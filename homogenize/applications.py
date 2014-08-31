@@ -6,10 +6,11 @@ from homogenize.matvec import (VecTri, Matrix, DFT, LinOper)
 from homogenize.materials import Material
 from homogenize.trigonometric import TrigPolynomial
 
+
 def homogenize_scalar(problem):
     """
     Homogenization of scalar elliptic problem.
- 
+
     Parameters
     ----------
     problem : object
@@ -36,7 +37,7 @@ def homogenize_scalar(problem):
 
     G1N = LinOper(name='G1', mat=[[FiN, hG1N, FN]])
     G2N = LinOper(name='G2', mat=[[FiN, hG2N, FN]])
- 
+
     for primaldual in pb.solve['primaldual']:
         print '\nproblem: ' + primaldual
         solutions = np.zeros(pb.shape).tolist()
@@ -66,8 +67,9 @@ def homogenize_scalar(problem):
 
         Afun = LinOper(name='FiGFA', mat=[[GN, A]])
 
-        for iL in np.arange(pb.dim): #iteration over unitary loads
-            E = np.zeros(pb.dim); E[iL] = 1
+        for iL in np.arange(pb.dim): # iteration over unitary loads
+            E = np.zeros(pb.dim)
+            E[iL] = 1
             print 'macroscopic load E = ' + str(E)
             EN = VecTri(name='EN', macroval=E, N=Nbar)
             x_start = VecTri(N=Nbar)
@@ -81,14 +83,14 @@ def homogenize_scalar(problem):
             else:
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
- 
+
             print 'solver : %s' % pb.solver['kind']
             cb(x_start) # initial callback
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     par=pb.solver, callback=cb)
- 
+
             solutions[iL] = add_macro2minimizer(X, E)
-            results[iL] = {'cb' : cb, 'info' : info}
+            results[iL] = {'cb': cb, 'info': info}
 
         # POSTPROCESSING
         print '\npostprocessing'
@@ -111,9 +113,10 @@ def homogenize_scalar(problem):
             else:
                 matrices[name] = np.linalg.inv(AH)
 
-        pb.output.update({'sol_' + primaldual : solutions,
-                          'res_' + primaldual : results,
-                          'mat_' + primaldual : matrices})
+        pb.output.update({'sol_' + primaldual: solutions,
+                          'res_' + primaldual: results,
+                          'mat_' + primaldual: matrices})
+
 
 def assembly_matrix(Afun, solutions):
     dim = len(solutions)
@@ -127,6 +130,7 @@ def assembly_matrix(Afun, solutions):
         for jj in np.arange(dim):
             AH[ii, jj] = Afun(solutions[ii])*solutions[jj]
     return AH
+
 
 def add_macro2minimizer(X, E):
     if np.allclose(X.mean(), E):
