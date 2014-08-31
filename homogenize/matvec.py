@@ -8,6 +8,7 @@ import numpy as np
 from homogenize.projections import get_Fourier_projections
 from homogenize.trigonometric import TrigPolynomial
 
+
 class FieldFun():
     """
     general class that provides functions for VecTri and Matrix classes
@@ -44,6 +45,7 @@ class FieldFun():
             ss += str(self.val)
         return ss
 
+
 class Scalar():
     """
     Scalar value that is used to multiply VecTri or Matrix classes
@@ -66,6 +68,7 @@ class Scalar():
 
     def transpose(self):
         return self
+
 
 class VecTri(FieldFun, TrigPolynomial):
     """
@@ -90,9 +93,9 @@ class VecTri(FieldFun, TrigPolynomial):
             either of 'ones' or 'random'
     """
     def __init__(self, name='?', N=None, Fourier=False, elas=False,
-                  valtype=None, **kwargs):
+                 valtype=None, **kwargs):
         self.Fourier = Fourier
-        if Fourier == False:
+        if Fourier is False:
             self.dtype = np.float64
         else:
             self.dtype = np.complex128
@@ -151,7 +154,7 @@ class VecTri(FieldFun, TrigPolynomial):
         if isinstance(x, Scalar):
             name = get_name('c', '*', self.name)
             return VecTri(name=name, val=x.val*self.val)
-        elif  np.size(x) == 1:
+        elif np.size(x) == 1:
             name = get_name('c', '*', self.name)
             return VecTri(name=name, val=x*self.val)
         else:
@@ -179,9 +182,9 @@ class VecTri(FieldFun, TrigPolynomial):
             scal = (self*self)**0.5
         elif ntype == 2:
             scal = (self*self)**0.5
-        elif ntype==1:
+        elif ntype == 1:
             scal = np.sum(np.abs(self.val))
-        elif ntype=='inf':
+        elif ntype == 'inf':
             scal = np.sum(np.abs(self.val))
         elif ntype == 'proj':
             _, hG1, hG2 = get_Fourier_projections(self.N, self.Y, M=None,
@@ -226,8 +229,8 @@ class VecTri(FieldFun, TrigPolynomial):
     def __eq__(self, x):
         if isinstance(x, VecTri):
             nor = (self-x).norm()
-            res = 'same instance VecTri; norm = %s'%str(nor)
-        elif np.shape(x)==self.get_shape():
+            res = 'same instance VecTri; norm = %s' % str(nor)
+        elif np.shape(x) == self.get_shape():
             res = np.linalg.norm(self.val-x)
         else:
             res = False
@@ -258,52 +261,13 @@ class VecTri(FieldFun, TrigPolynomial):
         subV = self.val[0]
         return subV[ind0-ss[0], :][:, ind1-ss[1]]
 
-#     @staticmethod
-#     def get_ZNl(N):
-#         r"""
-#         it produces index set ZNl=\underline{\set{Z}}^d_N :
-#         ZNl[i][j]\in\set{Z} : -N[i]/2 <= ZNl[i] < N[i]/2
-#         """
-#         ZNl = []
-#         N = np.array(N)
-#         for m in np.arange(np.size(N)):
-#             ZNl.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5)))
-#         return ZNl
-#
-#     @staticmethod
-#     def get_xil(N, Y):
-#         """
-#         it produces discrete frequencies of Fourier series
-#         xil[i] = ZNl[i]/Y[i]
-#         """
-#         xil = []
-#         for m in np.arange(np.size(N)):
-#             xil.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5))/Y[m])
-#         return xil
-#
-#     @staticmethod
-#     def get_grid_coordinates(N, Y):
-#         """
-#         It produces coordinates of the set of nodal points
-#         Coord[i][j] = x_N^{(i,j)}
-#         """
-#         d = np.size(N)
-#         ZNl = VecTri.get_ZNl(N)
-#         Coord = []
-#         for m in np.arange(d):
-#             x = ZNl[m]/N[m]*2*Y[m]
-#             Nshape = np.ones(d)
-#             Nshape[m] = N[m]
-#             Nrep = np.copy(N)
-#             Nrep[m] = 1
-#             Coord.append(np.tile(np.reshape(x, Nshape), Nrep))
-#         return Coord
 
 def get_name(x_name, oper, y_name):
     name = x_name + oper + y_name
-    if len(name)>20:
-        name = 'oper(%s)'%oper
+    if len(name) > 20:
+        name = 'oper(%s)' % oper
     return name
+
 
 class Matrix(FieldFun):
     """
@@ -348,12 +312,12 @@ class Matrix(FieldFun):
                         self.val[m, n] = kwargs['homog'][m, n]
 
     def __mul__(self, x):
-        if isinstance(x, VecTri):#Matrix by VecTri multiplication
+        if isinstance(x, VecTri): # Matrix by VecTri multiplication
             name = get_name(self.name, '*', x.name)
             prod = VecTri(name=name,
                           val=np.einsum('ij...,j...->i...', self.val, x.val),
                           Fourier=x.Fourier)
-        elif isinstance(x, Matrix):#Matrix by Matrix multiplication
+        elif isinstance(x, Matrix): # Matrix by Matrix multiplication
             name = get_name(self.name, '*', x.name)
             prod = Matrix(name=name,
                           val=np.einsum('ij...,jk...->ik...', self.val, x.val))
@@ -363,10 +327,10 @@ class Matrix(FieldFun):
         elif isinstance(x, Scalar):
             name = get_name(self.name, '*', 'c')
             prod = Matrix(name=name, val=self.val*x.val)
-        elif np.size(x)==1: # Matrix by Constant multiplication
+        elif np.size(x) == 1: # Matrix by Constant multiplication
             name = get_name(self.name, '*', 'c')
             prod = Matrix(name=name, val=self.val*x)
-        elif np.size(x)==self.pdN():
+        elif np.size(x) == self.pdN():
             val = np.einsum('ij...,j...->i...', self.val,
                             np.reshape(x, self.dN()))
             prod = np.reshape(val, self.pdN())
@@ -377,7 +341,7 @@ class Matrix(FieldFun):
         return prod
 
     def __rmul__(self, x):
-        if np.shape(x)==(self.d, self.d):
+        if np.shape(x) == (self.d, self.d):
             # Matrix by (d,d)-array multiplication
             val = np.zeros(self.ddN())
             for m in np.arange(self.d):
@@ -430,11 +394,11 @@ class Matrix(FieldFun):
 
     def __eq__(self, x):
         if isinstance(x, Matrix):
-            if self.get_shape()==x.get_shape():
+            if self.get_shape() == x.get_shape():
                 res = 'same instance (Matrix) with norm = %f' % (self-x).norm()
             else:
                 res = 'same instance (Matrix); different shape'
-        elif all(self.get_shape()==np.shape(x)):
+        elif all(self.get_shape() == np.shape(x)):
             res = 'different instances (Matrix vs numpy.array), norm = %f' \
                 % (np.linalg.norm(np.reshape(self.val-x, self.ddN())))
         else:
@@ -483,7 +447,6 @@ class ShiftMatrix():
     def __init__(self, N):
         self.N = N
         self.d = np.size(N)
-#         self.val = np.zeros(np.hstack([self.d,self.d,self.N]))
 
     def get_shift(self, ss, transpose=False):
         SS = Matrix(N=self.N, Fourier=True)
@@ -493,6 +456,7 @@ class ShiftMatrix():
         for ii in np.arange(self.d):
             SS.val[ii, ii] = S
         return SS
+
 
 class Id():
     """
@@ -508,7 +472,7 @@ class Id():
         return x
 
     def __repr__(self):
-        return 'Class : %s\n'%(self.__class__.__name__)
+        return 'Class : %s\n' % (self.__class__.__name__)
 
 
 class DFT():
@@ -559,7 +523,7 @@ class DFT():
             return LinOper(mat=[[self, x]])
 
         else:
-            if np.size(x)>np.prod(self.N):
+            if np.size(x) > np.prod(self.N):
                 d = np.size(x)/np.prod(self.N)
                 xre = np.reshape(x, np.hstack([d, self.N]))
             else:
@@ -595,6 +559,7 @@ class DFT():
         """
         x = np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(Fx), N))
         return x
+
 
 class LinOper():
     """
@@ -699,8 +664,9 @@ class LinOper():
             for n in np.arange(len(self.mat_rev[m])):
                 summand.append(self.mat_rev[m][n].transpose())
             mat.append(summand)
-        name = '(%s)^T' %self.name
+        name = '(%s)^T' % self.name
         return LinOper(name=name, mat=mat)
+
 
 class MultiVector():
     """
@@ -710,7 +676,7 @@ class MultiVector():
         self.name = name
         self.val = val
 
-        #parameters for vector like operations
+        # parameters for vector like operations
         self.dim = len(self.val)
         self._iter = np.arange(self.dim)
         self.ltype = []
@@ -781,7 +747,7 @@ class MultiVector():
             if flag_row:
                 s += ' , '
             s += self.val[item].name
-            s += '(%s)'%self.val[item].__class__.__name__
+            s += '(%s)' % self.val[item].__class__.__name__
             flag_row = True
         s += ' ]\n'
         s += '    val :\n'
@@ -809,6 +775,7 @@ class MultiVector():
         return 'subvector types : %s; subvector equality : %s' % (str(ltype),
                                                                   str(lval))
 
+
 class MultiOper():
     """
     MultiOperator used for some mixed formulations
@@ -830,9 +797,6 @@ class MultiOper():
 
     def __mul__(self, x):
         return self(x)
-
-    def __getitem__(self, m): #not working???
-        return self.val[m]
 
     def __repr__(self):
         s = 'Class : %s\n    name : %s\n' % (self.__class__.__name__,
@@ -856,12 +820,13 @@ class MultiOper():
             for n in np.arange(self.no_row):
                 row.append(self.val[n][m].transpose())
             val.append(row)
-        name = '(%s)^T' %self.name
+        name = '(%s)^T' % self.name
         return MultiOper(name=name, val=val)
+
 
 class ScipyOper():
     def __init__(self, name='ScipyLinOper', A=None, X=None, AT=None,
-                  dtype=None):
+                 dtype=None):
         self.A = A
         if dtype is not None:
             self.dtype = dtype
@@ -915,10 +880,11 @@ class ScipyOper():
 
     def __repr__(self):
         ss = 'Class : %s\n    name : %s\n' % (self.__class__.__name__,
-                                             self.name)
+                                              self.name)
         ss += '    shape = %s\n' % (str(self.shape))
         ss += '    A : %s\n' % (self.A.name)
         return ss
+
 
 def get_inverse(A):
     """
@@ -949,6 +915,7 @@ def get_inverse(A):
                 invA[k][l] = invA[k][l] - invA[m][l]*Bnull
     invA = np.array(invA)
     return invA
+
 
 def curl_norm(e, Y):
     """
@@ -986,16 +953,18 @@ def curl_norm(e, Y):
     curl = []
     e0 = []
     for m in np.arange(3):
-        j = (m+1)%3
-        k = (j+1)%3
+        j = (m+1) % 3
+        k = (j+1) % 3
         curl.append(xiM[j]*Fe[k]-xiM[k]*Fe[j])
         e0.append(np.real(Fe[m][ind_mean]))
     curl = np.array(curl)
     curlnorm = np.real(np.sum(curl[:]*np.conj(curl[:])))
     curlnorm = (curlnorm/np.prod(N))**0.5
     norm_e0 = np.linalg.norm(e0)
-    if norm_e0>1e-10: curlnorm = curlnorm/norm_e0
+    if norm_e0 > 1e-10:
+        curlnorm = curlnorm/norm_e0
     return curlnorm
+
 
 def div_norm(j, Y):
     """
@@ -1033,6 +1002,7 @@ def div_norm(j, Y):
         divnorm = divnorm / norm_j0
     return divnorm
 
+
 def enlarge(xN, M):
     xM = np.zeros(M, dtype=xN.dtype)
     M = np.array(M)
@@ -1042,9 +1012,10 @@ def enlarge(xN, M):
     iend = (M+N+1)/2
     if d == 2:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
-    elif d==3:
+    elif d == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
     return xM
+
 
 def enlargeF(xN, M):
     FxM = np.zeros(M, dtype=np.complex128)
@@ -1054,13 +1025,14 @@ def enlargeF(xN, M):
     FxN = DFT.fftnc(xN, N)
     ibeg = (M-N+1)/2
     iend = (M+N+1)/2
-    if d==2:
+    if d == 2:
         FxM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = FxN/np.prod(N)*np.prod(M)
-    elif d==3:
+    elif d == 3:
         coef = np.prod(N)*np.prod(M)
         FxM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = FxN/coef
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
+
 
 def enlarge_M(xN, M):
     d = np.size(M)
@@ -1070,34 +1042,5 @@ def enlarge_M(xN, M):
             xM[m][n] = enlarge(xN[m][n], M)
     return xM
 
-# def redu(xN, M):
-#     N = np.shape(xN)
-#     ibeg = (M-N+1)/2
-#     iend = (M+N+1)/2
-#     xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
-#     return xM
-# 
-# def reduF(xM, N):
-#     M = np.shape(xM)
-#     d = np.size(N)
-#     ibeg = (M-N+1)/2
-#     iend = (M+N+1)/2
-#     FxM = DFT.fftnc(xM, M)
-#     if d == 2:
-#         FxN = FxM[ibeg[0]:iend[0], ibeg[1]:iend[1]]/np.prod(M)*np.prod(N)
-#     elif d == 3:
-#         coef = np.prod(M)*np.prod(N)
-#         FxN = FxM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]/coef
-#     xN = DFT.ifftnc(FxN, N)
-#     return xN
-# 
-# def redu_M(xN, M):
-#     d = np.size(M)
-#     xM = np.zeros(np.hstack([d, d, M]))
-#     for m in np.arange(d):
-#         for n in np.arange(d):
-#             xM[m][n] = redu(xN[m][n], M)
-#     return xM
-
 if __name__ == '__main__':
-    execfile('main.py')
+    execfile('main_test.py')
