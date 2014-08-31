@@ -1,6 +1,7 @@
 import numpy as np
 import homogenize.applications as apps
 
+
 class Problem(object):
     def __init__(self, conf_problem=None, conf=None):
         self.__dict__.update(conf_problem)
@@ -58,7 +59,7 @@ class Problem(object):
                     print val
 
     def __repr__(self):
-        ss =  "Class : %s\n" % self.__class__.__name__
+        ss = "Class : %s\n" % self.__class__.__name__
         ss += '    name : %s\n' % self.name
         ss += '    physics = %s\n' % (self.physics)
         ss += '    dim = %d (dimension)\n' % (self.dim)
