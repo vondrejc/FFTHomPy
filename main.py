@@ -4,6 +4,7 @@ from general.base import import_file
 from homogenize.problem import Problem
 from optparse import OptionParser
 
+
 def main():
     parser = OptionParser()
     _, args = parser.parse_args()
@@ -13,7 +14,7 @@ def main():
     print '###################################################'
 
     if (len(args) == 1):
-        input_file = args[0];
+        input_file = args[0]
     elif (len(args) == 0):
         raise ValueError("The input argument (input file name) is missing.")
     else:
