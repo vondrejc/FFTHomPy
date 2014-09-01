@@ -1028,8 +1028,8 @@ def enlargeF(xN, M):
     if d == 2:
         FxM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = FxN/np.prod(N)*np.prod(M)
     elif d == 3:
-        coef = np.prod(N)*np.prod(M)
-        FxM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = FxN/coef
+        coef = np.prod(M)/np.prod(N)
+        FxM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = FxN*coef
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
 
