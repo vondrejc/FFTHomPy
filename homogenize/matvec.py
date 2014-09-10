@@ -1007,40 +1007,50 @@ def enlarge(xN, M):
     xM = np.zeros(M, dtype=xN.dtype)
     M = np.array(M)
     N = np.array(np.shape(xN))
-    d = np.size(N)
-    ibeg = (M-N+1)/2
-    iend = (M+N+1)/2
-    if d == 2:
+    dim = np.size(N)
+    ibeg = (M-N+(N % 2))/2
+    iend = (M+N+(N % 2))/2
+    if dim == 2:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
-    elif d == 3:
+    elif dim == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
     return xM
 
 
 def enlargeF(xN, M):
-    FxM = np.zeros(M, dtype=np.complex128)
     N = np.array(np.shape(xN))
-    M = np.array(M)
-    d = np.size(N)
-    FxN = DFT.fftnc(xN, N)
-    ibeg = (M-N+1)/2
-    iend = (M+N+1)/2
-    if d == 2:
-        FxM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = FxN/np.prod(N)*np.prod(M)
-    elif d == 3:
-        coef = np.prod(M)/np.prod(N)
-        FxM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = FxN*coef
+    M = np.array(M, dtype=np.int32)
+    FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
 
 
 def enlarge_M(xN, M):
-    d = np.size(M)
-    xM = np.zeros(np.hstack([d, d, M]))
-    for m in np.arange(d):
-        for n in np.arange(d):
+    M = np.array(M, dtype=np.int32)
+    dim = np.size(M)
+    xM = np.zeros(np.hstack([dim, dim, M]))
+    for m in np.arange(dim):
+        for n in np.arange(dim):
             xM[m][n] = enlarge(xN[m][n], M)
     return xM
 
+
+def decrease(xM, N):
+    N = np.array(N, dtype=np.int32)
+    M = np.array(xM.shape, dtype=np.int32)
+    dim = M.size
+    ibeg = (M-N+(N % 2))/2
+    iend = (M+N+(N % 2))/2
+    if dim == 2:
+        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1]]
+    elif dim == 3:
+        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
+    return xN
+
+
+def get_Nodd(N):
+    Nodd = N - ((N + 1) % 2)
+    return Nodd
+
 if __name__ == '__main__':
-    execfile('main_test.py')
+    execfile('../main_test.py')
