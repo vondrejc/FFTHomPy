@@ -1,6 +1,7 @@
 import numpy as nm
 from homogenize.matvec import VecTri
 
+
 class CallBack():
     def __init__(self, A=None, B=None, E2N=None, **kwargs):
         self.iter = 0
@@ -24,12 +25,14 @@ class CallBack():
 
     def __repr__(self):
         try:
-            s = 'Results of iterative solver :\n'
-            s = s + 'iterations : %d\n' % self.iter
-            s = s + 'res_norm : %g' % self.res_norm[-1]
+            ss = ''
+            ss += '    iterations : %d\n' % self.iter
+            ss += '    res_norm : %g' % self.res_norm[-1]
+            ss += '\n'
         except:
-            s = 'the results are not initialized yet'
-        return s
+            ss = 'the results are not initialized yet'
+        return ss
+
 
 class CallBack_GA():
     def __init__(self, A=None, B=None, E2N=None, **kwargs):
@@ -66,10 +69,10 @@ class CallBack_GA():
 
     def __repr__(self):
         try:
-            s = 'Results of iterative solver :\n'
-            s = s + 'iterations : %d\n' % self.iter
-            s = s + 'res_norm : %g\n' % self.res_norm[-1]
-            s = s + 'bound : %g' % self.bound[-1]
+            ss = ''
+            ss += '    iterations : %d\n' % self.iter
+            ss += '    res_norm : %g\n' % self.res_norm[-1]
+            ss += '    bound : %g' % self.bound[-1]
         except:
-            s = 'no output'
-        return s
+            ss = 'no output'
+        return ss

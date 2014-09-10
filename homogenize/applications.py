@@ -86,6 +86,7 @@ def homogenize_scalar(problem):
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
+            print cb
 
         # POSTPROCESSING
         print '\npostprocessing'
