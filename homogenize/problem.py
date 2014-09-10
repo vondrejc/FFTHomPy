@@ -9,6 +9,7 @@ class Problem(object):
             conf_material = conf.materials[self.material]
         else:
             conf_material = self.material
+
         self.material = self.parse_material(conf_material)
 
         self.Y = np.array(self.material['Y'], dtype=np.float64)
@@ -22,21 +23,25 @@ class Problem(object):
         self.output = {}
 
     @staticmethod
-    def parse_material(material):
-        for incl in material['inclusions']:
-            if incl in ['all', 'otherwise']:
-                n_incl = material['inclusions'].count(incl)
-                if n_incl == 0:
-                    continue
-                elif n_incl == 1:
-                    ind = material['inclusions'].index(incl)
-                    if ind == n_incl:
+    def parse_material(conf_material):
+        if 'fun' in conf_material:
+            material = conf_material
+        else:
+            material = conf_material
+            for incl in material['inclusions']:
+                if incl in ['all', 'otherwise']:
+                    n_incl = material['inclusions'].count(incl)
+                    if n_incl == 0:
                         continue
-                    for _, vals in material.iteritems():
-                        val = vals.pop(ind)
-                        vals.append(val)
-                else:
-                    raise ValueError()
+                    elif n_incl == 1:
+                        ind = material['inclusions'].index(incl)
+                        if ind == n_incl:
+                            continue
+                        for _, vals in material.iteritems():
+                            val = vals.pop(ind)
+                            vals.append(val)
+                    else:
+                        raise ValueError()
         return material
 
     def __call__(self):
