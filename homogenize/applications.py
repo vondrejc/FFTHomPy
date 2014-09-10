@@ -4,7 +4,6 @@ from general.solver import linear_solver
 from general.solver_pp import CallBack, CallBack_GA
 from homogenize.matvec import (VecTri, Matrix, DFT, LinOper)
 from homogenize.materials import Material
-from homogenize.trigonometric import TrigPolynomial
 
 
 def homogenize_scalar(problem):
@@ -28,7 +27,7 @@ def homogenize_scalar(problem):
     if pb.solve['kind'] is 'GaNi':
         Nbar = pb.solve['N']
     elif pb.solve['kind'] is 'Ga':
-        Nbar = 2*pb.solve['N']
+        Nbar = 2*pb.solve['N'] - 1
         hG1N = hG1N.resize(Nbar)
         hG2N = hG2N.resize(Nbar)
 
@@ -46,19 +45,15 @@ def homogenize_scalar(problem):
         # material coefficients
         mat = Material(pb)
 
-        def get_A(mat, solve, primaldual):
-            if solve['kind'] is 'GaNi':
-                coord = TrigPolynomial.get_grid_coordinates(pb.solve['N'],
-                                                            pb.Y)
-                A = mat.evaluate(coord)
-                if primaldual is 'dual':
-                    A = A.inv()
-            elif solve['kind'] is 'Ga':
-                A = mat.get_A_Ga(2*solve['N'], order=solve['order'],
-                                 primaldual=primaldual)
-            return A
-
-        A = get_A(mat, pb.solve, primaldual)
+        if pb.solve['kind'] is 'GaNi':
+            A = mat.get_A_GaNi(pb.solve['N'], primaldual)
+        elif pb.solve['kind'] is 'Ga':
+            if 'M' in pb.solve:
+                M = pb.solve['M']
+            else:
+                M = None
+            A = mat.get_A_Ga(Nbar=Nbar, order=pb.solve['order'], M=M,
+                             primaldual=primaldual)
 
         if primaldual is 'primal':
             GN = G1N
@@ -96,18 +91,30 @@ def homogenize_scalar(problem):
         print '\npostprocessing'
         matrices = {}
         for pp in pb.postprocess:
-            if 'order' in pp:
-                if pp['order'] is not None:
-                    order_name = '_o' + str(pp['order'])
-                else:
-                    order_name = ''
-            else:
+            if pp['kind'] in ['GaNi', 'gani']:
                 order_name = ''
-            name = 'AH_%s%s_n%d_%s' % (pp['kind'], order_name,
-                                       np.mean(pp['N']), primaldual)
+                Nname = ''
+                A = mat.get_A_GaNi(pb.solve['N'], primaldual)
+            elif pp['kind'] in ['Ga', 'ga']:
+                Nbarpp = 2*pb.solve['N'] - 1
+                if pp['order'] is None:
+                    Nname = ''
+                    order_name = ''
+                    A = mat.get_A_Ga(Nbar=Nbarpp, order=pp['order'],
+                                     primaldual=primaldual)
+                else:
+                    order_name = '_o' + str(pp['order'])
+                    Nname = '_n%d' % np.mean(pp['M'])
+                    A = mat.get_A_Ga(Nbar=Nbarpp, order=pp['order'],
+                                     M=pp['M'], primaldual=primaldual)
+            else:
+                ValueError()
+
+            name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
             print 'calculate: ' + name
-            A = get_A(mat, pp, primaldual)
+
             AH = assembly_matrix(A, solutions)
+
             if primaldual is 'primal':
                 matrices[name] = AH
             else:
