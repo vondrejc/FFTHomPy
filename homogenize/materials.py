@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.special as sp
-from homogenize.matvec import DFT, VecTri, Matrix
+from homogenize.matvec import DFT, VecTri, Matrix, decrease
 from homogenize.trigonometric import TrigPolynomial
 
 inclusion_keys = {'ball': ['ball', 'circle'],
@@ -13,9 +13,9 @@ class Material():
         self.conf = problem_conf.material
         self.Y = problem_conf.Y
 
-    def get_A_Ga(self, N, order=None, primaldual='primal'):
+    def get_A_Ga(self, Nbar, order=None, M=None, primaldual='primal'):
         if order is None:
-            shape_funs = self.get_shape_functions(N)
+            shape_funs = self.get_shape_functions(Nbar)
             val = np.zeros(self.conf['vals'][0].shape + shape_funs[0].shape)
             for ii in range(len(self.conf['inclusions'])):
                 if primaldual is 'primal':
@@ -25,28 +25,50 @@ class Material():
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
             return Matrix(name='A_Ga', val=val)
         else:
-            dim = np.size(N)
-            coord = TrigPolynomial.get_grid_coordinates(N, self.Y)
+            dim = np.size(Nbar)
+            coord = TrigPolynomial.get_grid_coordinates(M, self.Y)
             vals = self.evaluate(coord)
             if primaldual is 'dual':
                 vals = vals.inv()
 
-            h = self.Y/N
+            h = self.Y/M
             if order in [0, 'constant']:
-                Wraw = get_weights_con(h, N, self.Y)
+                Wraw = get_weights_con(h, Nbar, self.Y)
             elif order in [1, 'bilinear']:
-                Wraw = get_weights_lin(h, N, self.Y)
+                Wraw = get_weights_lin(h, Nbar, self.Y)
 
-            Aapp = np.zeros(np.hstack([dim, dim, N]))
+            Aapp = np.zeros(np.hstack([dim, dim, Nbar]))
             for m in np.arange(dim):
                 for n in np.arange(dim):
-                    Aapp[m, n] = np.real(np.prod(N) * \
-                        DFT.ifftnc(Wraw*DFT.fftnc(vals[m, n], N), N))
-            name = 'Aexact%d' % order
+                    hAM0 = DFT.fftnc(vals[m, n], M)
+                    if np.allclose(M, Nbar):
+                        hAM = hAM0
+                    elif np.all(np.greater_equal(M, Nbar)):
+                        hAM = decrease(hAM0, Nbar)
+                    elif np.all(np.less(M, Nbar)):
+                        factor = np.ceil(np.array(Nbar, dtype=np.float64) / M)
+                        hAM0per = np.tile(hAM0, 2*factor-1)
+                        hAM = decrease(hAM0per, Nbar)
+                    else:
+                        raise ValueError()
+
+                    pNbar = np.prod(Nbar)
+                    """ if DFT is normalized in accordance with articles there
+                    should be np.prod(M)"""
+                    Aapp[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
+
+            name = 'A_Ga%d' % order
             return Matrix(name=name, val=Aapp)
 
-    def get_shape_functions(self, N):
-        N = np.array(N, dtype=np.int32)
+    def get_A_GaNi(self, N, primaldual='primal'):
+        coord = TrigPolynomial.get_grid_coordinates(N, self.Y)
+        A = self.evaluate(coord)
+        if primaldual is 'dual':
+            A = A.inv()
+        return A
+
+    def get_shape_functions(self, N2):
+        N2 = np.array(N2, dtype=np.int32)
         inclusions = self.conf['inclusions']
         params = self.conf['params']
         positions = self.conf['positions']
@@ -54,19 +76,19 @@ class Material():
         for ii, incl in enumerate(inclusions):
             if incl in inclusion_keys['cube']:
                 h = params[ii]
-                Wraw = get_weights_con(h, N, self.Y)
-                chars.append(np.real(DFT.ifftnc(Wraw, N))*np.prod(N))
+                Wraw = get_weights_con(h, N2, self.Y)
+                chars.append(np.real(DFT.ifftnc(Wraw, N2))*np.prod(N2))
             elif incl in inclusion_keys['ball']:
                 r = params[ii]/2
                 if r == 0:
-                    Wraw = np.zeros(N)
+                    Wraw = np.zeros(N2)
                 else:
-                    Wraw = get_weights_circ(r, N, self.Y)
-                chars.append(np.real(DFT.ifftnc(Wraw, N))*np.prod(N))
+                    Wraw = get_weights_circ(r, N2, self.Y)
+                chars.append(np.real(DFT.ifftnc(Wraw, N2))*np.prod(N2))
             elif incl == 'all':
-                chars.append(np.ones(N))
+                chars.append(np.ones(N2))
             elif incl == 'otherwise':
-                chars.append(np.ones(N))
+                chars.append(np.ones(N2))
                 for ii in np.arange(len(inclusions)-1):
                     chars[-1] -= chars[ii]
             else:
@@ -92,7 +114,9 @@ class Material():
         """
         if hasattr(self.conf, '__call__'):
             A_val = self.conf(coord)
-
+        elif 'fun' in self.conf:
+            fun = self.conf['fun']
+            A_val = fun(coord)
         else:
             A_val = np.zeros(self.conf['vals'][0].shape + coord.shape[1:])
             topos = self.get_topologies(coord, self.conf['inclusions'],
@@ -131,12 +155,13 @@ class Material():
                 topos.append(np.ones(coord.shape[1:]))
                 for jj in np.arange(len(topos)-1):
                     topos[ii] -= topos[jj]
-                if not (topos[ii]>=0).all():
+                if not (topos[ii] >= 0).all():
                     raise NotImplementedError("Overlapping inclusions!")
             else:
                 msg = "Inclusion (%s) is not implemented." % (kind)
                 raise NotImplementedError(msg)
         return topos
+
 
 def get_weights_con(h, Nbar, Y):
     """
@@ -153,18 +178,19 @@ def get_weights_con(h, Nbar, Y):
     -------
         Wphi - integral weights at regular grid sizing Nbar
     """
-    d = np.size(Y)
+    dim = np.size(Y)
     meas_puc = np.prod(Y)
     ZN2l = VecTri.get_ZNl(Nbar)
     Wphi = np.ones(Nbar) / meas_puc
-    for ii in np.arange(d):
-        Nshape = np.ones(d)
+    for ii in np.arange(dim):
+        Nshape = np.ones(dim)
         Nshape[ii] = Nbar[ii]
         Nrep = np.copy(Nbar)
         Nrep[ii] = 1
         Wphi *= h[ii]*np.tile(np.reshape(np.sinc(h[ii]*ZN2l[ii]/Y[ii]),
                                          Nshape), Nrep)
     return Wphi
+
 
 def get_weights_lin(h, Nbar, Y):
     """
@@ -194,6 +220,7 @@ def get_weights_lin(h, Nbar, Y):
         Wphi *= h[ii]*np.tile(np.reshape((np.sinc(h[ii]*ZN2l[ii]/Y[ii]))**2,
                                          Nshape), Nrep)
     return Wphi
+
 
 def get_weights_circ(r, Nbar, Y):
     """
