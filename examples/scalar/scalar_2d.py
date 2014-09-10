@@ -8,65 +8,61 @@ dim = 2
 
 materials = {'square': {'inclusions': ['square', 'otherwise'],
                         'positions': [np.zeros(dim), ''],
-                        'params': [1.4*np.ones(dim), ''], # size of sides
+                        'params': [0.6*np.ones(dim), ''], # size of sides
                         'vals': [11*np.eye(dim), 1.*np.eye(dim)],
-                        'Y': np.array([2., 2.]),
+                        'Y': np.ones(dim),
                         },
              'square2': {'inclusions': ['square', 'otherwise'],
                          'positions': [np.zeros(dim), ''],
-                         'params': [2.8*np.ones(dim), ''], # size of sides
+                         'params': [1.2*np.ones(dim), ''], # size of sides
                          'vals': [11*np.eye(dim), 1.*np.eye(dim)],
-                         'Y': np.array([4., 4.]),
+                         'Y': 2.*np.ones(dim),
                          },
              'ball': {'inclusions': ['ball', 'otherwise'],
                       'positions': [np.zeros(dim), ''],
-                      'params': [2., ''], # diamater
+                      'params': [1., ''], # diamater
                       'vals': [11*np.eye(dim), 1.*np.eye(dim)],
-                      'Y': np.array([2., 2.]),
+                      'Y': 1.*np.ones(dim),
                       },
              'ball2': {'inclusions': ['ball', 'otherwise'],
                        'positions': [np.zeros(dim), ''],
-                       'params': [4., ''], # diamater
+                       'params': [2., ''], # diamater
                        'vals': [11*np.eye(dim), 1.*np.eye(dim)],
-                       'Y': np.array([4., 4.]),
+                       'Y': 2.*np.ones(dim),
                        },
              'laminate': {'inclusions': ['square', 'otherwise'],
                           'positions': [np.zeros(dim), ''],
-                          'params': [np.array([2., 1.0]), ''],
+                          'params': [np.array([1., 0.5]), ''],
                           'vals': [11*np.eye(dim), 1.*np.eye(dim)],
-                          'Y': np.array([2., 2.]),
+                          'Y': 1.*np.ones(dim),
                           },
              'laminate2': {'inclusions': ['square', 'otherwise'],
                            'positions': [np.zeros(dim), ''],
-                           'params': [np.array([4., 2.0]), ''],
+                           'params': [np.array([2., 1.0]), ''],
                            'vals': [11.*np.eye(dim), 1.*np.eye(dim)],
-                           'Y': np.array([4., 4.]),
+                           'Y': 2.*np.ones(dim),
                            },
              }
 
 N = np.array([5, 5])
 
-Nbar = np.array([145, 145])
-
 problems = [
     {'name': 'prob1',
      'physics': 'scalar',
-     'material': 'ball',
+     # 'material': 'ball',
      # 'material': 'laminate',
-     # 'material': 'square',
+     'material': 'square',
      'solve': {'kind': 'GaNi',
                'N': N,
                'primaldual': ['primal', 'dual']},
-     'postprocess': [{'kind': 'GaNi',
-                      'N': N},
+     'postprocess': [{'kind': 'GaNi'},
                      {'kind': 'Ga',
-                      'N': Nbar,
                       'order': None},
                      {'kind': 'Ga',
-                      'N': Nbar,
+                      'M': N,
                       'order': 0},
                      {'kind': 'Ga',
-                      'N': Nbar,
+                      'M': 3**4*N,
                       'order': 1}
                      ],
      'solver': {'kind': 'CG',
@@ -74,18 +70,16 @@ problems = [
                 'maxiter': 1e3}},
     {'name': 'prob2',
      'physics': 'scalar',
-     'material': 'ball2',
-     #     'material': 'laminate2',
-     #     'material': 'square2',
+     # 'material': 'ball2',
+     # 'material': 'laminate2',
+     'material': 'square2',
      'solve': {'kind': 'Ga',
                'N': N,
                'order': None,
                'primaldual': ['primal', 'dual']},
      'postprocess': [{'kind': 'Ga',
-                      'N': N,
                       'order': None}],
      'solver': {'kind': 'CG',
                 'tol': 1e-6,
                 'maxiter': 1e3}
-     },
-           ]
+     }, ]

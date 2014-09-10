@@ -106,7 +106,7 @@ class VecTri(FieldFun, TrigPolynomial):
             self.d = np.size(self.N)
         else:
             if N is not None:
-                self.N = N
+                self.N = np.array(N, dtype=np.int32)
             else:
                 print 'the assignment of N is required'
             self.d = np.size(self.N)
@@ -496,7 +496,7 @@ class DFT():
         else:
             self.name = 'DFT'
 
-        self.N = N
+        self.N = np.array(N, dtype=np.int32)
         self.inverse = inverse
         if normalized:
             self.norm_coef = np.prod(self.N)

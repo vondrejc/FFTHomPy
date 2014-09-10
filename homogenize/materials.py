@@ -46,6 +46,7 @@ class Material():
             return Matrix(name=name, val=Aapp)
 
     def get_shape_functions(self, N):
+        N = np.array(N, dtype=np.int32)
         inclusions = self.conf['inclusions']
         params = self.conf['params']
         positions = self.conf['positions']
