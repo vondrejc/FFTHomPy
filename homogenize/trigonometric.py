@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class TrigPolynomial():
     @staticmethod
     def get_ZNl(N):
@@ -41,6 +42,7 @@ class TrigPolynomial():
             Nrep[ii] = 1
             coord[ii] = np.tile(np.reshape(x, Nshape), Nrep)
         return coord
+
 
 class TrigPolBasis(TrigPolynomial):
     """
@@ -85,3 +87,6 @@ class TrigPolBasis(TrigPolynomial):
             ss = "Shape basis function for k = %d and N = %s" \
                 % (self.order, str(self.N))
         return ss
+
+if __name__ == '__main__':
+    execfile('../main_test.py')
