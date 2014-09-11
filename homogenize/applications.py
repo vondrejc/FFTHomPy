@@ -67,7 +67,7 @@ def homogenize_scalar(problem):
             E[iL] = 1
             print 'macroscopic load E = ' + str(E)
             EN = VecTri(name='EN', macroval=E, N=Nbar)
-            x_start = VecTri(N=Nbar)
+            x0 = VecTri(N=Nbar) # initial approximation for solvers
 
             B = Afun(-EN) # RHS
 
@@ -80,15 +80,15 @@ def homogenize_scalar(problem):
                     implemented" % (pb.solver['callback']))
 
             print 'solver : %s' % pb.solver['kind']
-            cb(x_start) # initial callback
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
-                                    par=pb.solver, callback=cb)
+                                    x0=x0, par=pb.solver, callback=cb)
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
             print cb
 
         # POSTPROCESSING
+        del Afun, A, B, E, EN, GN, X
         print '\npostprocessing'
         matrices = {}
         for pp in pb.postprocess:
@@ -115,7 +115,7 @@ def homogenize_scalar(problem):
             print 'calculate: ' + name
 
             AH = assembly_matrix(A, solutions)
-
+            print AH
             if primaldual is 'primal':
                 matrices[name] = AH
             else:
@@ -130,13 +130,16 @@ def assembly_matrix(Afun, solutions):
     dim = len(solutions)
     if not np.allclose(Afun.N, solutions[0].N):
         Nbar = Afun.N
+        sol = []
         for ii in np.arange(dim):
-            solutions[ii] = solutions[ii].resize(Nbar)
+            sol.append(solutions[ii].resize(Nbar))
+    else:
+        sol = solutions
 
     AH = np.zeros([dim, dim])
     for ii in np.arange(dim):
         for jj in np.arange(dim):
-            AH[ii, jj] = Afun(solutions[ii])*solutions[jj]
+            AH[ii, jj] = Afun(sol[ii]) * sol[jj]
     return AH
 
 

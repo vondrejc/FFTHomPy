@@ -237,6 +237,8 @@ class VecTri(FieldFun, TrigPolynomial):
         return res
 
     def resize(self, M):
+        if np.allclose(self.N, M):
+            return self
         val = np.zeros(np.hstack([self.d, M]))
         for m in np.arange(self.d):
             val[m] = enlargeF(self.val[m], M)

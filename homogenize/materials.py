@@ -13,6 +13,39 @@ class Material():
         self.conf = problem_conf.material
         self.Y = problem_conf.Y
 
+        # control the correctness of material definition
+        if 'Y' not in self.conf:
+            raise ValueError("The definition of PUC size (Y) is missing!")
+
+        if 'fun' in self.conf:
+            pass
+        elif 'inclusions' in self.conf:
+            n_incl = len(self.conf['inclusions'])
+            for key in ['positions', 'params', 'vals']:
+                if key not in self.conf:
+                    msg = "Key (%s) is missing in material definition!" % key
+                    raise ValueError(msg)
+                if len(self.conf[key]) != n_incl:
+                    raise ValueError("Improper number of value in material\
+                         definition for key (%s)!" % key)
+
+            for ii, incl in enumerate(self.conf['inclusions']):
+                if incl in ['all', 'otherwise']:
+                    continue
+
+                param = self.conf['params'][ii]
+                position = self.conf['positions'][ii]
+                try:
+                    if any(np.greater(param, self.Y)):
+                        raise ValueError("Improper parameters of inclusion!")
+
+                    self.conf['positions'][ii] = position % self.Y
+                except:
+                    raise ValueError("Improper material definition!")
+
+        else:
+            raise NotImplementedError("Improper material definition!")
+
     def get_A_Ga(self, Nbar, order=None, M=None, primaldual='primal'):
         if order is None:
             shape_funs = self.get_shape_functions(Nbar)
@@ -74,17 +107,21 @@ class Material():
         positions = self.conf['positions']
         chars = []
         for ii, incl in enumerate(inclusions):
+            position = positions[ii]
+            if isinstance(position, np.ndarray):
+                SS = get_shift_inclusion(N2, position, self.Y)
+
             if incl in inclusion_keys['cube']:
                 h = params[ii]
                 Wraw = get_weights_con(h, N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(Wraw, N2))*np.prod(N2))
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
             elif incl in inclusion_keys['ball']:
                 r = params[ii]/2
                 if r == 0:
                     Wraw = np.zeros(N2)
                 else:
                     Wraw = get_weights_circ(r, N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(Wraw, N2))*np.prod(N2))
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
             elif incl == 'all':
                 chars.append(np.ones(N2))
             elif incl == 'otherwise':
@@ -112,16 +149,12 @@ class Material():
         A : numpy.array
             material coefficients at coordinates (coord)
         """
-        if hasattr(self.conf, '__call__'):
-            A_val = self.conf(coord)
-        elif 'fun' in self.conf:
+        if 'fun' in self.conf:
             fun = self.conf['fun']
             A_val = fun(coord)
         else:
             A_val = np.zeros(self.conf['vals'][0].shape + coord.shape[1:])
-            topos = self.get_topologies(coord, self.conf['inclusions'],
-                                        self.conf['params'],
-                                        self.conf['positions'])
+            topos = self.get_topologies(coord)
 
             for ii in np.arange(len(self.conf['inclusions'])):
                 A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii],
@@ -129,38 +162,89 @@ class Material():
 
         return Matrix(name='material', val=A_val)
 
-    @staticmethod
-    def get_topologies(coord, inclusions, params, positions):
+    def get_topologies(self, coord):
+        inclusions = self.conf['inclusions']
+        params = self.conf['params']
+        positions = self.conf['positions']
+
         dim = coord.shape[0]
         topos = []
+
+        # periodically enlarge coordinates
+        N = np.array(coord.shape[1:])
+        cop = np.empty(np.hstack([dim, 3*N]))
+        mapY = np.array([-1, 0, 1])
+        for dd in np.arange(dim):
+            Nshape = np.ones(dim, dtype=np.int32)
+            Nshape[dd] = 3*N[dd]
+            Nrep = 3*N
+            Nrep[dd] = 1
+            vec = np.repeat(mapY*self.Y[dd], N[dd])
+            Ymat = np.tile(np.reshape(vec, Nshape), Nrep)
+            cop[dd] = np.tile(coord[dd], 3*np.ones(dim)) + Ymat
+
+        mapY = np.array([-1, 0, 1])
+        Yiter = mapY[np.newaxis]
+        for ii in np.arange(1, dim):
+            Yiter = np.vstack([np.repeat(Yiter, 3, axis=1),
+                               np.tile(mapY, Yiter.shape[1])])
 
         for ii, kind in enumerate(inclusions):
 
             if kind in inclusion_keys['cube']:
                 param = np.array(params[ii], dtype=np.float64)
-                position = np.array(positions[ii], dtype=np.float64)
-                topos.append(np.ones(coord.shape[1:]))
-                for jj in np.arange(dim):
-                    topos[ii] *= ((coord[jj]-position[jj]) >= -param[jj]/2)
-                    topos[ii] *= ((coord[jj]-position[jj]) <= param[jj]/2)
+                pos = np.array(positions[ii], dtype=np.float64)
+                topos.append(np.zeros(cop.shape[1:]))
+                for Ycoef in Yiter.T:
+                    Ym = self.Y*Ycoef
+                    topo_loc = np.ones(cop.shape[1:])
+                    for dd in np.arange(dim):
+                        topo_loc *= ((cop[dd]-pos[dd]+Ym[dd]) > -param[dd]/2)
+                        topo_loc *= ((cop[dd]-pos[dd]+Ym[dd]) <= param[dd]/2)
+                    topos[ii] += topo_loc
+                topos[ii] = decrease(topos[ii], N)
+
             elif kind in inclusion_keys['ball']:
-                position = np.array(positions[ii], dtype=np.float64)
-                norm2 = 0. # square of norm
-                for jj in np.arange(dim):
-                    norm2 += (coord[jj]-position[jj])**2
-                topos.append(norm2**0.5 < params[ii]/2)
-#             elif kind == 'all':
-#                 topos.append(np.ones(coord.shape[1:]))
+                pos = np.array(positions[ii], dtype=np.float64)
+                topos.append(np.zeros(cop.shape[1:]))
+                for Ycoef in Yiter.T:
+                    Ym = self.Y*Ycoef
+                    topo_loc = np.ones(cop.shape[1:])
+
+                    norm2 = 0. # square of norm
+                    for dd in np.arange(dim):
+                        norm2 += (cop[dd]-pos[dd]-Ym[dd])**2
+                    topos[ii] += (norm2**0.5 < params[ii]/2)
+                topos[ii] = decrease(topos[ii], N)
+
             elif kind == 'otherwise':
                 topos.append(np.ones(coord.shape[1:]))
                 for jj in np.arange(len(topos)-1):
                     topos[ii] -= topos[jj]
                 if not (topos[ii] >= 0).all():
                     raise NotImplementedError("Overlapping inclusions!")
+
             else:
                 msg = "Inclusion (%s) is not implemented." % (kind)
                 raise NotImplementedError(msg)
+
         return topos
+
+
+def get_shift_inclusion(N, h, Y):
+    N = np.array(N, dtype=np.int32)
+    Y = np.array(Y, dtype=np.float64)
+    dim = N.size
+    ZN = TrigPolynomial.get_ZNl(N)
+    SS = np.ones(N, dtype=np.complex128)
+    for ii in np.arange(dim):
+        Nshape = np.ones(dim)
+        Nshape[ii] = N[ii]
+        Nrep = N
+        Nrep[ii] = 1
+        SS *= np.tile(np.reshape(np.exp(-2*np.pi*1j*(h[ii]*ZN[ii]/Y[ii])),
+                                 Nshape), Nrep)
+    return SS
 
 
 def get_weights_con(h, Nbar, Y):
