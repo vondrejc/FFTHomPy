@@ -7,6 +7,7 @@ relating operators for homogenization.
 import numpy as np
 from homogenize.projections import get_Fourier_projections
 from homogenize.trigonometric import TrigPolynomial
+from homogenize.matvec_fun import enlarge, enlarge_M, get_inverse
 
 
 class FieldFun():
@@ -16,8 +17,10 @@ class FieldFun():
     def dN(self):
         return np.hstack([self.d, self.N])
 
-    def ddN(self):
-        return np.hstack([self.d, self.d, self.N])
+    def ddN(self, M=None):
+        if M is None:
+            M = self.N
+        return np.hstack([self.d, self.d, M])
 
     def pN(self):
         return np.prod(self.N)
@@ -239,9 +242,13 @@ class VecTri(FieldFun, TrigPolynomial):
     def resize(self, M):
         if np.allclose(self.N, M):
             return self
-        val = np.zeros(np.hstack([self.d, M]))
-        for m in np.arange(self.d):
-            val[m] = enlargeF(self.val[m], M)
+        val = np.zeros(np.hstack([self.d, M]), dtype=self.dtype)
+        if self.Fourier is False:
+            for m in np.arange(self.d):
+                val[m] = enlargeF(self.val[m], M)
+        else:
+            for m in np.arange(self.d):
+                val[m] = enlarge(self.val[m], M)
         return VecTri(name=self.name, val=val)
 
     def mulTri(self, y, resize=True):
@@ -411,8 +418,11 @@ class Matrix(FieldFun):
         if self.Fourier:
             val = enlarge_M(self.val, M)
         else:
-            raise NotImplementedError()
-        return Matrix(name=self.name, val=val)
+            val = np.zeros(self.ddN())
+            for ii in np.arange(self.d):
+                for jj in np.arange(self.d):
+                    val[ii, jj] = enlargeF(self.val[ii, jj], M)
+        return Matrix(name=self.name, val=val, Fourier=self.Fourier)
 
     def get_shifted_submatrix(self, ss=None):
         if ss is None:
@@ -887,38 +897,6 @@ class ScipyOper():
         ss += '    A : %s\n' % (self.A.name)
         return ss
 
-
-def get_inverse(A):
-    """
-    It calculates the inverse of conductivity coefficients at grid points,
-    i.e. of matrix A_GaNi
-    """
-    B = np.copy(A)
-    N = np.array(B[0][0].shape)
-    d = N.size
-    invA = np.eye(d).tolist()
-    for m in np.arange(d):
-        Bdiag = np.copy(B[m][m])
-        B[m][m] = np.ones(N)
-        for n in np.arange(m+1, d):
-            B[m][n] = B[m][n]/Bdiag
-        for n in np.arange(d):
-            invA[m][n] = invA[m][n]/Bdiag
-        for k in np.arange(m+1, d):
-            Bnull = np.copy(B[k][m])
-            for l in np.arange(d):
-                B[k][l] = B[k][l] - B[m][l]*Bnull
-                invA[k][l] = invA[k][l] - invA[m][l]*Bnull
-    for m in np.arange(d-1, -1, -1):
-        for k in np.arange(m-1, -1, -1):
-            Bnull = np.copy(B[k][m])
-            for l in np.arange(d):
-                B[k][l] = B[k][l] - B[m][l]*Bnull
-                invA[k][l] = invA[k][l] - invA[m][l]*Bnull
-    invA = np.array(invA)
-    return invA
-
-
 def curl_norm(e, Y):
     """
     it calculates curl-based norm,
@@ -1004,55 +982,12 @@ def div_norm(j, Y):
         divnorm = divnorm / norm_j0
     return divnorm
 
-
-def enlarge(xN, M):
-    xM = np.zeros(M, dtype=xN.dtype)
-    M = np.array(M)
-    N = np.array(np.shape(xN))
-    dim = np.size(N)
-    ibeg = (M-N+(N % 2))/2
-    iend = (M+N+(N % 2))/2
-    if dim == 2:
-        xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
-    elif dim == 3:
-        xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
-    return xM
-
-
 def enlargeF(xN, M):
     N = np.array(np.shape(xN))
     M = np.array(M, dtype=np.int32)
     FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
-
-
-def enlarge_M(xN, M):
-    M = np.array(M, dtype=np.int32)
-    dim = np.size(M)
-    xM = np.zeros(np.hstack([dim, dim, M]))
-    for m in np.arange(dim):
-        for n in np.arange(dim):
-            xM[m][n] = enlarge(xN[m][n], M)
-    return xM
-
-
-def decrease(xM, N):
-    N = np.array(N, dtype=np.int32)
-    M = np.array(xM.shape, dtype=np.int32)
-    dim = M.size
-    ibeg = (M-N+(N % 2))/2
-    iend = (M+N+(N % 2))/2
-    if dim == 2:
-        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1]]
-    elif dim == 3:
-        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
-    return xN
-
-
-def get_Nodd(N):
-    Nodd = N - ((N + 1) % 2)
-    return Nodd
 
 if __name__ == '__main__':
     execfile('../main_test.py')

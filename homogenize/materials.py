@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.special as sp
-from homogenize.matvec import DFT, VecTri, Matrix, decrease
+from homogenize.matvec import DFT, VecTri, Matrix
+from homogenize.matvec_fun import decrease
 from homogenize.trigonometric import TrigPolynomial
 
 inclusion_keys = {'ball': ['ball', 'circle'],
