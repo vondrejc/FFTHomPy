@@ -6,6 +6,8 @@ from homogenize.matvec import VecTri
 
 def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
                   solver=None, callback=None):
+    if callback is not None:
+        callback(x0)
     if solver == 'CG':
         x, info = CG(Afun, B, x0=x0, par=par, callback=callback)
     elif solver == 'iterative':
@@ -39,7 +41,7 @@ def iterative(Afun, x0, par=None, callback=None):
            'kit': 0}
     x = x0
     while (res['norm_res'] > par.solver['tol'] and
-           res['kit'] < par.solver['maxit']):
+           res['kit'] < par.solver['maxiter']):
         res['kit'] += 1
         x = x - alp*Afun(x)
         callback(x)
@@ -76,8 +78,8 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         par = dict()
     if 'tol' not in par.keys():
         par['tol'] = 1e-6
-    if 'maxit' not in par.keys():
-        par['maxit'] = 1e3
+    if 'maxiter' not in par.keys():
+        par['maxiter'] = 1e3
 
     res = dict()
     res['time'] = dbg.start_time()
@@ -90,9 +92,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     res['norm_res'] = np.double(rr)**0.5 # /np.norm(E_N)
     norm_res_log = []
     norm_res_log.append(res['norm_res'])
-    if callback is not None:
-        callback(xCG)
-    while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxit']):
+    while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1 # number of iterations
         AP = Afun(P)
         alp = rr/(P*AP)
@@ -142,8 +142,8 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
         par = dict()
     if 'tol' not in par:
         par['tol'] = 1e-6
-    if 'maxit' not in par:
-        par['maxit'] = 1e3
+    if 'maxiter' not in par:
+        par['maxiter'] = 1e3
 
     res = dict()
     res['time'] = dbg.start_time()
@@ -156,9 +156,7 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
     res['norm_res'] = np.double(rr)**0.5 # /np.norm(E_N)
     norm_res_log = []
     norm_res_log.append(res['norm_res'])
-    if callback is not None:
-        callback(xCG)
-    while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxit']):
+    while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1 # number of iterations
         AP = Afun(P)
         alp = rr/(P*AP)
@@ -178,4 +176,4 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
     return xCG, res
 
 if __name__ == '__main__':
-    execfile('main_test.py')
+    execfile('../main_test.py')

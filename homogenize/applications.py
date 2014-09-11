@@ -115,7 +115,7 @@ def homogenize_scalar(problem):
             print 'calculate: ' + name
 
             AH = assembly_matrix(A, solutions)
-            print AH
+
             if primaldual is 'primal':
                 matrices[name] = AH
             else:
