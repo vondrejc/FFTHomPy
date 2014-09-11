@@ -62,6 +62,18 @@ class Problem(object):
                 for key, val in output['mat_'+primaldual].iteritems():
                     print key
                     print val
+        if hasattr(self, 'save'):
+            import cPickle
+            import os
+            if self.save['data'] == 'all':
+                filename = self.save['file']
+                dirs = os.path.dirname(filename)
+                if not os.path.exists(dirs):
+                    os.makedirs(dirs)
+
+                filew = open(self.save['file'], 'w')
+                cPickle.dump(self.output, filew)
+                filew.close()
 
     def __repr__(self):
         ss = "Class : %s\n" % self.__class__.__name__
