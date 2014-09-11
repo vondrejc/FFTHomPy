@@ -4,7 +4,7 @@ from homogenize.matvec import VecTri
 
 class CallBack():
     def __init__(self, A=None, B=None, E2N=None, **kwargs):
-        self.iter = 0
+        self.iter = -1
         self.res_norm = []
         self.energy_norm = []
         self.A = A
