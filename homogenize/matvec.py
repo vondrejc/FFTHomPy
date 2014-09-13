@@ -5,7 +5,7 @@ relating operators for homogenization.
 """
 
 import numpy as np
-from homogenize.projections import get_Fourier_projections
+import homogenize.projections as proj
 from homogenize.trigonometric import TrigPolynomial
 from homogenize.matvec_fun import enlarge, enlarge_M, get_inverse
 
@@ -28,11 +28,8 @@ class FieldFun():
     def pdN(self):
         return np.prod(self.dN())
 
-    def get_shape(self):
-        return np.shape(self.val)
-
-    def shape(self):
-        return self.get_shape()
+    def __getitem__(self, i):
+        return self.val[i]
 
     def __repr__(self, full=False):
         ss = "Class : %s\n    name : %s\n" % (self.__class__.__name__,
@@ -40,7 +37,7 @@ class FieldFun():
         ss += '    Fourier = %s \n' % (self.Fourier)
         ss += '    dimension d = %g \n' % (self.d)
         ss += '    size N = %s \n' % str(self.N)
-        ss += '    shape  = %s \n' % str(self.get_shape())
+        ss += '    val.shape  = %s \n' % str(self.val.shape)
         ss += '    norm = %s\n' % str(self.norm())
         ss += '    mean = %s\n' % str(self.mean())
         if full:
@@ -95,27 +92,27 @@ class VecTri(FieldFun, TrigPolynomial):
         valtypes : str
             either of 'ones' or 'random'
     """
-    def __init__(self, name='?', N=None, Fourier=False, elas=False,
+    def __init__(self, name='?', N=None, d=None, Fourier=False, elas=False,
                  valtype=None, **kwargs):
         self.Fourier = Fourier
-        if Fourier is False:
-            self.dtype = np.float64
-        else:
-            self.dtype = np.complex128
 
         if 'val' in kwargs:
             self.val = kwargs['val']
-            self.N = np.array(np.shape(self.val[0]))
-            self.d = np.size(self.N)
+            self.N = np.array(self.val.shape[1:])
+            self.d = self.val.shape[0]
         else:
             if N is not None:
                 self.N = np.array(N, dtype=np.int32)
             else:
-                print 'the assignment of N is required'
-            self.d = np.size(self.N)
+                raise ValueError("Parameter N is required!")
+            if d is None:
+                self.d = self.N.size
+            else:
+                self.d = d
 
             if 'macroval' in kwargs:
                 self.name = 'macroval'
+                self.d = kwargs['macroval'].size
                 self.val = np.zeros(self.dN())
                 for m in np.arange(self.d):
                         self.val[m] = kwargs['macroval'][m]
@@ -127,17 +124,26 @@ class VecTri(FieldFun, TrigPolynomial):
                 self.val = np.random.random(self.dN())
             else:
                 self.name = '0'
-                self.val = np.zeros(self.dN(), dtype=self.dtype)
+                self.val = np.zeros(self.dN())
 
         if 'Y' in kwargs:
             self.Y = np.array(kwargs['Y'])
         else:
-            self.Y = np.ones(self.d)
+            pass
+
         if name is not None:
             self.name = name
 
         self.valshape = np.shape(self.val)
         self.size = np.size(self.val)
+
+        topo_dim = self.N.size
+        if self.d == topo_dim:
+            self.physics = 'scalar'
+        elif self.d == topo_dim*(topo_dim+1)/2:
+            self.physics = 'elasticity'
+        else:
+            ValueError()
 
     def __mul__(self, x):
         if isinstance(x, VecTri):
@@ -159,23 +165,27 @@ class VecTri(FieldFun, TrigPolynomial):
             return VecTri(name=name, val=x.val*self.val)
         elif np.size(x) == 1:
             name = get_name('c', '*', self.name)
-            return VecTri(name=name, val=x*self.val)
+            return VecTri(name=name, val=x*self.val, Fourier=self.Fourier)
         else:
-            return 'this right hand side mult is not implemented'
+            raise NotImplementedError("The right hand side multiplication for \
+                class VecTri!")
 
     def __add__(self, x):
         if isinstance(x, VecTri):
             name = get_name(self.name, '+', x.name)
-            summ = VecTri(name=name, val=self.val+x.val)
+            if self.Fourier != x.Fourier:
+                raise ValueError("Mismatch in Fourier/shape coefficients!")
+            summ = VecTri(name=name, val=self.val+x.val, Fourier=self.Fourier)
         else:
-            summ = VecTri(name=self.name, val=self.val+x)
+            summ = VecTri(name=self.name, val=self.val+x,
+                          Fourier=self.Fourier)
         return summ
 
     def __radd__(self, x):
         return self+x
 
     def __neg__(self):
-        return VecTri(name='-'+self.name, val=-self.val)
+        return VecTri(name='-'+self.name, val=-self.val, Fourier=self.Fourier)
 
     def __sub__(self, x):
         return self.__add__(-x)
@@ -190,17 +200,20 @@ class VecTri(FieldFun, TrigPolynomial):
         elif ntype == 'inf':
             scal = np.sum(np.abs(self.val))
         elif ntype == 'proj':
-            _, hG1, hG2 = get_Fourier_projections(self.N, self.Y, M=None,
-                                                  centered=True, NyqNul=True)
-            if not self.Fourier:
-                Fd = DFT(name='F2N', inverse=False, N=self.N)
-                x = Fd*self
+            if self.physics == 'scalar':
+                _, hG1, hG2 = proj.scalar(self.N, self.Y, M=None,
+                                          centered=True, NyqNul=True)
+                if not self.Fourier:
+                    Fd = DFT(name='F2N', inverse=False, N=self.N)
+                    x = Fd*self
+                else:
+                    x = self.val
+                scal = []
+                scal.append(np.linalg.norm(self.mean()))
+                scal.append((Matrix(val=hG1)*x).norm())
+                scal.append((Matrix(val=hG2)*x).norm())
             else:
-                x = self.val
-            scal = []
-            scal.append(np.linalg.norm(self.mean()))
-            scal.append((Matrix(val=hG1)*x).norm())
-            scal.append((Matrix(val=hG2)*x).norm())
+                raise NotImplementedError()
         elif ntype == 'curl':
             scal = curl_norm(self.val, self.Y)
         elif ntype == 'div':
@@ -219,9 +232,6 @@ class VecTri(FieldFun, TrigPolynomial):
             for di in np.arange(self.d):
                 mean[di] = np.mean(self.val[di])
         return mean
-
-    def __getitem__(self, i):
-        return self.val[i]
 
     def __call__(self):
         return self.val
@@ -242,14 +252,14 @@ class VecTri(FieldFun, TrigPolynomial):
     def resize(self, M):
         if np.allclose(self.N, M):
             return self
-        val = np.zeros(np.hstack([self.d, M]), dtype=self.dtype)
+        val = np.zeros(np.hstack([self.d, M]), dtype=self.val.dtype)
         if self.Fourier is False:
             for m in np.arange(self.d):
                 val[m] = enlargeF(self.val[m], M)
         else:
             for m in np.arange(self.d):
                 val[m] = enlarge(self.val[m], M)
-        return VecTri(name=self.name, val=val)
+        return VecTri(name=self.name, val=val, Fourier=self.Fourier)
 
     def mulTri(self, y, resize=True):
         if isinstance(y, VecTri):
@@ -295,19 +305,18 @@ class Matrix(FieldFun):
     """
     def __init__(self, name='?', Fourier=False, Id=False, **kwargs):
         self.Fourier = Fourier
-        if Fourier:
-            self.dtype = np.complex128
-        else:
-            self.dtype = np.float64
         self.name = name
 
         if 'val' in kwargs.keys():
             self.val = np.array(kwargs['val'])
-            self.N = np.array(np.shape(self.val[0][0]))
-            self.d = np.size(self.N)
+            self.N = np.array(self.val.shape[2:])
+            self.d = self.val.shape[0]
+            if self.val.shape[1] != self.d:
+                raise ValueError("Improper dimension of values %s."
+                                 % str(self.val.shape))
         else:
             self.N = np.array(kwargs['N'])
-            if 'd' in kwargs.keys():
+            if 'd' in kwargs:
                 self.d = kwargs['d']
             else:
                 self.d = np.size(self.N)
@@ -315,7 +324,7 @@ class Matrix(FieldFun):
             if Id:
                 for m in np.arange(self.d):
                     self.val[m][m] = 1.
-            elif 'homog' in kwargs.keys():
+            elif 'homog' in kwargs:
                 for m in np.arange(self.d):
                     for n in np.arange(self.d):
                         self.val[m, n] = kwargs['homog'][m, n]
@@ -394,12 +403,12 @@ class Matrix(FieldFun):
     def __div__(self, x):
         return self*(1./x)
 
-    def __getitem__(self, i):
-        return self.val[i]
-
     def inv(self):
         name = 'inv(%s)' % (self.name)
-        return Matrix(name=name, val=get_inverse(self.val))
+        if self.Fourier is False:
+            return Matrix(name=name, val=get_inverse(self.val), Fourier=False)
+        else:
+            raise NotImplementedError("The inverse for Fourier coefficients!")
 
     def __eq__(self, x):
         if isinstance(x, Matrix):
@@ -524,11 +533,11 @@ class DFT():
                 name = get_name('F', '*', x.name)
                 return VecTri(name=name,
                               val=self.fftnc(x.val, self.N)/self.norm_coef,
-                              Fourier=True)
+                              Fourier=not x.Fourier)
             else:
                 name = get_name('Fi', '*', x.name)
                 val = np.real(self.ifftnc(x.val, self.N))*self.norm_coef
-                return VecTri(name=name, val=val, Fourier=False)
+                return VecTri(name=name, val=val, Fourier=not x.Fourier)
 
         elif (isinstance(x, LinOper) or isinstance(x, Matrix)
               or isinstance(x, DFT)):
@@ -897,6 +906,7 @@ class ScipyOper():
         ss += '    A : %s\n' % (self.A.name)
         return ss
 
+
 def curl_norm(e, Y):
     """
     it calculates curl-based norm,
@@ -981,6 +991,7 @@ def div_norm(j, Y):
     if norm_j0 > 1e-10:
         divnorm = divnorm / norm_j0
     return divnorm
+
 
 def enlargeF(xN, M):
     N = np.array(np.shape(xN))

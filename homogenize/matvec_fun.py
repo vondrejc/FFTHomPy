@@ -1,15 +1,25 @@
 import numpy as np
-from homogenize.trigonometric import TrigPolynomial
 
 
 def get_inverse(A):
     """
     It calculates the inverse of conductivity coefficients at grid points,
     i.e. of matrix A_GaNi
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+
+    Returns
+    -------
+    invA : numpy.ndarray
     """
     B = np.copy(A)
-    N = np.array(B[0][0].shape)
-    d = N.size
+    N = np.array(A.shape[2:])
+    d = A.shape[0]
+    if A.shape[0] != A.shape[1]:
+        raise NotImplementedError("Non-square matrix!")
+
     invA = np.eye(d).tolist()
     for m in np.arange(d):
         Bdiag = np.copy(B[m][m])
@@ -54,10 +64,9 @@ def enlarge_M(xN, M):
     N = np.array(xN.shape[2:])
     if np.allclose(M, N):
         return xN
-    dim = np.size(M)
-    xM = np.zeros(np.hstack([dim, dim, M]))
-    for m in np.arange(dim):
-        for n in np.arange(dim):
+    xM = np.zeros(np.hstack([xN.shape[0], xN.shape[1], M]))
+    for m in np.arange(xN.shape[0]):
+        for n in np.arange(xN.shape[1]):
             xM[m][n] = enlarge(xN[m][n], M)
     return xM
 
