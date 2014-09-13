@@ -57,11 +57,11 @@ class Material():
                 elif primaldual is 'dual':
                     Aincl = np.linalg.inv(self.conf['vals'][ii])
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
-            return Matrix(name='A_Ga', val=val)
+            return Matrix(name='A_Ga', val=val, Fourier=False)
         else:
-            dim = np.size(Nbar)
             coord = TrigPolynomial.get_grid_coordinates(M, self.Y)
             vals = self.evaluate(coord)
+            dim = vals.d
             if primaldual is 'dual':
                 vals = vals.inv()
 
@@ -92,7 +92,7 @@ class Material():
                     Aapp[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
 
             name = 'A_Ga%d' % order
-            return Matrix(name=name, val=Aapp)
+            return Matrix(name=name, val=Aapp, Fourier=False)
 
     def get_A_GaNi(self, N, primaldual='primal'):
         coord = TrigPolynomial.get_grid_coordinates(N, self.Y)
@@ -161,7 +161,7 @@ class Material():
                 A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii],
                                    topos[ii])
 
-        return Matrix(name='material', val=A_val)
+        return Matrix(name='material', val=A_val, Fourier=False)
 
     def get_topologies(self, coord):
         inclusions = self.conf['inclusions']
