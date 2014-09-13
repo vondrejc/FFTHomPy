@@ -1,5 +1,5 @@
 import numpy as np
-import homogenize.applications as apps
+import homogenize.applications
 
 
 class Problem(object):
@@ -44,24 +44,24 @@ class Problem(object):
                         raise ValueError()
         return material
 
-    def __call__(self):
-        if self.physics == 'scalar':
-            print '=============================='
-            apps.homogenize_scalar(self)
-        else:
-            raise ValueError("Not implemented physics (%s)." % (self.physics))
-
     def calculate(self):
-        self.__call__()
+        print '\n=============================='
+        if self.physics == 'scalar':
+            homogenize.applications.scalar(self)
+        elif self.physics == 'elasticity':
+            homogenize.applications.elasticity(self)
+        else:
+            raise ValueError("Not implemented physics (%s)." % self.physics)
 
     def postprocessing(self):
         output = self.output
-        if self.physics == 'scalar':
+        if self.physics in ['scalar', 'elasticity']:
             print '\nHomogenized matrices'
             for primaldual in self.solve['primaldual']:
                 for key, val in output['mat_'+primaldual].iteritems():
                     print key
                     print val
+
         if hasattr(self, 'save'):
             import cPickle
             import os
