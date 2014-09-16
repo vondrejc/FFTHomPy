@@ -19,8 +19,7 @@ def scalar(problem):
     print pb
 
     # Fourier projections
-    _, hG1, hG2 = proj.scalar(pb.solve['N'], pb.Y,
-                                  centered=True, NyqNul=True)
+    _, hG1, hG2 = proj.scalar(pb.solve['N'], pb.Y, centered=True, NyqNul=True)
     del _
     hG1N = Matrix(name='hG1', val=hG1, Fourier=True)
     hG2N = Matrix(name='hG1', val=hG2, Fourier=True)

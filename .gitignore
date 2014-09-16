@@ -56,3 +56,4 @@ docs/_build/
 *test*
 examples/*
 .settings/*
+output/*

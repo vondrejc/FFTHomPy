@@ -459,7 +459,10 @@ class ShiftMatrix():
             ss = np.zeros(d)
         else:
             ss = np.array(ss)
-        omeg2N = lambda s, k, n: np.exp(-2*np.pi*1j*(s*k/n))
+
+        def omeg2N(s, k, n):
+            return np.exp(-2*np.pi*1j*(s*k/n))
+
         ZNl = VecTri.get_ZNl(N)
         SS = np.outer(omeg2N(ss[0], ZNl[0], 2*N[0]),
                       omeg2N(ss[1], ZNl[1], 2*N[1]))

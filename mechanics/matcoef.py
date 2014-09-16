@@ -167,7 +167,13 @@ class ElasticTensor():
     def dispose_mandel(vec):
         vec = vec.squeeze()
         sym = vec.shape[0]
-        dimfun = lambda sym: int((-1.+(1+8*sym)**.5)/2)
+
+        def dimfun(sym):
+            """
+            Inverse function to dim*(dim+1)/2.
+            """
+            return int((-1.+(1+8*sym)**.5)/2)
+
         dim = dimfun(sym)
 
         if vec.ndim == 2: # matrix
