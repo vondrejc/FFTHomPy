@@ -63,17 +63,24 @@ class Problem(object):
                     print val
 
         if hasattr(self, 'save'):
-            import cPickle
-            import os
-            if self.save['data'] == 'all':
-                filename = self.save['file']
-                dirs = os.path.dirname(filename)
-                if not os.path.exists(dirs):
-                    os.makedirs(dirs)
+            if 'data' not in self.save:
+                self.save['data'] = 'all'
 
-                filew = open(self.save['file'], 'w')
-                cPickle.dump(self.output, filew)
+            import os
+
+            filename = self.save['filename']
+            dirs = os.path.dirname(filename)
+            if not os.path.exists(dirs) and dirs != '':
+                os.makedirs(dirs)
+
+            if self.save['data'] == 'all':
+                import cPickle
+                filew = open(filename, 'w')
+                cPickle.dump(self, filew)
                 filew.close()
+
+            else:
+                raise NotImplementedError()
 
     def __repr__(self):
         ss = "Class : %s\n" % self.__class__.__name__
