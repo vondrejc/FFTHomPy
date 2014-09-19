@@ -1,5 +1,8 @@
 import numpy as np
 import homogenize.applications
+from general.base import get_base_dir
+import os
+import sys
 
 
 class Problem(object):
@@ -66,21 +69,24 @@ class Problem(object):
             if 'data' not in self.save:
                 self.save['data'] = 'all'
 
-            import os
+            if self.save['data'] == 'all':
+                data = self.output
+                data.update({'physics': self.physics,
+                             'solve': self.solve,
+                             'solver': self.solver,
+                             'postprocess': self.postprocess,
+                             'save': self.save,
+                             'material': self.material})
 
             filename = self.save['filename']
             dirs = os.path.dirname(filename)
             if not os.path.exists(dirs) and dirs != '':
                 os.makedirs(dirs)
 
-            if self.save['data'] == 'all':
-                import cPickle
-                filew = open(filename, 'w')
-                cPickle.dump(self, filew)
-                filew.close()
-
-            else:
-                raise NotImplementedError()
+            import cPickle
+            filew = open(filename, 'w')
+            cPickle.dump(self.output, filew)
+            filew.close()
 
     def __repr__(self):
         ss = "Class : %s\n" % self.__class__.__name__
@@ -95,6 +101,26 @@ class Problem(object):
         for key, val in self.solve.iteritems():
             ss += '        %s : %s\n' % (key, str(val))
         return ss
+
+
+def import_file(file_name):
+    base_dir = get_base_dir()
+    module_path = os.path.dirname(os.path.join(base_dir, file_name))
+
+    if module_path not in sys.path:
+        sys.path.append(module_path)
+        remove_path = True
+    else:
+        remove_path = False
+
+    module_name = os.path.splitext(os.path.basename(file_name))[0]
+
+    conf = __import__(module_name)
+
+    if remove_path:
+        sys.path.pop(-1)
+
+    return conf
 
 if __name__ == '__main__':
     execfile('../main_test.py')
