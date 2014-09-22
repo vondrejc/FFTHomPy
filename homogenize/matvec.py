@@ -249,7 +249,11 @@ class VecTri(FieldFun, TrigPolynomial):
             res = False
         return res
 
-    def resize(self, M):
+    def enlarge(self, M):
+        """
+        It enlarges a trigonometric polynomial by adding zeros to the Fourier
+        coefficients with high frequencies.
+        """
         if np.allclose(self.N, M):
             return self
         val = np.zeros(np.hstack([self.d, M]), dtype=self.val.dtype)
@@ -449,7 +453,7 @@ class Matrix(FieldFun):
 
 class ShiftMatrix():
     """
-    Matrix object defining shift
+    Matrix object defining shift of Fourier coefficients.
     """
     @staticmethod
     def get_shift_matrix(N, ss=None):
@@ -997,6 +1001,23 @@ def div_norm(j, Y):
 
 
 def enlargeF(xN, M):
+    """
+    It enlarges an array of grid values. First, Fourier coefficients are
+    calculated and complemented by zeros. Then an inverse DFT provides
+    the grid values on required grid.
+
+    Parameters
+    ----------
+    xN : numpy.ndarray of shape = N
+        input array that is to be enlarged
+
+    Returns
+    -------
+    xM : numpy.ndarray of shape = M
+        output array that is enlarged
+    M : array like
+        number of grid points
+    """
     N = np.array(np.shape(xN))
     M = np.array(M, dtype=np.int32)
     FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)

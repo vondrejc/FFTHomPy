@@ -44,6 +44,21 @@ def get_inverse(A):
 
 
 def enlarge(xN, M):
+    """
+    Enlarge an array of Fourier coefficients by zeros.
+
+    Parameters
+    ----------
+    xN : numpy.ndarray of shape = N
+        input array that is to be enlarged
+
+    Returns
+    -------
+    xM : numpy.ndarray of shape = M
+        output array that is enlarged
+    M : array like
+        number of grid points
+    """
     xM = np.zeros(M, dtype=xN.dtype)
     M = np.array(M)
     N = np.array(np.shape(xN))
@@ -56,10 +71,27 @@ def enlarge(xN, M):
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
     elif dim == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
+    else:
+        raise NotImplementedError()
     return xM
 
 
 def enlarge_M(xN, M):
+    """
+    Matrix representation of enlarge function.
+
+    Parameters
+    ----------
+    xN : numpy.ndarray of shape = (dim, dim) + N
+        input matrix that is to be enlarged
+
+    Returns
+    -------
+    xM : numpy.ndarray of shape = (dim, dim) + M
+        output matrix that is enlarged
+    M : array like
+        number of grid points
+    """
     M = np.array(M, dtype=np.int32)
     N = np.array(xN.shape[2:])
     if np.allclose(M, N):
@@ -71,17 +103,33 @@ def enlarge_M(xN, M):
     return xM
 
 
-def decrease(xM, N):
-    N = np.array(N, dtype=np.int32)
-    M = np.array(xM.shape, dtype=np.int32)
-    dim = M.size
-    ibeg = (M-N+(N % 2))/2
-    iend = (M+N+(N % 2))/2
+def decrease(xN, M):
+    """
+    Decreases an array of Fourier coefficients by omitting the highest
+    frequencies.
+
+    Parameters
+    ----------
+    xN : numpy.ndarray of shape = N
+        input array that is to be enlarged
+
+    Returns
+    -------
+    xM : numpy.ndarray of shape = M
+        output array that is enlarged
+    M : array like
+        number of grid points
+    """
+    M = np.array(M, dtype=np.int32)
+    N = np.array(xN.shape, dtype=np.int32)
+    dim = N.size
+    ibeg = (N-M+(M % 2))/2
+    iend = (N+M+(M % 2))/2
     if dim == 2:
-        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1]]
+        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
     elif dim == 3:
-        xN = xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
-    return xN
+        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
+    return xM
 
 
 def get_Nodd(N):

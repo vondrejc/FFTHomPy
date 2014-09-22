@@ -260,7 +260,7 @@ def assembly_matrix(Afun, solutions):
         Nbar = Afun.N
         sol = []
         for ii in np.arange(dim):
-            sol.append(solutions[ii].resize(Nbar))
+            sol.append(solutions[ii].enlarge(Nbar))
     else:
         sol = solutions
 
