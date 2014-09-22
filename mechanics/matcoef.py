@@ -42,8 +42,8 @@ class ElasticTensor():
         self.plane = plane
 
         self.sym = self.get_sym(self.dim)
-        self.bulk = bulk
-        self.mu = mu
+        self.bulk = float(bulk)
+        self.mu = float(mu)
 
         # set up values to tensor and matrices
         _, volumetric, deviatoric = self.get_decomposition()
