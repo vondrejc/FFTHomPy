@@ -4,9 +4,11 @@ Input file for a scalar linear elliptic problems.
 
 import numpy as np
 import os
+from general.base import get_base_dir
 
-path = os.path.dirname(os.path.abspath(__file__))
-file_name = path + '/topologie.txt'
+base_dir = get_base_dir()
+input_dir = os.path.dirname(os.path.abspath(__file__))
+file_name = os.path.join(input_dir, 'topologie.txt')
 
 
 def get_topo():
@@ -51,7 +53,7 @@ problems = [
      'solver': {'kind': 'CG',
                 'tol': tol,
                 'maxiter': maxiter},
-     'save': {'filename': 'output/from_file_gani',
+     'save': {'filename': os.path.join(base_dir, 'output/from_file_gani'),
               'data': 'all'}},
     {'name': 'prob2',
      'physics': 'scalar',
@@ -67,6 +69,6 @@ problems = [
      'solver': {'kind': 'CG',
                 'tol': tol,
                 'maxiter': maxiter},
-     'save': {'filename': 'output/from_file_ga',
+     'save': {'filename': os.path.join(base_dir, 'output/from_file_ga'),
               'data': 'all'}
      }, ]

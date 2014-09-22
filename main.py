@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-from general.base import import_file
-from homogenize.problem import Problem
+from homogenize.problem import Problem, import_file
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -24,3 +23,5 @@ for conf_problem in conf.problems:
     prob = Problem(conf_problem, conf)
     prob.calculate()
     prob.postprocessing()
+
+print 'The calculation is finished!'
