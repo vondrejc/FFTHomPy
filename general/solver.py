@@ -11,7 +11,7 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
     if solver == 'CG':
         x, info = CG(Afun, B, x0=x0, par=par, callback=callback)
     elif solver == 'iterative':
-        x, info = iterative(Afun, x0, par=par, callback=callback)
+        x, info = richardson(Afun, B, x0, par=par, callback=callback)
     else:
         solver = solver
         Afun.define_operand(B)
@@ -21,13 +21,13 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
                                  rmatvec=ATfun.matvec, dtype=np.float64)
         if solver == 'scipy_cg':
             xcol, info = cg(Afunvec, B.vec(), x0=x0.vec(),
-                            tol=par.solver['tol'],
-                            maxiter=par.solver['maxiter'],
+                            tol=par['tol'],
+                            maxiter=par['maxiter'],
                             xtype=None, M=None, callback=callback)
         elif solver == 'scipy_bicg':
             xcol, info = bicg(Afunvec, B.vec(), x0=x0.vec(),
-                              tol=par.solver['tol'],
-                              maxiter=par.solver['maxiter'],
+                              tol=par['tol'],
+                              maxiter=par['maxiter'],
                               xtype=None, M=None, callback=callback)
         res = dict()
         res['info'] = info
@@ -35,15 +35,16 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
     return x, info
 
 
-def iterative(Afun, x0, par=None, callback=None):
-    alp = 1./par.solver['alpha']
+def richardson(Afun, B, x0, par=None, callback=None):
+    alp = 1./par['alpha']
     res = {'norm_res': 1.,
            'kit': 0}
     x = x0
-    while (res['norm_res'] > par.solver['tol'] and
-           res['kit'] < par.solver['maxiter']):
+    while (res['norm_res'] > par['tol'] and res['kit'] < par['maxiter']):
         res['kit'] += 1
-        x = x - alp*Afun(x)
+        x_prev = x
+        x = x - alp*(Afun(x) - B)
+        res['norm_res'] = (x_prev-x).norm()
         callback(x)
     return x, res
 

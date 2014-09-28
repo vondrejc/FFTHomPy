@@ -669,8 +669,8 @@ class LinOper():
         if isinstance(X, VecTri):
             Y = self(X)
             self.shape = (Y.size, X.size)
-            self.X_reshape = X.get_shape()
-            self.Y_reshape = Y.get_shape()
+            self.X_reshape = X.val.shape
+            self.Y_reshape = Y.val.shape
         else:
             print 'LinOper : This operand is not supported'
 
