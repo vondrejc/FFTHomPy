@@ -92,8 +92,8 @@ class VecTri(FieldFun, TrigPolynomial):
         valtypes : str
             either of 'ones' or 'random'
     """
-    def __init__(self, name='?', N=None, d=None, Fourier=False, elas=False,
-                 valtype=None, **kwargs):
+    def __init__(self, name='?', N=None, d=None, Fourier=False, valtype=None,
+                 **kwargs):
         self.Fourier = Fourier
 
         if 'val' in kwargs:
@@ -150,14 +150,19 @@ class VecTri(FieldFun, TrigPolynomial):
             scal = np.real(np.sum(self.val[:]*np.conj(x.val[:])))
             if not self.Fourier:
                 scal = scal / np.prod(self.N)
+            return scal
+
         elif np.size(x) == 1: # scalar value
             name = get_name(self.name, '*', 'c')
             scal = VecTri(name=name, val=np.array(x)*self.val)
+            self.val *= x
+            return self
+
+        elif all(self.val.shape == x.shape):
+            return np.real(np.sum(self.val[:]*np.conj(x[:])))
+
         else:
-            if not all(self.val.shape == x.shape):
-                raise ValueError("The shape of vectors are not appropriate.")
-            scal = np.real(np.sum(self.val[:]*np.conj(x[:])))
-        return scal
+            raise ValueError("The shape of vectors are not appropriate.")
 
     def __rmul__(self, x):
         if isinstance(x, Scalar):
