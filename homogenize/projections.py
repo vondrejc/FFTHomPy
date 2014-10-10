@@ -1,7 +1,6 @@
 import numpy as np
 import scipy as sp
-from homogenize.trigonometric import TrigPolynomial
-from homogenize.matvec_fun import enlarge_M, get_Nodd
+from homogenize.matvec_fun import TrigPolynomial, enlarge_M, get_Nodd
 
 
 def scalar(N, Y, centered=True, NyqNul=True):

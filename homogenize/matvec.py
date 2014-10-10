@@ -5,9 +5,7 @@ relating operators for homogenization.
 """
 
 import numpy as np
-import homogenize.projections as proj
-from homogenize.trigonometric import TrigPolynomial
-from homogenize.matvec_fun import enlarge, enlarge_M, get_inverse
+from homogenize.matvec_fun import *
 
 
 class FieldFun():
@@ -134,7 +132,7 @@ class VecTri(FieldFun, TrigPolynomial):
         if name is not None:
             self.name = name
 
-        self.valshape = np.shape(self.val)
+        self.valshape = self.val.shape
         self.size = np.size(self.val)
 
         topo_dim = self.N.size
@@ -152,14 +150,18 @@ class VecTri(FieldFun, TrigPolynomial):
                 scal = scal / np.prod(self.N)
             return scal
 
-        elif np.size(x) == 1: # scalar value
-            name = get_name(self.name, '*', 'c')
-            scal = VecTri(name=name, val=np.array(x)*self.val)
-            self.val *= x
-            return self
+        elif isinstance(x, np.ndarray):
+            if np.size(x) == 1: # scalar value
+                name = get_name(self.name, '*', 'c')
+                scal = VecTri(name=name, val=np.array(x)*self.val)
+                self.val *= x
+                return self
 
-        elif all(self.val.shape == x.shape):
-            return np.real(np.sum(self.val[:]*np.conj(x[:])))
+            elif x.shape == (self.d, self.d):
+                return self.mul_tensorR(x)
+
+            elif all(self.val.shape == x.shape):
+                return np.real(np.sum(self.val[:]*np.conj(x[:])))
 
         else:
             raise ValueError("The shape of vectors are not appropriate.")
@@ -168,12 +170,14 @@ class VecTri(FieldFun, TrigPolynomial):
         if isinstance(x, Scalar):
             name = get_name('c', '*', self.name)
             return VecTri(name=name, val=x.val*self.val)
+
         elif np.size(x) == 1:
             name = get_name('c', '*', self.name)
             return VecTri(name=name, val=x*self.val, Fourier=self.Fourier)
+
         else:
-            raise NotImplementedError("The right hand side multiplication for \
-                class VecTri!")
+            raise ValueError()
+
 
     def __add__(self, x):
         if isinstance(x, VecTri):
@@ -195,7 +199,7 @@ class VecTri(FieldFun, TrigPolynomial):
     def __sub__(self, x):
         return self.__add__(-x)
 
-    def norm(self, ntype='L2', **kwargs):
+    def norm(self, ntype='L2'):
         if ntype == 'L2':
             scal = (self*self)**0.5
         elif ntype == 2:
@@ -204,27 +208,14 @@ class VecTri(FieldFun, TrigPolynomial):
             scal = np.sum(np.abs(self.val))
         elif ntype == 'inf':
             scal = np.sum(np.abs(self.val))
-        elif ntype == 'proj':
-            if self.physics == 'scalar':
-                _, hG1, hG2 = proj.scalar(self.N, self.Y, M=None,
-                                          centered=True, NyqNul=True)
-                if not self.Fourier:
-                    Fd = DFT(name='F2N', inverse=False, N=self.N)
-                    x = Fd*self
-                else:
-                    x = self.val
-                scal = []
-                scal.append(np.linalg.norm(self.mean()))
-                scal.append((Matrix(val=hG1)*x).norm())
-                scal.append((Matrix(val=hG2)*x).norm())
-            else:
-                raise NotImplementedError()
         elif ntype == 'curl':
             scal = curl_norm(self.val, self.Y)
         elif ntype == 'div':
             scal = div_norm(self.val, self.Y)
         else:
-            scal = 'this type of norm is not supported'
+            msg = "The norm (%s) of VecTri is not implemented!" % ntype
+            raise NotImplementedError(msg)
+
         return scal
 
     def mean(self):
@@ -278,6 +269,37 @@ class VecTri(FieldFun, TrigPolynomial):
                 y2 = y.resize(2*M)
                 return VecTri(name=self.name+y.name, val=x2.val*y2.val)
 
+
+    def mul_elementwise(self, x):
+        if self.Fourier != x.Fourier:
+            msg = "Mismatch of Fourier coefficients and nodal values!"
+            raise ValueError(msg)
+        name = self.name + '*' + x.name
+        return VecTri(name=name, val=self.val*x.val, Fourier=self.Fourier)
+
+
+    def mul_tensorL(self, val):
+        return VecTri(name=self.name,
+                      val=np.einsum('ij...,j...->i...', val, self.val),
+                      Fourier=self.Fourier)
+
+    def mul_tensorR(self, val):
+        return VecTri(name=self.name,
+                      val=np.einsum('i...,ij...->j...', self.val, val),
+                      Fourier=self.Fourier)
+
+    def mul_gridwise(self, val):
+        return VecTri(name=self.name,
+                      val=np.einsum('...,i...->i...', val, self.val),
+                      Fourier=self.Fourier)
+
+    def scal_tensor(self, x):
+        return np.einsum('i...,i...->...', self.val, x.val)
+
+    def outer_tensor(self, x):
+        return Matrix(val=np.einsum('i...,j...->ij...', self.val, x.val),
+                      Fourier=self.Fourier)
+
     def get_S_subvector(self, ss=None):
         # NOT WORKING
         if ss is None:
@@ -320,6 +342,7 @@ class Matrix(FieldFun):
             self.val = np.array(kwargs['val'])
             self.N = np.array(self.val.shape[2:])
             self.d = self.val.shape[0]
+            self.dtype = self.val.dtype
             if self.val.shape[1] != self.d:
                 raise ValueError("Improper dimension of values %s."
                                  % str(self.val.shape))
@@ -329,10 +352,18 @@ class Matrix(FieldFun):
                 self.d = kwargs['d']
             else:
                 self.d = np.size(self.N)
+
+            if self.Fourier:
+                self.dtype = np.complex128
+            else:
+                self.dtype = np.float64
+
             self.val = np.zeros(self.ddN(), dtype=self.dtype)
+
             if Id:
                 for m in np.arange(self.d):
                     self.val[m][m] = 1.
+
             elif 'homog' in kwargs:
                 for m in np.arange(self.d):
                     for n in np.arange(self.d):
@@ -418,6 +449,22 @@ class Matrix(FieldFun):
             return Matrix(name=name, val=get_inverse(self.val), Fourier=False)
         else:
             raise NotImplementedError("The inverse for Fourier coefficients!")
+
+
+    def mul_tensorR(self, val):
+        if val.shape == (self.d, self.d):
+            return Matrix(name=self.name,
+                          val=np.einsum('ij...,jk...->ik...', self.val, val),
+                          Fourier=self.Fourier)
+        elif val.shape == (self.d,):
+            return VecTri(name=self.name,
+                          val=np.einsum('ij...,j...->i...', self.val, val),
+                          Fourier=self.Fourier)
+
+    def mul_gridwise(self, val):
+        return Matrix(name=self.name,
+                      val=np.einsum('...,ij...->ij...', val, self.val),
+                      Fourier=self.Fourier)
 
     def __eq__(self, x):
         if isinstance(x, Matrix):
@@ -860,6 +907,7 @@ class MultiOper():
 class ScipyOper():
     def __init__(self, name='ScipyLinOper', A=None, X=None, AT=None,
                  dtype=None):
+        self.name = name
         self.A = A
         if dtype is not None:
             self.dtype = dtype
@@ -918,104 +966,17 @@ class ScipyOper():
         ss += '    A : %s\n' % (self.A.name)
         return ss
 
-
-def curl_norm(e, Y):
-    """
-    it calculates curl-based norm,
-    it controls that the fields are curl-free with zero mean as
-    it is required of electric fields
-
-    Parameters
-    ----------
-        e - electric field
-        Y - the size of periodic unit cell
-
-    Returns
-    -------
-        curlnorm - curl-based norm
-    """
-    N = np.array(np.shape(e[0]))
-    d = np.size(N)
-    xil = TrigPolynomial.get_xil(N, Y)
-    xiM = []
-    Fe = []
-    for m in np.arange(d):
-        Nshape = np.ones(d)
-        Nshape[m] = N[m]
-        Nrep = np.copy(N)
-        Nrep[m] = 1
-        xiM.append(np.tile(np.reshape(xil[m], Nshape), Nrep))
-        Fe.append(DFT.fftnc(e[m], N)/np.prod(N))
-
-    if d == 2:
-        Fe.append(np.zeros(N))
-        xiM.append(np.zeros(N))
-
-    ind_mean = tuple(np.fix(N/2))
-    curl = []
-    e0 = []
-    for m in np.arange(3):
-        j = (m+1) % 3
-        k = (j+1) % 3
-        curl.append(xiM[j]*Fe[k]-xiM[k]*Fe[j])
-        e0.append(np.real(Fe[m][ind_mean]))
-    curl = np.array(curl)
-    curlnorm = np.real(np.sum(curl[:]*np.conj(curl[:])))
-    curlnorm = (curlnorm/np.prod(N))**0.5
-    norm_e0 = np.linalg.norm(e0)
-    if norm_e0 > 1e-10:
-        curlnorm = curlnorm/norm_e0
-    return curlnorm
-
-
-def div_norm(j, Y):
-    """
-    it calculates divergence-based norm,
-    it controls that the fields are divergence-free with zero mean as
-    it is required of electric current
-
-    Parameters
-    ----------
-        j - electric current
-        Y - the size of periodic unit cell
-
-    Returns
-    -------
-        divnorm - divergence-based norm
-    """
-    N = np.array(np.shape(j[0]))
-    d = np.size(N)
-    ind_mean = tuple(np.fix(N/2))
-    xil = VecTri.get_xil(N, Y)
-    R = 0
-    j0 = np.zeros(d)
-    for m in np.arange(d):
-        Nshape = np.ones(d)
-        Nshape[m] = N[m]
-        Nrep = np.copy(N)
-        Nrep[m] = 1
-        xiM = np.tile(np.reshape(xil[m], Nshape), Nrep)
-        Fj = DFT.fftnc(j[m], N)/np.prod(N)
-        j0[m] = np.real(Fj[ind_mean])
-        R = R + xiM*Fj
-    divnorm = np.real(np.sum(R[:]*np.conj(R[:]))/np.prod(N))**0.5
-    norm_j0 = np.linalg.norm(j0)
-    if norm_j0 > 1e-10:
-        divnorm = divnorm / norm_j0
-    return divnorm
-
-
 def enlargeF(xN, M):
     """
     It enlarges an array of grid values. First, Fourier coefficients are
     calculated and complemented by zeros. Then an inverse DFT provides
     the grid values on required grid.
-
+ 
     Parameters
     ----------
     xN : numpy.ndarray of shape = N
         input array that is to be enlarged
-
+ 
     Returns
     -------
     xM : numpy.ndarray of shape = M
@@ -1028,6 +989,7 @@ def enlargeF(xN, M):
     FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
+
 
 if __name__ == '__main__':
     execfile('../main_test.py')
