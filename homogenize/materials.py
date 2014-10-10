@@ -10,9 +10,9 @@ inclusion_keys = {'ball': ['ball', 'circle'],
 
 class Material():
 
-    def __init__(self, problem_conf):
-        self.conf = problem_conf.material
-        self.Y = problem_conf.Y
+    def __init__(self, material_conf):
+        self.conf = material_conf
+        self.Y = material_conf['Y']
 
         # control the correctness of material definition
         if 'Y' not in self.conf:
@@ -22,10 +22,10 @@ class Material():
             pass
         elif 'inclusions' in self.conf:
             n_incl = len(self.conf['inclusions'])
-            for key in ['positions', 'params', 'vals']:
-                if key not in self.conf:
-                    msg = "Key (%s) is missing in material definition!" % key
-                    raise ValueError(msg)
+            for key in self.conf:
+                if key in ['Y']:
+                    continue
+
                 if len(self.conf[key]) != n_incl:
                     raise ValueError("Improper number of value in material\
                          definition for key (%s)!" % key)

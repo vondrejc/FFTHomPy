@@ -41,7 +41,7 @@ def scalar(problem):
         results = np.zeros(pb.shape).tolist()
 
         # material coefficients
-        mat = Material(pb)
+        mat = Material(pb.material)
 
         if pb.solve['kind'] is 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
@@ -163,7 +163,7 @@ def elasticity(problem):
         results = np.zeros(pb.shape).tolist()
 
         # material coefficients
-        mat = Material(pb)
+        mat = Material(pb.material)
 
         if pb.solve['kind'] is 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
