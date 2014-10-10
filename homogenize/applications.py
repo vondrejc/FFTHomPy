@@ -19,10 +19,8 @@ def scalar(problem):
     print pb
 
     # Fourier projections
-    _, hG1, hG2 = proj.scalar(pb.solve['N'], pb.Y, centered=True, NyqNul=True)
-    del _
-    hG1N = Matrix(name='hG1', val=hG1, Fourier=True)
-    hG2N = Matrix(name='hG1', val=hG2, Fourier=True)
+    _, hG1N, hG2N = proj.scalar(pb.solve['N'], pb.Y, centered=True,
+                                NyqNul=True)
 
     if pb.solve['kind'] is 'GaNi':
         Nbar = pb.solve['N']
@@ -140,13 +138,9 @@ def elasticity(problem):
     print pb
 
     # Fourier projections
-    _, hG1h, hG1s, hG2h, hG2s = proj.elasticity(pb.solve['N'], pb.Y,
-                                                centered=True, NyqNul=True)
+    _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb.solve['N'], pb.Y,
+                                                    centered=True, NyqNul=True)
     del _
-    hG1hN = Matrix(name='hG1', val=hG1h, Fourier=True)
-    hG1sN = Matrix(name='hG1', val=hG1s, Fourier=True)
-    hG2hN = Matrix(name='hG1', val=hG2h, Fourier=True)
-    hG2sN = Matrix(name='hG1', val=hG2s, Fourier=True)
 
     if pb.solve['kind'] is 'GaNi':
         Nbar = pb.solve['N']

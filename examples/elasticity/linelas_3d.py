@@ -30,5 +30,5 @@ problems = [
                'primaldual': ['primal', 'dual']},
      'postprocess': [{'kind': 'GaNi'}],
      'solver': {'kind': 'CG',
-                'tol': 1e-2,
+                'tol': 1e-5,
                 'maxiter': 1e3}}]

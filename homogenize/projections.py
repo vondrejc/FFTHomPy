@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sp
-from homogenize.matvec_fun import TrigPolynomial, enlarge_M, get_Nodd
+# from homogenize.matvec_fun import TrigPolynomial, enlarge_M, get_Nodd
+from homogenize.matvec import Matrix, TrigPolynomial, get_Nodd
 
 
 def scalar(N, Y, centered=True, NyqNul=True):
@@ -81,15 +82,20 @@ def scalar(N, Y, centered=True, NyqNul=True):
             G1l[m][n] = G1l[n][m]
             G2l[m][n] = G2l[n][m]
 
-    if NyqNul:
-        G1l = enlarge_M(G1l, N)
-        G2l = enlarge_M(G2l, N)
-
     if not centered:
         for m in np.arange(d):
             for n in np.arange(d):
                 G1l[m][n] = np.fft.ifftshift(G1l[m][n])
                 G2l[m][n] = np.fft.ifftshift(G2l[m][n])
+
+    G0l = Matrix(name='hG0', val=G0l, Fourier=True)
+    G1l = Matrix(name='hG1', val=G1l, Fourier=True)
+    G2l = Matrix(name='hG2', val=G2l, Fourier=True)
+
+    if NyqNul:
+        G0l = G0l.enlarge(N)
+        G1l = G1l.enlarge(N)
+        G2l = G2l.enlarge(N)
     return G0l, G1l, G2l
 
 
@@ -215,12 +221,6 @@ def elasticity(N, Y, centered=True, NyqNul=True): # (N, d, D, Y):
     G2h = 1./(d-1)*(d*Lamh + G1h - W - WT)
     G2s = IS0 - G1h - G1s - G2h
 
-    if NyqNul:
-        G1h = enlarge_M(G1h, Nred)
-        G1s = enlarge_M(G1s, Nred)
-        G2h = enlarge_M(G2h, Nred)
-        G2s = enlarge_M(G2s, Nred)
-
     if not centered:
         for m in np.arange(d):
             for n in np.arange(d):
@@ -229,6 +229,18 @@ def elasticity(N, Y, centered=True, NyqNul=True): # (N, d, D, Y):
                 G2h[m][n] = np.fft.ifftshift(G2h[m][n])
                 G2s[m][n] = np.fft.ifftshift(G2s[m][n])
 
+    G0 = Matrix(name='hG1', val=mean, Fourier=True)
+    G1h = Matrix(name='hG1', val=G1h, Fourier=True)
+    G1s = Matrix(name='hG1', val=G1s, Fourier=True)
+    G2h = Matrix(name='hG1', val=G2h, Fourier=True)
+    G2s = Matrix(name='hG1', val=G2s, Fourier=True)
+
+    if NyqNul:
+        G0 = G0.enlarge(N)
+        G1h = G1h.enlarge(N)
+        G1s = G1s.enlarge(N)
+        G2h = G2h.enlarge(N)
+        G2s = G2s.enlarge(N)
     return mean, G1h, G1s, G2h, G2s
 
 if __name__ == '__main__':

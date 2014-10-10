@@ -479,7 +479,7 @@ class Matrix(FieldFun):
             res = False
         return res
 
-    def resize(self, M):
+    def enlarge(self, M):
         if self.Fourier:
             val = enlarge_M(self.val, M)
         else:
