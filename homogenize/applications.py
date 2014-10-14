@@ -26,8 +26,8 @@ def scalar(problem):
         Nbar = pb.solve['N']
     elif pb.solve['kind'] is 'Ga':
         Nbar = 2*pb.solve['N'] - 1
-        hG1N = hG1N.resize(Nbar)
-        hG2N = hG2N.resize(Nbar)
+        hG1N = hG1N.enlarge(Nbar)
+        hG2N = hG2N.enlarge(Nbar)
 
     FN = DFT(name='FN', inverse=False, N=Nbar)
     FiN = DFT(name='FiN', inverse=True, N=Nbar)
@@ -127,7 +127,7 @@ def scalar(problem):
 
 def elasticity(problem):
     """
-    Homogenization of scalar elliptic problem.
+    Homogenization of linear elasticity.
 
     Parameters
     ----------
