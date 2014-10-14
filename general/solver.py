@@ -13,18 +13,20 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
     elif solver == 'iterative':
         x, info = richardson(Afun, B, x0, par=par, callback=callback)
     else:
-        solver = solver
-        Afun.define_operand(B)
-        ATfun.define_operand(B)
         from scipy.sparse.linalg import LinearOperator, cg, bicg
-        Afunvec = LinearOperator(Afun.shape, matvec=Afun.matvec,
-                                 rmatvec=ATfun.matvec, dtype=np.float64)
         if solver == 'scipy_cg':
+            Afun.define_operand(B)
+            Afunvec = LinearOperator(Afun.shape, matvec=Afun.matvec,
+                                     dtype=np.float64)
             xcol, info = cg(Afunvec, B.vec(), x0=x0.vec(),
                             tol=par['tol'],
                             maxiter=par['maxiter'],
                             xtype=None, M=None, callback=callback)
         elif solver == 'scipy_bicg':
+            Afun.define_operand(B)
+            ATfun.define_operand(B)
+            Afunvec = LinearOperator(Afun.shape, matvec=Afun.matvec,
+                                     rmatvec=ATfun.matvec, dtype=np.float64)
             xcol, info = bicg(Afunvec, B.vec(), x0=x0.vec(),
                               tol=par['tol'],
                               maxiter=par['maxiter'],
