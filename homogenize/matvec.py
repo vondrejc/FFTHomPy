@@ -68,7 +68,7 @@ class Scalar():
         return self
 
 
-class VecTri(FieldFun, TrigPolynomial):
+class VecTri(FieldFun, Grid):
     """
     Class representing the trigonometric polynomial using values at grid points
     or using Fourier coefficients
@@ -334,11 +334,11 @@ class Matrix(FieldFun):
     kwargs['val'] : numpy.ndarray of shape (d,d,N)
         assemble the matrix to predefined values
     """
-    def __init__(self, name='?', Fourier=False, Id=False, **kwargs):
+    def __init__(self, name='?', Fourier=False, valtype=None, **kwargs):
         self.Fourier = Fourier
         self.name = name
 
-        if 'val' in kwargs.keys():
+        if valtype is None:
             self.val = np.array(kwargs['val'])
             self.N = np.array(self.val.shape[2:])
             self.d = self.val.shape[0]
@@ -358,16 +358,19 @@ class Matrix(FieldFun):
             else:
                 self.dtype = np.float64
 
-            self.val = np.zeros(self.ddN(), dtype=self.dtype)
-
-            if Id:
+            if valtype in ['Id', 'id']:
+                self.val = np.zeros(self.ddN(), dtype=self.dtype)
                 for m in np.arange(self.d):
                     self.val[m][m] = 1.
 
-            elif 'homog' in kwargs:
+            elif valtype in ['random']:
+                self.val = np.random.random(self.ddN())
+
+            elif valtype in ['homog']:
+                self.val = np.zeros(self.ddN(), dtype=self.dtype)
                 for m in np.arange(self.d):
                     for n in np.arange(self.d):
-                        self.val[m, n] = kwargs['homog'][m, n]
+                        self.val[m, n] = val[m, n]
 
     def __mul__(self, x):
         if isinstance(x, VecTri): # Matrix by VecTri multiplication
@@ -442,6 +445,14 @@ class Matrix(FieldFun):
 
     def __div__(self, x):
         return self*(1./x)
+
+    def T(self):
+        return self.transpose()
+
+    def transpose(self):
+        return Matrix(name=self.name,
+                      val=np.einsum('ij...->ji...', self.val),
+                      Fourier=self.Fourier)
 
     def inv(self):
         name = 'inv(%s)' % (self.name)
@@ -989,6 +1000,92 @@ def enlargeF(xN, M):
     FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)
     xM = np.real(DFT.ifftnc(FxM, M))
     return xM
+
+
+def curl_norm(e, Y):
+    """
+    it calculates curl-based norm,
+    it controls that the fields are curl-free with zero mean as
+    it is required of electric fields
+
+    Parameters
+    ----------
+        e - electric field
+        Y - the size of periodic unit cell
+
+    Returns
+    -------
+        curlnorm - curl-based norm
+    """
+    N = np.array(np.shape(e[0]))
+    d = np.size(N)
+    xil = Grid.get_xil(N, Y)
+    xiM = []
+    Fe = []
+    for m in np.arange(d):
+        Nshape = np.ones(d)
+        Nshape[m] = N[m]
+        Nrep = np.copy(N)
+        Nrep[m] = 1
+        xiM.append(np.tile(np.reshape(xil[m], Nshape), Nrep))
+        Fe.append(DFT.fftnc(e[m], N)/np.prod(N))
+
+    if d == 2:
+        Fe.append(np.zeros(N))
+        xiM.append(np.zeros(N))
+
+    ind_mean = tuple(np.fix(N/2))
+    curl = []
+    e0 = []
+    for m in np.arange(3):
+        j = (m+1) % 3
+        k = (j+1) % 3
+        curl.append(xiM[j]*Fe[k]-xiM[k]*Fe[j])
+        e0.append(np.real(Fe[m][ind_mean]))
+    curl = np.array(curl)
+    curlnorm = np.real(np.sum(curl[:]*np.conj(curl[:])))
+    curlnorm = (curlnorm/np.prod(N))**0.5
+    norm_e0 = np.linalg.norm(e0)
+    if norm_e0 > 1e-10:
+        curlnorm = curlnorm/norm_e0
+    return curlnorm
+
+
+def div_norm(j, Y):
+    """
+    it calculates divergence-based norm,
+    it controls that the fields are divergence-free with zero mean as
+    it is required of electric current
+
+    Parameters
+    ----------
+        j - electric current
+        Y - the size of periodic unit cell
+
+    Returns
+    -------
+        divnorm - divergence-based norm
+    """
+    N = np.array(np.shape(j[0]))
+    d = np.size(N)
+    ind_mean = tuple(np.fix(N/2))
+    xil = VecTri.get_xil(N, Y)
+    R = 0
+    j0 = np.zeros(d)
+    for m in np.arange(d):
+        Nshape = np.ones(d)
+        Nshape[m] = N[m]
+        Nrep = np.copy(N)
+        Nrep[m] = 1
+        xiM = np.tile(np.reshape(xil[m], Nshape), Nrep)
+        Fj = DFT.fftnc(j[m], N)/np.prod(N)
+        j0[m] = np.real(Fj[ind_mean])
+        R = R + xiM*Fj
+    divnorm = np.real(np.sum(R[:]*np.conj(R[:]))/np.prod(N))**0.5
+    norm_j0 = np.linalg.norm(j0)
+    if norm_j0 > 1e-10:
+        divnorm = divnorm / norm_j0
+    return divnorm
 
 
 if __name__ == '__main__':

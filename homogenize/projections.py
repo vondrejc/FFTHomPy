@@ -1,7 +1,8 @@
 import numpy as np
 import scipy as sp
 # from homogenize.matvec_fun import TrigPolynomial, enlarge_M, get_Nodd
-from homogenize.matvec import Matrix, TrigPolynomial, get_Nodd
+from homogenize.matvec_fun import Grid
+from homogenize.matvec import Matrix, get_Nodd
 
 
 def scalar(N, Y, centered=True, NyqNul=True):
@@ -31,7 +32,7 @@ def scalar(N, Y, centered=True, NyqNul=True):
     else:
         Nred = N
 
-    xi = TrigPolynomial.get_xil(Nred, Y)
+    xi = Grid.get_xil(Nred, Y)
     xi2 = []
     for m in np.arange(d):
         xi2.append(xi[m]**2)
@@ -110,7 +111,7 @@ def elasticity(N, Y, centered=True, NyqNul=True): # (N, d, D, Y):
     OUTPUT =
         G1h,G1s,G2h,G2s : projection matrices of size DxDxN
     """
-    xi = TrigPolynomial.get_xil(N, Y)
+    xi = Grid.get_xil(N, Y)
     N = np.array(N)
     d = N.size
     D = d*(d+1)/2

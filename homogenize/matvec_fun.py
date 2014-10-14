@@ -1,6 +1,6 @@
 import numpy as np
 
-class TrigPolynomial():
+class Grid():
     @staticmethod
     def get_ZNl(N):
         r"""
@@ -31,7 +31,7 @@ class TrigPolynomial():
         Coord[i][j] = x_N^{(i,j)}
         """
         d = np.size(N)
-        ZNl = TrigPolynomial.get_ZNl(N)
+        ZNl = Grid.get_ZNl(N)
         coord = np.zeros(np.hstack([d, N]))
         for ii in np.arange(d):
             x = ZNl[ii]/N[ii]*Y[ii]
@@ -43,7 +43,7 @@ class TrigPolynomial():
         return coord
 
 
-class TrigPolBasis(TrigPolynomial):
+class TrigPolBasis(Grid):
     """
     This represents a basis functions of trigonometric polynomials.
     """
@@ -217,93 +217,6 @@ def decrease(xN, M):
     elif dim == 3:
         xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
     return xM
-
-def curl_norm(e, Y):
-    """
-    it calculates curl-based norm,
-    it controls that the fields are curl-free with zero mean as
-    it is required of electric fields
-
-    Parameters
-    ----------
-        e - electric field
-        Y - the size of periodic unit cell
-
-    Returns
-    -------
-        curlnorm - curl-based norm
-    """
-    N = np.array(np.shape(e[0]))
-    d = np.size(N)
-    xil = TrigPolynomial.get_xil(N, Y)
-    xiM = []
-    Fe = []
-    for m in np.arange(d):
-        Nshape = np.ones(d)
-        Nshape[m] = N[m]
-        Nrep = np.copy(N)
-        Nrep[m] = 1
-        xiM.append(np.tile(np.reshape(xil[m], Nshape), Nrep))
-        Fe.append(DFT.fftnc(e[m], N)/np.prod(N))
-
-    if d == 2:
-        Fe.append(np.zeros(N))
-        xiM.append(np.zeros(N))
-
-    ind_mean = tuple(np.fix(N/2))
-    curl = []
-    e0 = []
-    for m in np.arange(3):
-        j = (m+1) % 3
-        k = (j+1) % 3
-        curl.append(xiM[j]*Fe[k]-xiM[k]*Fe[j])
-        e0.append(np.real(Fe[m][ind_mean]))
-    curl = np.array(curl)
-    curlnorm = np.real(np.sum(curl[:]*np.conj(curl[:])))
-    curlnorm = (curlnorm/np.prod(N))**0.5
-    norm_e0 = np.linalg.norm(e0)
-    if norm_e0 > 1e-10:
-        curlnorm = curlnorm/norm_e0
-    return curlnorm
-
-
-def div_norm(j, Y):
-    """
-    it calculates divergence-based norm,
-    it controls that the fields are divergence-free with zero mean as
-    it is required of electric current
-
-    Parameters
-    ----------
-        j - electric current
-        Y - the size of periodic unit cell
-
-    Returns
-    -------
-        divnorm - divergence-based norm
-    """
-    N = np.array(np.shape(j[0]))
-    d = np.size(N)
-    ind_mean = tuple(np.fix(N/2))
-    xil = VecTri.get_xil(N, Y)
-    R = 0
-    j0 = np.zeros(d)
-    for m in np.arange(d):
-        Nshape = np.ones(d)
-        Nshape[m] = N[m]
-        Nrep = np.copy(N)
-        Nrep[m] = 1
-        xiM = np.tile(np.reshape(xil[m], Nshape), Nrep)
-        Fj = DFT.fftnc(j[m], N)/np.prod(N)
-        j0[m] = np.real(Fj[ind_mean])
-        R = R + xiM*Fj
-    divnorm = np.real(np.sum(R[:]*np.conj(R[:]))/np.prod(N))**0.5
-    norm_j0 = np.linalg.norm(j0)
-    if norm_j0 > 1e-10:
-        divnorm = divnorm / norm_j0
-    return divnorm
-
-
 
 
 def get_Nodd(N):
