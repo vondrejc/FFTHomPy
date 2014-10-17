@@ -25,7 +25,7 @@ class Grid():
         return xil
 
     @staticmethod
-    def get_grid_coordinates(N, Y):
+    def get_coordinates(N, Y):
         """
         It produces coordinates of the set of nodal points
         Coord[i][j] = x_N^{(i,j)}

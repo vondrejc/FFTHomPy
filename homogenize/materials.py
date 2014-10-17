@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.special as sp
 from homogenize.matvec import DFT, VecTri, Matrix
-from homogenize.matvec_fun import decrease
-from homogenize.trigonometric import TrigPolynomial
+from homogenize.matvec_fun import Grid, decrease
+
 
 inclusion_keys = {'ball': ['ball', 'circle'],
                   'cube': ['cube', 'square']}
@@ -59,7 +59,7 @@ class Material():
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
             return Matrix(name='A_Ga', val=val, Fourier=False)
         else:
-            coord = TrigPolynomial.get_grid_coordinates(M, self.Y)
+            coord = Grid.get_coordinates(M, self.Y)
             vals = self.evaluate(coord)
             dim = vals.d
             if primaldual is 'dual':
@@ -95,7 +95,7 @@ class Material():
             return Matrix(name=name, val=Aapp, Fourier=False)
 
     def get_A_GaNi(self, N, primaldual='primal'):
-        coord = TrigPolynomial.get_grid_coordinates(N, self.Y)
+        coord = Grid.get_coordinates(N, self.Y)
         A = self.evaluate(coord)
         if primaldual is 'dual':
             A = A.inv()
@@ -236,7 +236,7 @@ def get_shift_inclusion(N, h, Y):
     N = np.array(N, dtype=np.int32)
     Y = np.array(Y, dtype=np.float64)
     dim = N.size
-    ZN = TrigPolynomial.get_ZNl(N)
+    ZN = Grid.get_ZNl(N)
     SS = np.ones(N, dtype=np.complex128)
     for ii in np.arange(dim):
         Nshape = np.ones(dim)
@@ -323,7 +323,7 @@ def get_weights_circ(r, Nbar, Y):
         Wphi - integral weights at regular grid sizing Nbar
     """
     d = np.size(Y)
-    ZN2l = TrigPolynomial.get_ZNl(Nbar)
+    ZN2l = Grid.get_ZNl(Nbar)
     meas_puc = np.prod(Y)
     circ = 0
     for m in np.arange(d):
