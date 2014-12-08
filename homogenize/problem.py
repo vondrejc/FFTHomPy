@@ -3,7 +3,7 @@ import homogenize.applications
 from general.base import get_base_dir
 import os
 import sys
-
+import general.dbg as dbg
 
 class Problem(object):
     def __init__(self, conf_problem=None, conf=None):
@@ -49,12 +49,15 @@ class Problem(object):
 
     def calculate(self):
         print '\n=============================='
+        tim = dbg.start_time()
         if self.physics == 'scalar':
             homogenize.applications.scalar(self)
         elif self.physics == 'elasticity':
             homogenize.applications.elasticity(self)
         else:
             raise ValueError("Not implemented physics (%s)." % self.physics)
+        tim = dbg.get_time(tim)
+        print 'total time for problem', tim
 
     def postprocessing(self):
         output = self.output
