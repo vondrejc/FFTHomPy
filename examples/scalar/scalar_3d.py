@@ -5,18 +5,24 @@ Input file for a scalar linear elliptic problems.
 import numpy as np
 
 dim = 3
+N = 5*np.ones(dim, dtype=np.int32)
+# M = 10*np.ones(dim, dtype=np.int32)
+
 
 materials = {'cube': {'inclusions': ['cube', 'otherwise'],
                       'positions': [np.zeros(dim), ''],
                       'params': [0.7*np.ones(dim), ''], # size of sides
                       'vals': [11*np.eye(dim), 1.*np.eye(dim)],
                       'Y': np.ones(dim),
+                      'order': None,
                       },
-             'cube2': {'inclusions': ['cube', 'otherwise'],
+             'cube_Ga': {'inclusions': ['cube', 'otherwise'],
                        'positions': [np.zeros(dim), ''],
                        'params': [1.4*np.ones(dim), ''], # size of sides
                        'vals': [11*np.eye(dim), 1.*np.eye(dim)],
                        'Y': 2.*np.ones(dim),
+                       'order': 0,
+                       'P': 2*N,
                        },
              'ball': {'inclusions': ['ball', 'otherwise'],
                       'positions': [np.zeros(dim), ''],
@@ -56,21 +62,50 @@ materials = {'cube': {'inclusions': ['cube', 'otherwise'],
                         },
              }
 
-N = 5*np.ones(dim, dtype=np.int32)
 
-M = 10*np.ones(dim, dtype=np.int32)
 
 problems = [
     {'name': 'prob1',
      'physics': 'scalar',
-     # 'material': 'ball',
-     'material': 'prism',
-     # 'material': 'laminate',
-     # 'material': 'cube',
+     'material': 'cube',
      'solve': {'kind': 'GaNi',
                'N': N,
                'primaldual': ['primal', 'dual']},
-     'postprocess': [{'kind': 'GaNi'}],
+     'postprocess': [{'kind': 'GaNi'},
+                     {'kind': 'Ga',
+                      'order': None},
+                     {'kind': 'Ga',
+                      'order': 0,
+                      'P': 3*N},
+                     {'kind': 'Ga',
+                      'order': 1,
+                      'P': 3*N}],
      'solver': {'kind': 'CG',
                 'tol': 1e-6,
-                'maxiter': 1e3}}]
+                'maxiter': 1e3}
+     },
+    {'name': 'prob2',
+     'physics': 'scalar',
+     'material': 'cube',
+     'solve': {'kind': 'Ga',
+               'N': N,
+               'primaldual': ['primal', 'dual']},
+     'postprocess': [{'kind': 'Ga',
+                      }],
+     'solver': {'kind': 'CG',
+                'tol': 1e-2,
+                'maxiter': 1e3}
+     },
+    {'name': 'prob3',
+     'physics': 'scalar',
+     'material': 'cube_Ga',
+     'solve': {'kind': 'Ga',
+               'N': N,
+               'primaldual': ['primal', 'dual']},
+     'postprocess': [{'kind': 'Ga',
+                      },],
+     'solver': {'kind': 'CG',
+                'tol': 1e-2,
+                'maxiter': 1e3}
+     },
+            ]

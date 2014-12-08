@@ -5,6 +5,7 @@ from general.solver_pp import CallBack, CallBack_GA
 from homogenize.matvec import (VecTri, Matrix, DFT, LinOper)
 from homogenize.materials import Material
 import general.dbg as dbg
+from homogenize.postprocess import postprocess, add_macro2minimizer
 
 def scalar(problem):
     """
@@ -47,12 +48,7 @@ def scalar(problem):
         if pb.solve['kind'] is 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
         elif pb.solve['kind'] is 'Ga':
-            if 'M' in pb.solve:
-                M = pb.solve['M']
-            else:
-                M = None
-            A = mat.get_A_Ga(Nbar=Nbar, order=pb.solve['order'], M=M,
-                             primaldual=primaldual)
+            A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
 
         if primaldual is 'primal':
             GN = G1N
@@ -116,10 +112,10 @@ def elasticity(problem):
         Nbar = pb.solve['N']
     elif pb.solve['kind'] is 'Ga':
         Nbar = 2*pb.solve['N'] - 1
-        hG1hN = hG1hN.resize(Nbar)
-        hG1sN = hG1sN.resize(Nbar)
-        hG2hN = hG2hN.resize(Nbar)
-        hG2sN = hG2sN.resize(Nbar)
+        hG1hN = hG1hN.enlarge(Nbar)
+        hG1sN = hG1sN.enlarge(Nbar)
+        hG2hN = hG2hN.enlarge(Nbar)
+        hG2sN = hG2sN.enlarge(Nbar)
 
     FN = DFT(name='FN', inverse=False, N=Nbar)
     FiN = DFT(name='FiN', inverse=True, N=Nbar)
@@ -138,12 +134,7 @@ def elasticity(problem):
         if pb.solve['kind'] is 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
         elif pb.solve['kind'] is 'Ga':
-            if 'M' in pb.solve:
-                M = pb.solve['M']
-            else:
-                M = None
-            A = mat.get_A_Ga(Nbar=Nbar, order=pb.solve['order'], M=M,
-                             primaldual=primaldual)
+            A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
 
         if primaldual is 'primal':
             GN = G1N
@@ -182,43 +173,6 @@ def elasticity(problem):
         # POSTPROCESSING
         del Afun, B, E, EN, GN, X
         postprocess(pb, A, mat, solutions, results, primaldual)
-#         print '\npostprocessing'
-#         matrices = {}
-#         for pp in pb.postprocess:
-#             if pp['kind'] in ['GaNi', 'gani']:
-#                 order_name = ''
-#                 Nname = ''
-#                 A = mat.get_A_GaNi(pb.solve['N'], primaldual)
-#             elif pp['kind'] in ['Ga', 'ga']:
-#                 Nbarpp = 2*pb.solve['N'] - 1
-#                 if pp['order'] is None:
-#                     Nname = ''
-#                     order_name = ''
-#                     A = mat.get_A_Ga(Nbar=Nbarpp, order=pp['order'],
-#                                      primaldual=primaldual)
-#                 else:
-#                     order_name = '_o' + str(pp['order'])
-#                     Nname = '_n%d' % np.mean(pp['M'])
-#                     A = mat.get_A_Ga(Nbar=Nbarpp, order=pp['order'],
-#                                      M=pp['M'], primaldual=primaldual)
-#             else:
-#                 ValueError()
-# 
-#             name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
-#             print 'calculate: ' + name
-# 
-#             AH = assembly_matrix(A, solutions)
-# 
-#             if primaldual is 'primal':
-#                 matrices[name] = AH
-#             else:
-#                 matrices[name] = np.linalg.inv(AH)
-# 
-#         pb.output.update({'sol_' + primaldual: solutions,
-#                           'res_' + primaldual: results,
-#                           'mat_' + primaldual: matrices})
-
-
 
 
 if __name__ == '__main__':

@@ -370,7 +370,7 @@ class Matrix(FieldFun):
                 self.val = np.zeros(self.ddN(), dtype=self.dtype)
                 for m in np.arange(self.d):
                     for n in np.arange(self.d):
-                        self.val[m, n] = val[m, n]
+                        self.val[m, n] = np.array(kwargs['val'][m, n])
 
     def __mul__(self, x):
         if isinstance(x, VecTri): # Matrix by VecTri multiplication

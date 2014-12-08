@@ -16,8 +16,8 @@ def get_topo():
     return topo
 
 topo = get_topo()
-N = np.array(topo.shape)
-dim = N.size
+P = np.array(topo.shape) # image resolution
+dim = P.size
 
 
 def get_mat(coord=None):
@@ -31,20 +31,42 @@ def get_mat(coord=None):
     return mat_vals
 
 materials = {'file': {'fun': get_mat,
-                      'Y': np.ones(dim)}}
+                      'Y': np.ones(dim),
+                      'order': 0,
+                      'P': P}}
 
 maxiter = 1e3
-tol = 1e-4
+tol = 1e-6
+
 problems = [
     {'name': 'prob1',
      'physics': 'scalar',
      'material': 'file',
      'solve': {'kind': 'GaNi',
-               'N': N,
+               'N': P,
                'primaldual': ['primal', 'dual']},
-     'postprocess': [{'kind': 'GaNi'}],
+     'postprocess': [{'kind': 'GaNi'},
+                     {'kind': 'Ga',
+                      'order': 0,
+                      'P': P},
+                     {'kind': 'Ga',
+                      'order': 1,
+                      'P': P}],
      'solver': {'kind': 'CG',
                 'tol': tol,
                 'maxiter': maxiter},
      'save': {'filename': os.path.join(base_dir, 'output/from_file_gani'),
-              'data': 'all'}}]
+              'data': 'all'}},
+    {'name': 'prob2',
+     'physics': 'scalar',
+     'material': 'file',
+     'solve': {'kind': 'Ga',
+               'N': P,
+               'primaldual': ['primal', 'dual']},
+     'postprocess': [{'kind': 'Ga'}],
+     'solver': {'kind': 'CG',
+                'tol': tol,
+                'maxiter': maxiter},
+     'save': {'filename': os.path.join(base_dir, 'output/from_file_ga'),
+              'data': 'all'}}
+            ]

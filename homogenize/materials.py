@@ -23,12 +23,12 @@ class Material():
         elif 'inclusions' in self.conf:
             n_incl = len(self.conf['inclusions'])
             for key in self.conf:
-                if key in ['Y']:
+                if key in ['Y', 'order', 'P']:
                     continue
 
                 if len(self.conf[key]) != n_incl:
-                    raise ValueError("Improper number of value in material\
-                         definition for key (%s)!" % key)
+                    msg = "Improper no. of values in material for (%s)!" % key
+                    raise ValueError(msg)
 
             for ii, incl in enumerate(self.conf['inclusions']):
                 if incl in ['all', 'otherwise']:
@@ -47,7 +47,13 @@ class Material():
         else:
             raise NotImplementedError("Improper material definition!")
 
-    def get_A_Ga(self, Nbar, order=None, M=None, primaldual='primal'):
+#     def get_A_Ga(self, Nbar, order=None, M=None, primaldual='primal'):
+    def get_A_Ga(self, Nbar, primaldual='primal', order=None, P=None):
+        """ Returns stiffness matrix for scheme with exact integration."""
+
+        if order is None and 'order' in self.conf:
+            order = self.conf['order']
+
         if order is None:
             shape_funs = self.get_shape_functions(Nbar)
             val = np.zeros(self.conf['vals'][0].shape + shape_funs[0].shape)
@@ -58,14 +64,17 @@ class Material():
                     Aincl = np.linalg.inv(self.conf['vals'][ii])
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
             return Matrix(name='A_Ga', val=val, Fourier=False)
+
         else:
-            coord = Grid.get_coordinates(M, self.Y)
+            if P is None and 'P' in self.conf:
+                P = self.conf['P']
+            coord = Grid.get_coordinates(P, self.Y)
             vals = self.evaluate(coord)
             dim = vals.d
             if primaldual is 'dual':
                 vals = vals.inv()
 
-            h = self.Y/M
+            h = self.Y/P
             if order in [0, 'constant']:
                 Wraw = get_weights_con(h, Nbar, self.Y)
             elif order in [1, 'bilinear']:
@@ -74,13 +83,13 @@ class Material():
             Aapp = np.zeros(np.hstack([dim, dim, Nbar]))
             for m in np.arange(dim):
                 for n in np.arange(dim):
-                    hAM0 = DFT.fftnc(vals[m, n], M)
-                    if np.allclose(M, Nbar):
+                    hAM0 = DFT.fftnc(vals[m, n], P)
+                    if np.allclose(P, Nbar):
                         hAM = hAM0
-                    elif np.all(np.greater_equal(M, Nbar)):
+                    elif np.all(np.greater_equal(P, Nbar)):
                         hAM = decrease(hAM0, Nbar)
-                    elif np.all(np.less(M, Nbar)):
-                        factor = np.ceil(np.array(Nbar, dtype=np.float64) / M)
+                    elif np.all(np.less(P, Nbar)):
+                        factor = np.ceil(np.array(Nbar, dtype=np.float64) / P)
                         hAM0per = np.tile(hAM0, 2*factor-1)
                         hAM = decrease(hAM0per, Nbar)
                     else:
@@ -88,10 +97,10 @@ class Material():
 
                     pNbar = np.prod(Nbar)
                     """ if DFT is normalized in accordance with articles there
-                    should be np.prod(M)"""
+                    should be np.prod(M) instead of np.prod(Nbar)"""
                     Aapp[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
 
-            name = 'A_Ga%d' % order
+            name = 'A_Ga_o%d_P%d' % (order, P.max())
             return Matrix(name=name, val=Aapp, Fourier=False)
 
     def get_A_GaNi(self, N, primaldual='primal'):
@@ -161,7 +170,7 @@ class Material():
                 A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii],
                                    topos[ii])
 
-        return Matrix(name='material', val=A_val, Fourier=False)
+        return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 
     def get_topologies(self, coord):
         inclusions = self.conf['inclusions']
