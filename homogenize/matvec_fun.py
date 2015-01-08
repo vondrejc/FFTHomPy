@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Grid():
     @staticmethod
     def get_ZNl(N):

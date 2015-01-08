@@ -233,7 +233,7 @@ class VecTri(FieldFun, Grid):
         return self.val
 
     def vec(self):
-        return np.reshape(self.val, self.size)
+        return np.matrix(self.val.ravel()).transpose()
 
     def __eq__(self, x):
         if isinstance(x, VecTri):
@@ -446,6 +446,9 @@ class Matrix(FieldFun):
     def __div__(self, x):
         return self*(1./x)
 
+    def __getitem__(self, i):
+        return self.val[i]
+
     def T(self):
         return self.transpose()
 
@@ -512,6 +515,16 @@ class Matrix(FieldFun):
             for jj in np.arange(self.d):
                 SM.val[ii, jj] = self.val[ii, jj][ind0-ss[0], :][:, ind1-ss[1]]
         return SM
+
+    def matrix(self):
+        pN = np.prod(self.N)
+        proddN = self.d*pN
+        matrix = np.matrix(np.zeros([proddN, proddN], dtype=np.float64))
+        for ii in np.arange(self.d):
+            for jj in np.arange(self.d):
+                submatrix = np.diag(self.val[ii, jj].ravel())
+                matrix[pN*ii:pN**(ii+1), pN*jj:pN**(jj+1)] = submatrix
+        return matrix
 
 
 class ShiftMatrix():
@@ -624,6 +637,28 @@ class DFT():
             else:
                 Fxre = np.real(self.ifftnc(xre, self.N))
             return np.reshape(Fxre, np.size(Fxre))
+
+    def matrix(self):
+        prodN = np.prod(self.N)
+        proddN = self.d*prodN
+        DTM = np.zeros(np.hstack([self.N, self.N]), dtype=np.complex128)
+        ZNl = Grid.get_ZNl(self.N)
+
+        if not self.inverse:
+            coef = 1./np.prod(self.N)
+        else:
+            coef = np.prod(self.N)
+
+        for nx in ZNl[0]:
+            for ny in ZNl[1]:
+                IM = np.zeros(np.array(self.N), dtype=np.float64)
+                IM[nx, ny] = 1
+                DTM[nx, ny, :, :] = coef*DFT.fftnc(IM, self.N)
+        import numpy.matlib as npmatlib
+        DTMd = npmatlib.zeros([proddN, proddN], dtype=np.complex128)
+        for ii in np.arange(self.d):
+            DTMd[prodN*ii:prodN**(ii+1), prodN*ii:prodN**(ii+1)] = DTM
+        return DTMd
 
     def __repr__(self):
         ss = "Class : %s\n" % (self.__class__.__name__,)
