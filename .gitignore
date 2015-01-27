@@ -57,3 +57,5 @@ docs/_build/
 examples/*
 .settings/*
 output/*
+*~
+_*
