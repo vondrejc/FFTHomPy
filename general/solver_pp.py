@@ -1,22 +1,18 @@
-import numpy as nm
+import numpy as np
 from homogenize.matvec import VecTri
 
 
 class CallBack():
-    def __init__(self, A=None, B=None, E2N=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
         self.iter = -1
         self.res_norm = []
         self.energy_norm = []
-        self.A = A
-        self.B = B
-        if 'Aener' in kwargs.keys():
-            self.Aener = kwargs['Aener']
-        self.E2N = E2N
 
     def __call__(self, x):
         self.iter += 1
         if not isinstance(x, VecTri):
-            X = VecTri(val=nm.reshape(x, self.B.dN()))
+            X = VecTri(val=np.reshape(x, self.B.dN()))
         else:
             X = x
         res = self.B - self.A(X)
@@ -35,26 +31,21 @@ class CallBack():
 
 
 class CallBack_GA():
-    def __init__(self, A=None, B=None, E2N=None, **kwargs):
-        self.iter = 0
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        self.iter = -1
         self.res_norm = []
         self.bound = []
         self.in_subspace_norm = []
-        self.A = A
-        self.B = B
-        self.E2N = E2N
-        self.Aex = kwargs['Aex']
-        self.GN = kwargs['GN']
-        self.primal = True
 
     def __call__(self, x):
         self.iter += 1
         if not isinstance(x, VecTri):
-            X = VecTri(val=nm.reshape(x, self.E2N.dN()))
+            X = VecTri(val=np.reshape(x, self.E2N.dN()))
         else:
             X = x
 
-        if nm.linalg.norm(X.mean() - self.E2N.mean()) < 1e-8:
+        if np.linalg.norm(X.mean() - self.E2N.mean()) < 1e-8:
             res = self.A(X)
             eN = X
         else:
