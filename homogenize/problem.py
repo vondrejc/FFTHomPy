@@ -6,7 +6,21 @@ import sys
 import general.dbg as dbg
 
 class Problem(object):
+    """
+    Class that parse input file, calculates the physical problem,
+    and post-process the results (calculates the homogenized properties.)
+    """
     def __init__(self, conf_problem=None, conf=None):
+        """
+        Parameters
+        ----------
+        conf_problem : dictionary
+            particular problem from problems in input file; dictionary that
+            usually contains following keywords: 'name', 'material', 'solve',
+            'solver', 'postprocess'
+        conf : module
+            configuration data from input file
+        """
         self.__dict__.update(conf_problem)
         if isinstance(self.material, str):
             conf_material = conf.materials[self.material]
@@ -27,6 +41,9 @@ class Problem(object):
 
     @staticmethod
     def parse_material(conf_material):
+        """
+        Parse material from input file.
+        """
         if 'fun' in conf_material:
             material = conf_material
         else:
@@ -44,10 +61,15 @@ class Problem(object):
                             val = vals.pop(ind)
                             vals.append(val)
                     else:
-                        raise ValueError()
+                        msg = "Maximal one occurrence of inclusion \
+                            'otherwise' or 'all' is allowed!"
+                        raise ValueError(msg)
         return material
 
     def calculate(self):
+        """
+        Calculates the problem according to physical model.
+        """
         print '\n=============================='
         tim = dbg.start_time()
         if self.physics == 'scalar':
@@ -60,6 +82,10 @@ class Problem(object):
         print 'total time for problem', tim
 
     def postprocessing(self):
+        """
+        Post-process the results. Usually consists of plotting of homogenized
+        properties.
+        """
         output = self.output
         if self.physics in ['scalar', 'elasticity']:
             print '\nHomogenized matrices'

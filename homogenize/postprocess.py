@@ -4,6 +4,9 @@ from homogenize.matvec import VecTri
 
 
 def postprocess(pb, A, mat, solutions, results, primaldual):
+    """
+    The function post-process the results.
+    """
     tim = dbg.start_time()
     print '\npostprocessing'
     matrices = {}
@@ -50,6 +53,10 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
                       'mat_' + primaldual: matrices})
 
 def assembly_matrix(Afun, solutions):
+    """
+    The function assembles the homogenized matrix from minimizers (corrector
+    functions).
+    """
     dim = len(solutions)
     if not np.allclose(Afun.N, solutions[0].N):
         Nbar = Afun.N
@@ -67,6 +74,11 @@ def assembly_matrix(Afun, solutions):
 
 
 def add_macro2minimizer(X, E):
+    """
+    The function takes the minimizers (corrector function with zero-mean
+    property or equaling to macroscopic value) and returns a corrector function
+    with mean that equals to macroscopic value E.
+    """
     if np.allclose(X.mean(), E):
         return X
     elif np.allclose(X.mean(), np.zeros_like(E)):

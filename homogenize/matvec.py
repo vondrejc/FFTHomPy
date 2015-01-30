@@ -5,12 +5,12 @@ relating operators for homogenization.
 """
 
 import numpy as np
-from homogenize.matvec_fun import *
+from homogenize.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
 
 
 class FieldFun():
     """
-    general class that provides functions for VecTri and Matrix classes
+    General class that provides functions for VecTri and Matrix classes.
     """
     def dN(self):
         return np.hstack([self.d, self.N])
@@ -219,6 +219,9 @@ class VecTri(FieldFun, Grid):
         return scal
 
     def mean(self):
+        """
+        Mean of trigonometric polynomial of shape of macroscopic vector.
+        """
         mean = np.zeros(self.d)
         if self.Fourier:
             ind = tuple(np.round(np.array(self.N)/2))
@@ -233,9 +236,16 @@ class VecTri(FieldFun, Grid):
         return self.val
 
     def vec(self):
+        """
+        Returns one-dimensional vector (column) version of trigonometric
+        polynomial.
+        """
         return np.matrix(self.val.ravel()).transpose()
 
     def __eq__(self, x):
+        """
+        Check the equality with other objects comparable to trig. polynomials.
+        """
         if isinstance(x, VecTri):
             nor = (self-x).norm()
             res = 'same instance VecTri; norm = %s' % str(nor)
@@ -517,6 +527,9 @@ class Matrix(FieldFun):
         return SM
 
     def matrix(self):
+        """
+        Returns full matrix version of Matrix class.
+        """
         pN = np.prod(self.N)
         proddN = self.d*pN
         matrix = np.matrix(np.zeros([proddN, proddN], dtype=np.float64))
@@ -564,7 +577,7 @@ class ShiftMatrix():
 
 class Id():
     """
-    identity operator
+    Identity operator.
     """
     def __init__(self, name='IdOper'):
         self.name = name
@@ -582,15 +595,16 @@ class Id():
 class DFT():
     """
     (inverse) Disrete Fourier Transform (DFT) to provide __call__
-    by FFT routine
+    by FFT routine.
 
-    parameters:
-        inverse : boolean
-            if True it provides inverse DFT
-        N : numpy.ndarray
-            N-sized (i)DFT,
-        normalized : boolean
-            version of DFT that is normalized by factor numpy.prod(N)
+    Parameters
+    ----------
+    inverse : boolean
+        if True it provides inverse DFT
+    N : numpy.ndarray
+        N-sized (i)DFT,
+    normalized : boolean
+        version of DFT that is normalized by factor numpy.prod(N)
     """
     def __init__(self, inverse=False, N=None, normalized=True, **kwargs):
         if 'name' in kwargs.keys():
@@ -639,6 +653,9 @@ class DFT():
             return np.reshape(Fxre, np.size(Fxre))
 
     def matrix(self):
+        """
+        This function returns the object as a matrix of DFT or iDFT resp.
+        """
         prodN = np.prod(self.N)
         proddN = self.d*prodN
         DTM = np.zeros(np.hstack([self.N, self.N]), dtype=np.complex128)
@@ -764,26 +781,55 @@ class LinOper():
         return s
 
     def define_operand(self, X):
+        """
+        This function defines the type of operand to correctly define linear
+        operator.
+
+        Parameters
+        ----------
+        X : any object
+            operand of linear operator
+        """
         if isinstance(X, VecTri):
             Y = self(X)
             self.shape = (Y.size, X.size)
             self.X_reshape = X.val.shape
             self.Y_reshape = Y.val.shape
         else:
-            print 'LinOper : This operand is not supported'
+            print 'LinOper : This operand is not implemented!'
 
     def matvec(self, x):
+        """
+        Provides the __call__ for operand recast into one-dimensional vector.
+        This is suitable for e.g. iterative solvers when trigonometric
+        polynomials are recast into one-dimensional numpy.arrays.
+
+        Parameters
+        ----------
+        x : one-dimensional numpy.array
+        """
         X = VecTri(val=self.revec(x))
         AX = self.__call__(X)
         return AX.vec()
 
     def vec(self, X):
+        """
+        Reshape the operand (VecTri) into one-dimensional vector (column)
+        version.
+        """
         return np.reshape(X, self.shape[1])
 
     def revec(self, x):
+        """
+        Reshape the one-dimensional vector of trig. pol. into shape occurring
+        in class VecTri.
+        """
         return np.reshape(x, self.Y_reshape)
 
     def transpose(self):
+        """
+        Transpose (adjoint) of linear operator.
+        """
         mat = []
         for m in np.arange(self.no_summands):
             summand = []
@@ -796,7 +842,7 @@ class LinOper():
 
 class MultiVector():
     """
-    MultiVector that is used for some mixed formulations
+    MultiVector that is used for some mixed formulations.
     """
     def __init__(self, name='MultiVector', val=None):
         self.name = name

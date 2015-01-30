@@ -1,8 +1,7 @@
 import numpy as np
 import scipy as sp
-# from homogenize.matvec_fun import TrigPolynomial, enlarge_M, get_Nodd
-from homogenize.matvec_fun import Grid
-from homogenize.matvec import Matrix, get_Nodd
+from homogenize.matvec_fun import Grid, get_Nodd
+from homogenize.matvec import Matrix
 
 
 def scalar(N, Y, centered=True, NyqNul=True):
@@ -100,7 +99,7 @@ def scalar(N, Y, centered=True, NyqNul=True):
     return G0l, G1l, G2l
 
 
-def elasticity(N, Y, centered=True, NyqNul=True): # (N, d, D, Y):
+def elasticity(N, Y, centered=True, NyqNul=True):
     """
     Projection matrix on a space of admissible strain fields
     INPUT =
