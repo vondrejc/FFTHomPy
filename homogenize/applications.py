@@ -2,7 +2,7 @@ import numpy as np
 import homogenize.projections as proj
 from general.solver import linear_solver
 from general.solver_pp import CallBack, CallBack_GA
-from homogenize.matvec import (VecTri, Matrix, DFT, LinOper)
+from homogenize.matvec import VecTri, DFT, LinOper
 from homogenize.materials import Material
 import general.dbg as dbg
 from homogenize.postprocess import postprocess, add_macro2minimizer
