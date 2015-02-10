@@ -321,6 +321,12 @@ class VecTri(FieldFun, Grid):
         subV = self.val[0]
         return subV[ind0-ss[0], :][:, ind1-ss[1]]
 
+    def transpose(self):
+        return self
+
+    def T(self):
+        return self
+
 
 def get_name(x_name, oper, y_name):
     name = x_name + oper + y_name

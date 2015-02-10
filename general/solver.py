@@ -6,13 +6,19 @@ from homogenize.matvec import VecTri
 
 def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
                   solver=None, callback=None):
+    """
+    Wraper for various linear solvers suited for FFT-based homogenization.
+    """
     if callback is not None:
         callback(x0)
-    if solver == 'CG':
+
+    if solver.lower() in ['cg']: # conjugate gradients
         x, info = CG(Afun, B, x0=x0, par=par, callback=callback)
-    elif solver == 'iterative':
+    elif solver.lower() in ['bicg']: # biconjugate gradients
+        x, info = BiCG(Afun, ATfun, B, x0=x0, par=par, callback=callback)
+    elif solver.lower() in ['iterative']: # iterative solver
         x, info = richardson(Afun, B, x0, par=par, callback=callback)
-    else:
+    elif solver.split('_')[0].lower() in ['scipy']: # solvers in scipy
         from scipy.sparse.linalg import LinearOperator, cg, bicg
         if solver == 'scipy_cg':
             Afun.define_operand(B)
@@ -34,6 +40,10 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
         res = dict()
         res['info'] = info
         x = VecTri(val=np.reshape(xcol, B.dN()))
+    else:
+        msg = "This kind (%s) of linear solver is not implemented" % solver
+        raise NotImplementedError(msg)
+
     return x, info
 
 
@@ -45,8 +55,9 @@ def richardson(Afun, B, x0, par=None, callback=None):
     while (res['norm_res'] > par['tol'] and res['kit'] < par['maxiter']):
         res['kit'] += 1
         x_prev = x
-        x = x - alp*(Afun(x) - B)
-        res['norm_res'] = (x_prev-x).norm()
+        x = x - alp*(Afun*x - B)
+        dif = x_prev-x
+        res['norm_res'] = float(dif.T*dif)**0.5
         callback(x)
     return x, res
 
@@ -87,21 +98,21 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     res = dict()
     res['time'] = dbg.start_time()
     xCG = x0
-    Ax = Afun(x0)
+    Ax = Afun*x0
     R = B - Ax
     P = R
-    rr = R*R
+    rr = float(R.T*R)
     res['kit'] = 0
     res['norm_res'] = np.double(rr)**0.5 # /np.norm(E_N)
     norm_res_log = []
     norm_res_log.append(res['norm_res'])
     while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1 # number of iterations
-        AP = Afun(P)
-        alp = rr/(P*AP)
+        AP = Afun*P
+        alp = float(rr/(P.T*AP))
         xCG = xCG + alp*P
         R = R - alp*AP
-        rrnext = R*R
+        rrnext = float(R.T*R)
         bet = rrnext/rr
         rr = rrnext
         P = R + bet*P
@@ -150,33 +161,37 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
 
     res = dict()
     res['time'] = dbg.start_time()
-    xCG = x0
-    Ax = Afun(x0)
+    xBiCG = x0
+    Ax = Afun*x0
     R = B - Ax
+    Rs = R
+    rr = float(R.T*Rs)
     P = R
-    rr = R*R
+    Ps = Rs
     res['kit'] = 0
-    res['norm_res'] = np.double(rr)**0.5 # /np.norm(E_N)
+    res['norm_res'] = rr**0.5 # /np.norm(E_N)
     norm_res_log = []
     norm_res_log.append(res['norm_res'])
     while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1 # number of iterations
-        AP = Afun(P)
-        alp = rr/(P*AP)
-        xCG = xCG + alp*P
+        AP = Afun*P
+        alp = rr/float(AP.T*Ps)
+        xBiCG = xBiCG + alp*P
         R = R - alp*AP
-        rrnext = R*R
+        Rs = Rs - alp*ATfun*Ps
+        rrnext = float(R.T*Rs)
         bet = rrnext/rr
         rr = rrnext
         P = R + bet*P
-        res['norm_res'] = np.double(rr)**0.5
+        Ps = Rs + bet*Ps
+        res['norm_res'] = rr**0.5
         norm_res_log.append(res['norm_res'])
         if callback is not None:
-            callback(xCG)
+            callback(xBiCG)
     res['time'] = dbg.get_time(res['time'])
     if res['kit'] == 0:
         res['norm_res'] = 0
-    return xCG, res
+    return xBiCG, res
 
 if __name__ == '__main__':
     execfile('../main_test.py')
