@@ -324,6 +324,7 @@ class VecTri(FieldFun, Grid):
     def transpose(self):
         return self
 
+    @property
     def T(self):
         return self
 
