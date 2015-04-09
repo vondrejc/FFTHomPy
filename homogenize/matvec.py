@@ -351,12 +351,14 @@ class Matrix(FieldFun):
     kwargs['val'] : numpy.ndarray of shape (d,d,N)
         assemble the matrix to predefined values
     """
-    def __init__(self, name='?', Fourier=False, valtype=None, **kwargs):
+    def __init__(self, name='?', Fourier=False, valtype='val', **kwargs):
         self.Fourier = Fourier
         self.name = name
+        self.valtype = valtype
+        self.__dict__.update(kwargs)
 
-        if valtype is None:
-            self.val = np.array(kwargs['val'])
+        if valtype in ['val']:
+            self.val = np.array(self.val)
             self.N = np.array(self.val.shape[2:])
             self.d = self.val.shape[0]
             self.dtype = self.val.dtype
@@ -364,10 +366,9 @@ class Matrix(FieldFun):
                 raise ValueError("Improper dimension of values %s."
                                  % str(self.val.shape))
         else:
-            self.N = np.array(kwargs['N'])
-            if 'd' in kwargs:
-                self.d = kwargs['d']
-            else:
+            if not hasattr(self, 'N'):
+                raise ValueError("Argument 'N' has to be defined!")
+            if not hasattr(self, 'd'):
                 self.d = np.size(self.N)
 
             if self.Fourier:
@@ -375,7 +376,7 @@ class Matrix(FieldFun):
             else:
                 self.dtype = np.float64
 
-            if valtype in ['Id', 'id']:
+            if valtype in ['Id', 'id', 'identity']:
                 self.val = np.zeros(self.ddN(), dtype=self.dtype)
                 for m in np.arange(self.d):
                     self.val[m][m] = 1.

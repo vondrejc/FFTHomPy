@@ -47,10 +47,10 @@ class Material():
         else:
             raise NotImplementedError("Improper material definition!")
 
-#     def get_A_Ga(self, Nbar, order=None, M=None, primaldual='primal'):
     def get_A_Ga(self, Nbar, primaldual='primal', order=None, P=None):
-        """ Returns stiffness matrix for scheme with exact integration."""
-
+        """
+        Returns stiffness matrix for scheme with exact integration.
+        """
         if order is None and 'order' in self.conf:
             order = self.conf['order']
 
@@ -104,6 +104,9 @@ class Material():
             return Matrix(name=name, val=Aapp, Fourier=False)
 
     def get_A_GaNi(self, N, primaldual='primal'):
+        """
+        Returns stiffness matrix for a scheme with trapezoidal quadrature rule.
+        """
         coord = Grid.get_coordinates(N, self.Y)
         A = self.evaluate(coord)
         if primaldual is 'dual':
@@ -111,6 +114,10 @@ class Material():
         return A
 
     def get_shape_functions(self, N2):
+        """
+        Returns stiffness matrix for exact integration scheme for individual
+        inclusions (square, circle, etc.).
+        """
         N2 = np.array(N2, dtype=np.int32)
         inclusions = self.conf['inclusions']
         params = self.conf['params']
@@ -173,6 +180,12 @@ class Material():
         return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 
     def get_topologies(self, coord):
+        """
+        Returns topologies at coordinates (coord). By a topology, it is
+        understood a characteristic function (ones and zeros at coord)
+        of individual inclusions (square, circle, etc.) usually defined in
+        input file.
+        """
         inclusions = self.conf['inclusions']
         params = self.conf['params']
         positions = self.conf['positions']
