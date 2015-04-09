@@ -63,7 +63,7 @@ class Material():
                 elif primaldual is 'dual':
                     Aincl = np.linalg.inv(self.conf['vals'][ii])
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
-            return Matrix(name='A_Ga', val=val, Fourier=False)
+            name = 'A_Ga'
 
         else:
             if P is None and 'P' in self.conf:
@@ -80,7 +80,7 @@ class Material():
             elif order in [1, 'bilinear']:
                 Wraw = get_weights_lin(h, Nbar, self.Y)
 
-            Aapp = np.zeros(np.hstack([dim, dim, Nbar]))
+            val = np.zeros(np.hstack([dim, dim, Nbar]))
             for m in np.arange(dim):
                 for n in np.arange(dim):
                     hAM0 = DFT.fftnc(vals[m, n], P)
@@ -98,11 +98,11 @@ class Material():
                     pNbar = np.prod(Nbar)
                     """ if DFT is normalized in accordance with articles there
                     should be np.prod(M) instead of np.prod(Nbar)"""
-                    Aapp[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
+                    val[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
 
             name = 'A_Ga_o%d_P%d' % (order, P.max())
-            return Matrix(name=name, val=Aapp, Fourier=False)
 
+        return Matrix(name=name, val=val, Fourier=False)
     def get_A_GaNi(self, N, primaldual='primal'):
         """
         Returns stiffness matrix for a scheme with trapezoidal quadrature rule.
