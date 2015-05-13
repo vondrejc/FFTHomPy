@@ -55,7 +55,7 @@ problems = [
      'solver': {'kind': 'CG',
                 'tol': tol,
                 'maxiter': maxiter},
-     'save': {'filename': os.path.join(base_dir, 'output/from_file_gani'),
+     'save': {'filename': os.path.join(base_dir, 'temp/from_file_prob1'),
               'data': 'all'}},
     {'name': 'prob2',
      'physics': 'scalar',
@@ -67,6 +67,6 @@ problems = [
      'solver': {'kind': 'CG',
                 'tol': tol,
                 'maxiter': maxiter},
-     'save': {'filename': os.path.join(base_dir, 'output/from_file_ga'),
+     'save': {'filename': os.path.join(base_dir, 'temp/from_file_prob2'),
               'data': 'all'}}
             ]

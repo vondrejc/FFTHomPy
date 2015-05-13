@@ -4,6 +4,10 @@ Input file for a scalar linear elliptic problems.
 
 import numpy as np
 from mechanics.matcoef import ElasticTensor
+import os
+from general.base import get_base_dir
+
+base_dir = get_base_dir()
 
 dim = 3
 N = 5*np.ones(dim, dtype=np.int32)
@@ -37,10 +41,13 @@ problems = [
                       'P': N},
                      {'kind': 'Ga',
                       'order': 1,
-                      'P': 9*N}],
+                      'P': N}],
      'solver': {'kind': 'CG',
                 'tol': 1e-5,
-                'maxiter': 1e3}},
+                'maxiter': 1e3},
+     'save': {'filename': os.path.join(base_dir, 'temp/linelas_3d_prob1'),
+              'data': 'all'},
+     },
     {'name': 'prob2',
      'physics': 'elasticity',
      'material': 'square',
@@ -51,6 +58,8 @@ problems = [
                       'order': None}],
      'solver': {'kind': 'CG',
                 'tol': 1e-2,
-                'maxiter': 1e3}
+                'maxiter': 1e3},
+     'save': {'filename': os.path.join(base_dir, 'temp/linelas_3d_prob2'),
+              'data': 'all'},
      },
             ]

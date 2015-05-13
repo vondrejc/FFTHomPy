@@ -3,6 +3,10 @@ Input file for a scalar linear elliptic problems.
 """
 
 import numpy as np
+import os
+from general.base import get_base_dir
+
+base_dir = get_base_dir()
 
 dim = 2
 N = 5*np.ones(dim, dtype=np.int32)
@@ -73,7 +77,9 @@ problems = [
                       'P': 27*N}],
      'solver': {'kind': 'CG',
                 'tol': 1e-6,
-                'maxiter': 1e3}
+                'maxiter': 1e3},
+     'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob1'),
+              'data': 'all'},
      },
     {'name': 'prob2',
      'physics': 'scalar',
@@ -85,7 +91,9 @@ problems = [
                       }],
      'solver': {'kind': 'CG',
                 'tol': 1e-2,
-                'maxiter': 1e3}
+                'maxiter': 1e3},
+     'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob2'),
+              'data': 'all'},
      },
     {'name': 'prob3',
      'physics': 'scalar',
@@ -97,6 +105,8 @@ problems = [
                       },],
      'solver': {'kind': 'CG',
                 'tol': 1e-2,
-                'maxiter': 1e3}
+                'maxiter': 1e3},
+     'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob3'),
+              'data': 'all'},
      },
             ]
