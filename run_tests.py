@@ -29,7 +29,6 @@ class Test_main(unittest.TestCase):
         for conf_problem in conf.problems:
             prob = Problem(conf_problem, conf)
             prob.calculate()
-            prob.postprocessing()
             file_res = 'tests/results/%s_%s' % (basen.split('.')[0], prob.name)
             with open(file_res, 'r') as frs:
                 res = Pickle.load(frs)
