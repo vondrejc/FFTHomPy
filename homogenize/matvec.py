@@ -121,13 +121,15 @@ class VecTri(FieldFun, Grid):
                 self.name = 'random'
                 self.val = np.random.random(self.dN())
             else:
+                if self.Fourier:
+                    dtype = np.complex128
+                else:
+                    dtype = np.float64
                 self.name = '0'
-                self.val = np.zeros(self.dN())
+                self.val = np.zeros(self.dN(), dtype=dtype)
 
         if 'Y' in kwargs:
             self.Y = np.array(kwargs['Y'])
-        else:
-            pass
 
         if name is not None:
             self.name = name
@@ -247,8 +249,7 @@ class VecTri(FieldFun, Grid):
         Check the equality with other objects comparable to trig. polynomials.
         """
         if isinstance(x, VecTri):
-            nor = (self-x).norm()
-            res = 'same instance VecTri; norm = %s' % str(nor)
+            res = (self-x).norm()
         elif np.shape(x) == self.get_shape():
             res = np.linalg.norm(self.val-x)
         else:
@@ -500,10 +501,11 @@ class Matrix(FieldFun):
 
     def __eq__(self, x):
         if isinstance(x, Matrix):
-            if self.get_shape() == x.get_shape():
-                res = 'same instance (Matrix) with norm = %f' % (self-x).norm()
+            if self.val.shape == x.val.shape:
+                res = (self-x).norm()
             else:
-                res = 'same instance (Matrix); different shape'
+                res = 'same instance (Matrix); different shapes: %s, %s' \
+                    % (str(self.val.shape), x.val.shape)
         elif all(self.get_shape() == np.shape(x)):
             res = 'different instances (Matrix vs numpy.array), norm = %f' \
                 % (np.linalg.norm(np.reshape(self.val-x, self.ddN())))
