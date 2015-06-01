@@ -84,4 +84,4 @@ def add_macro2minimizer(X, E):
     elif np.allclose(X.mean(), np.zeros_like(E)):
         return X + VecTri(name='EN', macroval=E, N=X.N, Fourier=False)
     else:
-        raise ValueError()
+        raise ValueError("Field is neither zero-mean nor E-mean.")
