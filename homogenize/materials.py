@@ -255,12 +255,10 @@ class Material():
 
     def savefig(self, fname='material.pdf', N=50*np.ones(2)):
         import pylab as pl
-        from matplotlib import cm
-        cmap = cm.Greys_r
         pl.figure(num=None, figsize=(3,3), dpi=1000)
         coord = Grid.get_coordinates(N, self.Y)
         vals = self.evaluate(coord)[0, 0]
-        pl.pcolor(coord[0], coord[1], -vals, cmap=cmap)
+        pl.pcolor(coord[0], coord[1], -vals)
         pl.xlim([-self.Y[0]/2, self.Y[0]/2])
         pl.ylim([-self.Y[1]/2, self.Y[1]/2])
         pl.xlabel(r'coordinate $x_1$')
