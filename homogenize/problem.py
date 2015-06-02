@@ -72,12 +72,14 @@ class Problem(object):
         """
         print '\n=============================='
         tim = dbg.start_time()
-        if self.physics == 'scalar':
-            homogenize.applications.scalar(self)
-        elif self.physics == 'elasticity':
-            homogenize.applications.elasticity(self)
+        if hasattr(homogenize.applications, self.physics):
+            eval('homogenize.applications.%s(self)' % self.physics)
         else:
-            raise ValueError("Not implemented physics (%s)." % self.physics)
+            msg = 'Not implemented physics (%s).\n' \
+                'Hint: Implement function (%s) into module' \
+                ' homogenize.applications!' % (self.physics, self.physics)
+            raise NotImplementedError(msg)
+
         tim = dbg.get_time(tim)
         print 'total time for problem', tim
 
