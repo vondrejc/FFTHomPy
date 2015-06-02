@@ -23,7 +23,7 @@ class Material():
         elif 'inclusions' in self.conf:
             n_incl = len(self.conf['inclusions'])
             for key in self.conf:
-                if key in ['Y', 'order', 'P']:
+                if key not in ['inclusions', 'positions', 'params', 'vals']:
                     continue
 
                 if len(self.conf[key]) != n_incl:
