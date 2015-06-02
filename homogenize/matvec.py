@@ -43,6 +43,10 @@ class FieldFun():
             ss += str(self.val)
         return ss
 
+    @staticmethod
+    def get_mean_index(N):
+        return tuple(np.round(np.array(N)/2))
+
 
 class Scalar():
     """
@@ -435,10 +439,16 @@ class Matrix(FieldFun):
         return np.sum(self.val**2)**0.5
 
     def mean(self):
-        res = np.array(np.zeros([self.d, self.d]))
-        for m in np.arange(self.d):
-            for n in np.arange(self.d):
-                res[m, n] = np.mean(self.val[m, n])
+        res = np.zeros([self.d, self.d])
+        if self.Fourier:
+            ind = self.get_mean_index(self.N)
+            for m in np.arange(self.d):
+                for n in np.arange(self.d):
+                    res[m, n] = self.val[ind]
+        else:
+            for m in np.arange(self.d):
+                for n in np.arange(self.d):
+                    res[m, n] = np.mean(self.val[m, n])
         return res
 
     def __add__(self, x):
