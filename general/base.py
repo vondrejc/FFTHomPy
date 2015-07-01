@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 def get_base_dir():
@@ -6,5 +7,11 @@ def get_base_dir():
     base_dir = os.path.normpath(os.path.join(module_dir, '..'))
     return base_dir
 
+def run_file(filen=''):
+    base_dir = get_base_dir()
+    main = base_dir + '/main.py'
+    sys.argv = [main, filen]
+    execfile(main)
+
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    run_file()
