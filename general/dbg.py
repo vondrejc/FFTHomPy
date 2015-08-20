@@ -24,4 +24,18 @@ def get_time(t):
     """ Measure and prints both real and computational time """
     return [time.clock()-t[0], time.time()-t[1]]
 
+class timer():
+    def __init__(self, name='time'):
+        self.name = name
+        self.start()
+
+    def start(self):
+        self.vals = []
+        self.ttin = [time.clock(), time.time()]
+
+    def measure(self):
+        self.vals.append([time.clock()-self.ttin[0], time.time()-self.ttin[1]])
+
+    def __repr__(self):
+        return self.name + ': ' + str(self.vals)
 

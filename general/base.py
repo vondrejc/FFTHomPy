@@ -13,5 +13,14 @@ def run_file(filen=''):
     sys.argv = [main, filen]
     execfile(main)
 
+def print_dict(d):
+    print '-- print dictionary -------------------'
+    for key, vals in d.items():
+        print key + ' =', vals
+
+def end():
+    print 'end'
+    sys.exit()
+
 if __name__ == '__main__':
     run_file()
