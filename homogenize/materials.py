@@ -5,7 +5,9 @@ from homogenize.matvec_fun import Grid, decrease
 
 
 inclusion_keys = {'ball': ['ball', 'circle'],
-                  'cube': ['cube', 'square']}
+                  'cube': ['cube', 'square'],
+                  'pyramid': ['bilinear_pyramid', 'pyramid']
+                  }
 
 
 class Material():
@@ -103,6 +105,7 @@ class Material():
             name = 'A_Ga_o%d_P%d' % (order, P.max())
 
         return Matrix(name=name, val=val, Fourier=False)
+
     def get_A_GaNi(self, N, primaldual='primal'):
         """
         Returns stiffness matrix for a scheme with trapezoidal quadrature rule.
@@ -122,6 +125,7 @@ class Material():
         inclusions = self.conf['inclusions']
         params = self.conf['params']
         positions = self.conf['positions']
+
         chars = []
         for ii, incl in enumerate(inclusions):
             position = positions[ii]
@@ -129,9 +133,9 @@ class Material():
                 SS = get_shift_inclusion(N2, position, self.Y)
 
             if incl in inclusion_keys['cube']:
-                h = params[ii]
-                Wraw = get_weights_con(h, N2, self.Y)
+                Wraw = get_weights_con(params[ii], N2, self.Y)
                 chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+
             elif incl in inclusion_keys['ball']:
                 r = params[ii]/2
                 if r == 0:
@@ -139,15 +143,23 @@ class Material():
                 else:
                     Wraw = get_weights_circ(r, N2, self.Y)
                 chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+
+            elif incl in inclusion_keys['pyramid']:
+                Wraw = get_weights_lin(params[ii]/2., N2, self.Y)
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+
             elif incl == 'all':
                 chars.append(np.ones(N2))
+
             elif incl == 'otherwise':
                 chars.append(np.ones(N2))
                 for ii in np.arange(len(inclusions)-1):
                     chars[-1] -= chars[ii]
+
             else:
                 msg = 'The inclusion (%s) is not supported!' % (incl)
                 raise NotImplementedError(msg)
+
         return chars
 
     def evaluate(self, coord):
@@ -240,12 +252,29 @@ class Material():
                     topos[ii] += (norm2**0.5 < params[ii]/2)
                 topos[ii] = decrease(topos[ii], N)
 
+            elif kind in inclusion_keys['pyramid']:
+                param = np.array(params[ii], dtype=np.float64)
+                pos = np.array(positions[ii], dtype=np.float64)
+                topos.append(np.zeros(cop.shape[1:]))
+                for Ycoef in Yiter.T:
+                    Ym = self.Y*Ycoef
+                    topo_loc = np.ones(cop.shape[1:])
+                    shp = cop[0].shape
+                    tri = lambda t, h: np.maximum(1-np.abs(t)/h, np.zeros(shp))
+                    for dd in np.arange(dim):
+                        topo_loc *= tri(cop[dd]-pos[dd]+2*Ym[dd], param[dd]/2.)
+                    topos[ii] += topo_loc
+                topos[ii] = decrease(topos[ii], N)
+
             elif kind == 'otherwise':
                 topos.append(np.ones(coord.shape[1:]))
                 for jj in np.arange(len(topos)-1):
                     topos[ii] -= topos[jj]
                 if not (topos[ii] >= 0).all():
                     raise NotImplementedError("Overlapping inclusions!")
+
+            elif kind == 'all':
+                topos.append(np.ones(coord.shape[1:]))
 
             else:
                 msg = "Inclusion (%s) is not implemented." % (kind)
@@ -320,7 +349,7 @@ def get_weights_lin(h, Nbar, Y):
 
     Parameters
     ----------
-    h - the parameter determining the size of inclusion
+    h - the parameter determining the size of inclusion (half-size of support)
     Nbar - no. of points of regular grid where the weights are evaluated
     Y - the size of periodic unit cell
 
