@@ -19,10 +19,12 @@ class Test_main(unittest.TestCase):
         pass
 
     def test_main(self):
+        # the main routine for testing
         for input_file in self.input_files:
             self.main(input_file)
 
     def main(self, input_file):
+        # test a particular file
         basen = os.path.basename(input_file)
         conf = import_file(input_file)
 
