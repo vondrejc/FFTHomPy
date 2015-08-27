@@ -49,12 +49,16 @@ class Material():
         else:
             raise NotImplementedError("Improper material definition!")
 
-    def get_A_Ga(self, Nbar, primaldual='primal', order=None, P=None):
+    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None):
         """
         Returns stiffness matrix for scheme with exact integration.
         """
-        if order is None and 'order' in self.conf:
+        if order == -1 and 'order' in self.conf:
             order = self.conf['order']
+        elif order in [None, 0, 1]:
+            pass
+        else:
+            raise ValueError('The material order is undefined!')
 
         if order is None:
             shape_funs = self.get_shape_functions(Nbar)
