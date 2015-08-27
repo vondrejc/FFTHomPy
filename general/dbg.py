@@ -25,9 +25,10 @@ def get_time(t):
     return [time.clock()-t[0], time.time()-t[1]]
 
 class Timer():
-    def __init__(self, name='time'):
+    def __init__(self, name='time', start=True):
         self.name = name
-        self.start()
+        if start:
+            self.start()
 
     def start(self):
         self.vals = []
