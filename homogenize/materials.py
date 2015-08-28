@@ -53,14 +53,15 @@ class Material():
         """
         Returns stiffness matrix for scheme with exact integration.
         """
-        if order == -1 and 'order' in self.conf:
-            order = self.conf['order']
-        elif order in [None, 0, 1]:
-            pass
-        else:
-            raise ValueError('The material order is undefined!')
+        if order == -1:
+            if 'order' in self.conf:
+                order = self.conf['order']
+            else:
+                raise ValueError('The material order is undefined!')
+        elif order not in [None, 'exact', 0, 1]:
+            raise ValueError('Wrong material order (%s)!' % str(order))
 
-        if order is None:
+        if order in [None, 'exact']:
             shape_funs = self.get_shape_functions(Nbar)
             val = np.zeros(self.conf['vals'][0].shape + shape_funs[0].shape)
             for ii in range(len(self.conf['inclusions'])):
