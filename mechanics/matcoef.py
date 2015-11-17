@@ -120,7 +120,7 @@ class ElasticTensor():
         return idsym, volumetric, deviatoric
 
     @staticmethod
-    def create_mandel(mat):
+    def create_mandel(mat, grid=False):
         """
         It transfer symmetric four-order tensor (or matrix) to
         second order tensor (or vector) using Mandel's notation.
@@ -129,39 +129,49 @@ class ElasticTensor():
         ----------
         mat : numpy.array of shape = (d, d, d, d) or (d, d) for dimension d
             fourth-order tensor of elastic parameters
+        grid : boolean
+            if true, the input array mat is evaluated at grid points
 
         Returns
         -------
-        vec : numpy.array of shape = (sym, sym) or (sym,) for sym = d*(d+1)/2
+        res : numpy.array of shape = (sym, sym) or (sym,) for sym = d*(d+1)/2
             second-order tensor of elastic parameters with Mandel's notation
         """
         dim = mat.shape[0]
         sym = dim*(dim+1)/2
-        if mat.ndim == 4:
-            vec = np.zeros([sym, sym], dtype=mat.dtype)
+        if grid:
+            grid_shape = mat.shape[-dim:]
+            grid_dim = dim
+        else:
+            grid_shape = ()
+            grid_dim = 0
+
+        if mat.ndim - grid_dim == 4:
+            res = np.zeros((sym, sym) + grid_shape, dtype=mat.dtype)
             for ii in np.arange(dim):
                 for jj in np.arange(dim):
                     kk = range(dim)
                     kk.remove(ii)
                     ll = range(dim)
                     ll.remove(jj)
-                    vec[ii, jj] = mat[ii, ii, jj, jj]
-                    vec[ii, jj+dim] = 2**.5*mat[ii, ii, ll[0], ll[1]]
-                    vec[jj+dim, ii] = vec[ii, jj+dim]
-                    vec[ii+dim, jj+dim] = 2*mat[kk[0], kk[1], ll[0], ll[1]]
-        elif mat.ndim == 2:
-            vec = np.zeros(sym, dtype=mat.dtype)
-            vec[:dim] = np.diag(mat)
+                    res[ii, jj] = mat[ii, ii, jj, jj]
+                    res[ii, jj+dim] = 2**.5*mat[ii, ii, ll[0], ll[1]]
+                    res[jj+dim, ii] = res[ii, jj+dim]
+                    res[ii+dim, jj+dim] = 2*mat[kk[0], kk[1], ll[0], ll[1]]
+
+        elif mat.ndim - grid_dim == 2:
+            res = np.zeros((sym,)  + grid_shape, dtype=mat.dtype)
+            res[:dim] = np.diag(mat)
             if dim == 2:
-                vec[dim] = 2**.5*mat[0, 1]
+                res[dim] = 2**.5*mat[0, 1]
             elif dim == 3:
                 for ii in np.arange(sym-dim):
                     ind = range(sym-dim)
                     ind.remove(ii)
-                    vec[dim+ii] = 2**.5*mat[ind[0], ind[1]]
+                    res[dim+ii] = 2**.5*mat[ind[0], ind[1]]
             else:
                 raise ValueError("Incorrect dimension (%d)" % dim)
-        return vec
+        return res
 
     @staticmethod
     def dispose_mandel(vec):
