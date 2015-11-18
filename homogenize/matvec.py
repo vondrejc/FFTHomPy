@@ -6,6 +6,7 @@ relating operators for homogenization.
 
 import numpy as np
 from homogenize.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
+import copy
 
 
 class FieldFun():
@@ -25,6 +26,11 @@ class FieldFun():
 
     def pdN(self):
         return np.prod(self.dN())
+
+    def zeros_like(self):
+        X = copy.deepcopy(self)
+        X.val[:] = 0
+        return X
 
     def __getitem__(self, i):
         return self.val[i]
@@ -444,7 +450,7 @@ class Matrix(FieldFun):
             ind = self.get_mean_index(self.N)
             for m in np.arange(self.d):
                 for n in np.arange(self.d):
-                    res[m, n] = self.val[ind]
+                    res[m, n] = self.val[m, n][ind]
         else:
             for m in np.arange(self.d):
                 for n in np.arange(self.d):
