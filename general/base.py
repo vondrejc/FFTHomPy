@@ -30,6 +30,18 @@ class Struct(object):
         if kwargs:
             self.__dict__.update(kwargs)
 
+    def _format_sequence(self, seq, threshold):
+        threshold_half = threshold / 2
+
+        if len(seq) > threshold:
+            out = ', '.join(str(ii) for ii in seq[:threshold_half]) \
+                  + ', ..., ' \
+                  + ', '.join(str(ii) for ii in seq[-threshold_half:])
+
+        else:
+            out = str(seq)
+
+        return out
 
     def __str__(self):
         """Print instance class, name and items in alphabetical order.
