@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as np
-import general.dbg as dbg
+from general.base import Timer
 from homogenize.matvec import VecTri
 
 
@@ -96,7 +96,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         par['maxiter'] = 1e3
 
     res = dict()
-    res['time'] = dbg.start_time()
+    res['time'] = Timer()
     xCG = x0
     Ax = Afun*x0
     R = B - Ax
@@ -120,7 +120,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         norm_res_log.append(res['norm_res'])
         if callback is not None:
             callback(xCG)
-    res['time'] = dbg.get_time(res['time'])
+    res['time'].measure()
     if res['kit'] == 0:
         res['norm_res'] = 0
     return xCG, res

@@ -5,7 +5,7 @@ from homogenize.materials import Material
 from homogenize.postprocess import postprocess, add_macro2minimizer
 from general.solver import linear_solver
 from general.solver_pp import CallBack, CallBack_GA
-import general.dbg as dbg
+from general.base import Timer
 
 
 def scalar(problem):
@@ -38,7 +38,7 @@ def scalar(problem):
     G2N = LinOper(name='G2', mat=[[FiN, hG2N, FN]])
 
     for primaldual in pb.solve['primaldual']:
-        tim = dbg.start_time()
+        tim = Timer(name='primal-dual')
         print '\nproblem: ' + primaldual
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
@@ -83,8 +83,7 @@ def scalar(problem):
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
             print cb
-        tim = dbg.get_time(tim)
-        print 'calculation times for each load:\n', tim
+        tim.measure()
 
         # POSTPROCESSING
         del Afun, B, E, EN, GN, X
@@ -125,6 +124,7 @@ def elasticity(problem):
     G2N = LinOper(name='G2', mat=[[FiN, hG2hN + hG2sN, FN]])
 
     for primaldual in pb.solve['primaldual']:
+        tim = Timer(name='primal-dual')
         print '\nproblem: ' + primaldual
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
@@ -170,6 +170,7 @@ def elasticity(problem):
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
             print cb
+        tim.measure()
 
         # POSTPROCESSING
         del Afun, B, E, EN, GN, X

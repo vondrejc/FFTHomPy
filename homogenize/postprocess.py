@@ -1,5 +1,5 @@
 import numpy as np
-from general import dbg
+from general.base import Timer
 from homogenize.matvec import VecTri
 
 
@@ -7,7 +7,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
     """
     The function post-process the results.
     """
-    tim = dbg.start_time()
+    tim = Timer(name='postprocessing')
     print '\npostprocessing'
     matrices = {}
     for pp in pb.postprocess:
@@ -45,8 +45,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             matrices[name] = AH
         else:
             matrices[name] = np.linalg.inv(AH)
-    tim = dbg.get_time(tim)
-    print 'postprocess time', tim
+    tim.measure()
 
     pb.output.update({'sol_' + primaldual: solutions,
                       'res_' + primaldual: results,

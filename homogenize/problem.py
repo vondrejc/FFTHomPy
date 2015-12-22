@@ -1,9 +1,8 @@
 import numpy as np
 import homogenize.applications
-from general.base import get_base_dir
+from general.base import get_base_dir, Timer
 import os
 import sys
-import general.dbg as dbg
 
 class Problem(object):
     """
@@ -71,7 +70,7 @@ class Problem(object):
         Calculates the problem according to physical model.
         """
         print '\n=============================='
-        tim = dbg.start_time()
+        tim = Timer(name='application')
         if hasattr(homogenize.applications, self.physics):
             eval('homogenize.applications.%s(self)' % self.physics)
         else:
@@ -79,9 +78,7 @@ class Problem(object):
                 'Hint: Implement function (%s) into module' \
                 ' homogenize.applications!' % (self.physics, self.physics)
             raise NotImplementedError(msg)
-
-        tim = dbg.get_time(tim)
-        print 'total time for problem', tim
+        tim.measure()
 
     def postprocessing(self):
         """
