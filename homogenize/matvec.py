@@ -5,6 +5,7 @@ relating operators for homogenization.
 """
 
 import numpy as np
+import numpy.matlib as npmatlib
 from homogenize.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
 import copy
 
@@ -618,7 +619,7 @@ class Id():
         return 'Class : %s\n' % (self.__class__.__name__)
 
 
-class DFT():
+class DFT(FieldFun):
     """
     (inverse) Disrete Fourier Transform (DFT) to provide __call__
     by FFT routine.
@@ -633,12 +634,12 @@ class DFT():
         version of DFT that is normalized by factor numpy.prod(N)
     """
     def __init__(self, inverse=False, N=None, normalized=True, **kwargs):
-        if 'name' in kwargs.keys():
-            self.name = kwargs['name']
-        elif inverse:
-            self.name = 'iDFT'
-        else:
-            self.name = 'DFT'
+        self.__dict__.update(kwargs)
+        if 'name' not in kwargs.keys():
+            if inverse:
+                self.name = 'iDFT'
+            else:
+                self.name = 'DFT'
 
         self.N = np.array(N, dtype=np.int32)
         self.inverse = inverse
@@ -687,17 +688,17 @@ class DFT():
         DTM = np.zeros(np.hstack([self.N, self.N]), dtype=np.complex128)
         ZNl = Grid.get_ZNl(self.N)
 
-        if not self.inverse:
-            coef = 1./np.prod(self.N)
+        if self.inverse:
+            DFToper = lambda x: np.prod(self.N)*DFT.ifftnc(x, self.N)
         else:
-            coef = np.prod(self.N)
+            DFToper = lambda x: 1./np.prod(self.N)*DFT.fftnc(x, self.N)
 
         for nx in ZNl[0]:
             for ny in ZNl[1]:
                 IM = np.zeros(np.array(self.N), dtype=np.float64)
                 IM[nx, ny] = 1
-                DTM[nx, ny, :, :] = coef*DFT.fftnc(IM, self.N)
-        import numpy.matlib as npmatlib
+                DTM[nx, ny, :, :] = DFToper(IM)
+        DTM = DTM.reshape([self.pN(), self.pN()])
         DTMd = npmatlib.zeros([proddN, proddN], dtype=np.complex128)
         for ii in np.arange(self.d):
             DTMd[prodN*ii:prodN**(ii+1), prodN*ii:prodN**(ii+1)] = DTM
