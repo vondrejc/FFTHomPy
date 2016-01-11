@@ -6,7 +6,6 @@ from homogenize.problem import Problem, import_file
 import cPickle as Pickle
 import os
 
-
 class Test_main(unittest.TestCase):
 
     def setUp(self):
@@ -44,4 +43,10 @@ class Test_main(unittest.TestCase):
                     self.assertAlmostEqual(0, val, msg=msg, delta=1e-14)
 
 if __name__ == "__main__":
-    unittest.main()
+    from homogenize.test_matvec import Test_matvec
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Test_main))
+    suite.addTest(unittest.makeSuite(Test_matvec))
+
+    runner=unittest.TextTestRunner()
+    runner.run(suite)
