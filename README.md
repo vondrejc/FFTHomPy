@@ -14,9 +14,9 @@ Papers
 Manual
 ------
 The basic manual can be found at
-- http://mech.fsv.cvut.cz/~vondrejc/FFTHomPy/
+- http://FFTHomPy.bitbucket.org
 
 or downloaded at
-- http://mech.fsv.cvut.cz/~vondrejc/FFTHomPy.pdf
+- http://FFTHomPy.bitbucket.org/FFTHomPy.pdf
 
 
