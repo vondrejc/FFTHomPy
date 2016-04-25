@@ -157,12 +157,14 @@ def enlarge(xN, M):
     dim = np.size(N)
     ibeg = (M-N+(N % 2))/2
     iend = (M+N+(N % 2))/2
-    if dim == 2:
-        xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
-    elif dim == 3:
+    if dim == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
+    elif dim == 2:
+        xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
+    elif dim == 1:
+        xM[ibeg[0]:iend[0]] = xN
     else:
-        raise NotImplementedError()
+        raise NotImplementedError('Fun enlarge do not support dim (%d).' % dim)
     return xM
 
 
