@@ -336,6 +336,16 @@ class VecTri(FieldFun, Grid):
     def transpose(self):
         return self
 
+    def fourier_transform(self):
+        """
+        Either discrete Fourier- or discrete inverse Fourier transform
+        """
+        if self.Fourier:
+            val = DFT.ifftnc(self.val, self.N).real*np.prod(self.N)
+        else:
+            val = DFT.fftnc(self.val, self.N)/np.prod(self.N)
+        return VecTri(name=self.name, val=val, Fourier=not self.Fourier)
+
     @property
     def T(self):
         return self
