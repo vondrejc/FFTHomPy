@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
-from homogenize.matvec_fun import Grid, get_Nodd
-from homogenize.matvec import Matrix
+from ffthompy.matvec_fun import Grid, get_Nodd
+from ffthompy.matvec import Matrix
 
 
 def scalar(N, Y, centered=True, NyqNul=True):

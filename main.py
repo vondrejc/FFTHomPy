@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from homogenize.problem import Problem, import_file
+from ffthompy.problem import Problem, import_file
 from optparse import OptionParser
 
 parser = OptionParser()

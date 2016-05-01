@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import numpy as np
-from .base import Timer
-from homogenize.matvec import VecTri
+from ffthompy.general.base import Timer
+from ffthompy.matvec import VecTri
 
 
 def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,

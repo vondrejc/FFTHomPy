@@ -2,7 +2,7 @@
 
 import unittest
 import numpy as np
-from homogenize.problem import Problem, import_file
+from ffthompy.problem import Problem, import_file
 import cPickle as Pickle
 import os
 
@@ -43,7 +43,7 @@ class Test_main(unittest.TestCase):
                     self.assertAlmostEqual(0, val, msg=msg, delta=1e-14)
 
 if __name__ == "__main__":
-    from homogenize.test_matvec import Test_matvec
+    from ffthompy.test_matvec import Test_matvec
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_main))
     suite.addTest(unittest.makeSuite(Test_matvec))

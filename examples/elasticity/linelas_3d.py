@@ -3,9 +3,9 @@ Input file for a scalar linear elliptic problems.
 """
 
 import numpy as np
-from homogenize.mechanics.matcoef import ElasticTensor
+from ffthompy.mechanics.matcoef import ElasticTensor
 import os
-from homogenize.general.base import get_base_dir
+from ffthompy.general.base import get_base_dir
 
 base_dir = get_base_dir()
 

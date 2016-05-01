@@ -1,11 +1,11 @@
 import numpy as np
-import homogenize.projections as proj
-from homogenize.matvec import VecTri, DFT, LinOper
-from homogenize.materials import Material
-from homogenize.postprocess import postprocess, add_macro2minimizer
-from .general.solver import linear_solver
-from .general.solver_pp import CallBack, CallBack_GA
-from .general.base import Timer
+import ffthompy.projections as proj
+from ffthompy.matvec import VecTri, DFT, LinOper
+from ffthompy.materials import Material
+from ffthompy.postprocess import postprocess, add_macro2minimizer
+from ffthompy.general.solver import linear_solver
+from ffthompy.general.solver_pp import CallBack, CallBack_GA
+from ffthompy.general.base import Timer
 
 
 def scalar(problem):

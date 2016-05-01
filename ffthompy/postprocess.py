@@ -1,6 +1,6 @@
 import numpy as np
-from .general.base import Timer
-from homogenize.matvec import VecTri
+from ffthompy.general.base import Timer
+from ffthompy.matvec import VecTri
 
 
 def postprocess(pb, A, mat, solutions, results, primaldual):

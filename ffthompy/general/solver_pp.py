@@ -1,5 +1,5 @@
 import numpy as np
-from homogenize.matvec import VecTri
+from ffthompy.matvec import VecTri
 
 
 class CallBack():

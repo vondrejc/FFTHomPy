@@ -6,7 +6,7 @@ relating operators for homogenization.
 
 import numpy as np
 import numpy.matlib as npmatlib
-from homogenize.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
+from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
 import copy
 
 

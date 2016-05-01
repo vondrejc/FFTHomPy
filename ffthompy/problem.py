@@ -1,6 +1,6 @@
 import numpy as np
-import homogenize.applications
-from .general.base import get_base_dir, Timer
+import ffthompy.applications
+from ffthompy.general.base import get_base_dir, Timer
 import os
 import sys
 
@@ -71,12 +71,12 @@ class Problem(object):
         """
         print '\n=============================='
         tim = Timer(name='application')
-        if hasattr(homogenize.applications, self.physics):
-            eval('homogenize.applications.%s(self)' % self.physics)
+        if hasattr(ffthompy.applications, self.physics):
+            eval('ffthompy.applications.%s(self)' % self.physics)
         else:
             msg = 'Not implemented physics (%s).\n' \
                 'Hint: Implement function (%s) into module' \
-                ' homogenize.applications!' % (self.physics, self.physics)
+                ' ffthompy!' % (self.physics, self.physics)
             raise NotImplementedError(msg)
         tim.measure()
 
