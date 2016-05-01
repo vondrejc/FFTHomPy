@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as np
-from general.base import Timer
+from .base import Timer
 from homogenize.matvec import VecTri
 
 

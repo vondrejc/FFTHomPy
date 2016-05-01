@@ -1,6 +1,6 @@
 import numpy as np
 import homogenize.applications
-from general.base import get_base_dir, Timer
+from .general.base import get_base_dir, Timer
 import os
 import sys
 
@@ -136,7 +136,7 @@ def import_file(file_name):
     module_path = os.path.dirname(os.path.join(base_dir, file_name))
 
     if module_path not in sys.path:
-        sys.path.append(module_path)
+        sys.path.insert(0, module_path)
         remove_path = True
     else:
         remove_path = False
@@ -146,7 +146,7 @@ def import_file(file_name):
     conf = __import__(module_name)
 
     if remove_path:
-        sys.path.pop(-1)
+        sys.path.pop(0)
 
     return conf
 

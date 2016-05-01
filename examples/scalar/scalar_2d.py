@@ -4,7 +4,7 @@ Input file for a scalar linear elliptic problems.
 
 import numpy as np
 import os
-from general.base import get_base_dir
+from homogenize.general.base import get_base_dir
 
 base_dir = get_base_dir()
 

@@ -1,5 +1,5 @@
 import numpy as np
-from general.base import Timer
+from .general.base import Timer
 from homogenize.matvec import VecTri
 
 
