@@ -33,6 +33,9 @@ class FieldFun():
         X.val[:] = 0
         return X
 
+    def mean_ind(self):
+        return tuple(np.round(np.array(self.N)/2))
+
     def __getitem__(self, i):
         return self.val[i]
 
