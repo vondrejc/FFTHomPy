@@ -36,7 +36,7 @@ class Grid():
         coord = np.zeros(np.hstack([d, N]))
         for ii in np.arange(d):
             x = ZNl[ii]/N[ii]*Y[ii]
-            Nshape = np.ones(d)
+            Nshape = np.ones(d, dtype=np.int)
             Nshape[ii] = N[ii]
             Nrep = np.copy(N)
             Nrep[ii] = 1

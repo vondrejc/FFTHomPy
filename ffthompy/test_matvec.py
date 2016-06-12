@@ -14,7 +14,7 @@ class Test_matvec(unittest.TestCase):
     def test_matrix_versions(self):
         dim = 2
         for n in [5, 6]:
-            N = n*np.ones(dim)
+            N = n*np.ones(dim, dtype=np.int)
             ur = VecTri(name='rand', dim=2, N=N, valtype='rand')
             FN = DFT(name='FN', inverse=False, N=N, d=dim)
             FiN = DFT(name='FiN', inverse=True, N=N, d=dim)

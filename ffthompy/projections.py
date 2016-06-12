@@ -25,7 +25,7 @@ def scalar(N, Y, centered=True, NyqNul=True):
         on divergence-free fields with zero mean
     """
     d = np.size(N)
-    N = np.array(N)
+    N = np.array(N, dtype=np.int)
     if NyqNul:
         Nred = get_Nodd(N)
     else:
@@ -42,9 +42,9 @@ def scalar(N, Y, centered=True, NyqNul=True):
     num = np.zeros(np.hstack([d, d, Nred]))
     denom = np.zeros(Nred)
 
-    ind_center = tuple(np.fix(np.array(Nred)/2))
+    ind_center = tuple(Nred/2)
     for m in np.arange(d): # diagonal components
-        Nshape = np.ones(d)
+        Nshape = np.ones(d, dtype=np.int)
         Nshape[m] = Nred[m]
         Nrep = np.copy(Nred)
         Nrep[m] = 1
@@ -55,11 +55,11 @@ def scalar(N, Y, centered=True, NyqNul=True):
 
     for m in np.arange(d): # upper diagonal components
         for n in np.arange(m+1, d):
-            NshapeM = np.ones(d)
+            NshapeM = np.ones(d, dtype=np.int)
             NshapeM[m] = Nred[m]
             NrepM = np.copy(Nred)
             NrepM[m] = 1
-            NshapeN = np.ones(d)
+            NshapeN = np.ones(d, dtype=np.int)
             NshapeN[n] = Nred[n]
             NrepN = np.copy(Nred)
             NrepN[n] = 1
@@ -111,7 +111,7 @@ def elasticity(N, Y, centered=True, NyqNul=True):
         G1h,G1s,G2h,G2s : projection matrices of size DxDxN
     """
     xi = Grid.get_xil(N, Y)
-    N = np.array(N)
+    N = np.array(N, dtype=np.int)
     d = N.size
     D = d*(d+1)/2
 
@@ -121,13 +121,13 @@ def elasticity(N, Y, centered=True, NyqNul=True):
         Nred = N
 
     xi2 = []
-    for ii in np.arange(d):
+    for ii in range(d):
         xi2.append(xi[ii]**2)
 
     num = np.zeros(np.hstack([d, d, Nred]))
     norm2_xi = np.zeros(Nred)
     for mm in np.arange(d): # diagonal components
-        Nshape = np.ones(d)
+        Nshape = np.ones(d, dtype=np.int)
         Nshape[mm] = Nred[mm]
         Nrep = np.copy(Nred)
         Nrep[mm] = 1
@@ -142,11 +142,11 @@ def elasticity(N, Y, centered=True, NyqNul=True):
 
     for m in np.arange(d): # upper diagonal components
         for n in np.arange(m+1, d):
-            NshapeM = np.ones(d)
+            NshapeM = np.ones(d, dtype=np.int)
             NshapeM[m] = Nred[m]
             NrepM = np.copy(Nred)
             NrepM[m] = 1
-            NshapeN = np.ones(d)
+            NshapeN = np.ones(d, dtype=np.int)
             NshapeN[n] = Nred[n]
             NrepN = np.copy(Nred)
             NrepN[n] = 1
