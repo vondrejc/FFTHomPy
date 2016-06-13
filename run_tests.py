@@ -50,7 +50,7 @@ class Test_main(unittest.TestCase):
             execfile(filen, {'__name__': 'test'})
 
 if __name__ == "__main__":
-    from ffthompy.test_matvec import Test_matvec
+    from ffthompy.unittest_matvec import Test_matvec
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_main))
     suite.addTest(unittest.makeSuite(Test_matvec))

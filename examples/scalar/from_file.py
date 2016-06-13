@@ -8,7 +8,7 @@ from ffthompy.general.base import get_base_dir
 
 base_dir = get_base_dir()
 input_dir = os.path.dirname(os.path.abspath(__file__))
-file_name = os.path.join(input_dir, 'topologie.txt')
+file_name = os.path.join(input_dir, 'topology.txt')
 
 
 def get_topo():
