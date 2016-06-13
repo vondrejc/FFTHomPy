@@ -1,5 +1,3 @@
-*.py[cod]
-
 # Eclipse
 .project
 .pydevproject
@@ -18,3 +16,5 @@ output/*
 *temp*
 *~
 _*
+!__*
+*.py[cod]
