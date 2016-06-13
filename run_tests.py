@@ -15,8 +15,8 @@ class Test_main(unittest.TestCase):
                             'examples/elasticity/linelas_3d.py']
         self.tutorial_files = ['tutorials/01_trig_pol.py',
                                'tutorials/02_homogenisation.py',
-#                                'tutorials/03'
-                               ]
+                               'tutorials/03_exact_integration_simple.py',
+                               'tutorials/04_exact_integration_fast.py']
 
     def tearDown(self):
         pass
@@ -40,9 +40,10 @@ class Test_main(unittest.TestCase):
             for primdual in prob.solve['primaldual']:
                 kwpd = 'mat_'+primdual
                 for kw in prob.output[kwpd]:
-                    val = np.linalg.norm(prob.output[kwpd][kw] - res[kwpd][kw])
+                    dif = prob.output[kwpd][kw]-res[kwpd][kw]
+                    val = np.linalg.norm(dif.ravel(), np.inf)
                     msg = 'Incorrect (%s) in problem (%s)' % (kw, prob.name)
-                    self.assertAlmostEqual(0, val, msg=msg, delta=1e-14)
+                    self.assertAlmostEqual(0, val, msg=msg, delta=1e-13)
 
     def test_tutorials(self): # test tutorials
         for filen in self.tutorial_files:
