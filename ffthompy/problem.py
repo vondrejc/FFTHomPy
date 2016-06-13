@@ -56,7 +56,7 @@ class Problem(object):
                         ind = material['inclusions'].index(incl)
                         if ind == n_incl:
                             continue
-                        for _, vals in material.iteritems():
+                        for _, vals in material.items():
                             val = vals.pop(ind)
                             vals.append(val)
                     else:
@@ -69,7 +69,7 @@ class Problem(object):
         """
         Calculates the problem according to physical model.
         """
-        print '\n=============================='
+        print('\n==============================')
         tim = Timer(name='application')
         if hasattr(ffthompy.applications, self.physics):
             eval('ffthompy.applications.%s(self)' % self.physics)
@@ -87,11 +87,11 @@ class Problem(object):
         """
         output = self.output
         if self.physics in ['scalar', 'elasticity']:
-            print '\nHomogenized matrices'
+            print('\nHomogenized matrices')
             for primaldual in self.solve['primaldual']:
-                for key, val in output['mat_'+primaldual].iteritems():
-                    print key
-                    print val
+                for key, val in output['mat_'+primaldual].items():
+                    print(key)
+                    print(val)
 
         if hasattr(self, 'save'):
             if 'data' not in self.save:
@@ -111,9 +111,9 @@ class Problem(object):
             if not os.path.exists(dirs) and dirs != '':
                 os.makedirs(dirs)
 
-            import cPickle
+            import pickle
             filew = open(filename, 'w')
-            cPickle.dump(self.output, filew)
+            pickle.dump(self.output, filew)
             filew.close()
 
     def __repr__(self):
@@ -123,10 +123,10 @@ class Problem(object):
         ss += '    dim = %d (dimension)\n' % (self.dim)
         ss += '    Y = %s (PUC size)\n' % str(self.Y)
         ss += '    material:\n'
-        for key, val in self.material.iteritems():
+        for key, val in self.material.items():
             ss += '        %s : %s\n' % (key, str(val))
         ss += '    solve:\n'
-        for key, val in self.solve.iteritems():
+        for key, val in self.solve.items():
             ss += '        %s : %s\n' % (key, str(val))
         return ss
 
@@ -151,4 +151,4 @@ def import_file(file_name):
     return conf
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

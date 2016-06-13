@@ -1,4 +1,4 @@
-print """
+print("""
 Numerical homogenisation based on exact integration, which is described in
 J. Vondrejc, Improved guaranteed computable bounds on homogenized properties
 of periodic media by FourierGalerkin method with exact integration,
@@ -8,7 +8,7 @@ This is a self-contained tutorial implementing scalar problem in dim=2
 on a unit periodic cell Y=(-0.5,0.5)x(-0.5,0.5)
 with a square inclusion of size 0.6 (side).
 The material is identity I in matrix and 10*I in inclusion.
-"""
+""")
 
 import numpy as np
 import itertools
@@ -39,7 +39,7 @@ freq = freq_fun(dN)
 def get_weights(h): # calculation of integral weights of rectangular function
     Wphi = np.zeros(dim*[dN]) # integral weights
     bw = lambda xi: np.sinc(h*xi) # basic weight
-    for ii, jj in itertools.product(range(dN), repeat=dim):
+    for ii, jj in itertools.product(list(range(dN)), repeat=dim):
         Wphi[ii, jj] = h**dim*bw(freq[ii])*bw(freq[jj])
     return Wphi
 
@@ -71,12 +71,12 @@ Cex2 = np.einsum('ij...,...->ij...', 11*np.eye(dim),   char_square)
 Cex2 += np.einsum('ij...,...->ij...', 1*np.eye(dim), 1.-char_square)
 
 ## checking that the Cex2 is the same
-print 'zero', np.linalg.norm(Cex-Cex2)
+print('zero', np.linalg.norm(Cex-Cex2))
 
 # projection operator
 Gamma  = np.zeros([dim, dim, dN, dN], dtype=np.float)
-for i, j in itertools.product(range(dim), repeat=2):
-    for x, y in itertools.product(range((dN-N)/2, (dN-N)/2+N), repeat=dim):
+for i, j in itertools.product(list(range(dim)), repeat=2):
+    for x, y in itertools.product(list(range((dN-N)/2, (dN-N)/2+N)), repeat=dim):
         q = np.array([freq[x], freq[y]]) # frequency vector
         # Gamma non-zero only for non-zero frequency (associated with the mean)
         if not q.dot(q) == 0:
@@ -103,6 +103,6 @@ state = x.reshape(dim, dN, dN) + E
 flux = dot(Cex, state)
 
 AH_11 = np.sum(flux*state)/dN**dim # homogenised properties
-print 'homogenised coefficient (component 11) =', AH_11
+print('homogenised coefficient (component 11) =', AH_11)
 
-print 'END'
+print('END')

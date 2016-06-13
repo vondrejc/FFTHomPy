@@ -1,13 +1,13 @@
-print """
+print("""
 This example shows how to interactively solve a problem of
 FFT-based homogenization with exact integration, which is described in
 J. Vondrejc, Improved guaranteed computable bounds on homogenized properties
 of periodic media by FourierGalerkin method with exact integration,
 Int. J. Numer. Methods Eng., 2016.
 This publication will be referred as IJNME2016.
-"""
+""")
 
-print """Problem is defined via problem definition with instance 'pb'
+print("""Problem is defined via problem definition with instance 'pb'
 with a following keys:
 
 material : dictionary
@@ -29,7 +29,7 @@ postprocess : list
 
 solver : dictionary
     stores the parameters for linear solver
-"""
+""")
 
 import os
 import sys
@@ -92,10 +92,10 @@ B = Afun(-EN) # right-hand side of linear system
 X, info = linear_solver(solver='CG', Afun=Afun, B=B,
                         x0=x0, par=pb['solver'], callback=None)
 
-print 'homogenised properties (component 11) =', A(X + EN)*(X + EN)
+print('homogenised properties (component 11) =', A(X + EN)*(X + EN))
 
 if __name__ == "__main__":
     ## plotting of local fields ##################
     X.plot(ind=0, N=N)
 
-print 'END'
+print('END')

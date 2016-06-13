@@ -694,7 +694,7 @@ class DFT(FieldFun):
     """
     def __init__(self, inverse=False, N=None, normalized=True, **kwargs):
         self.__dict__.update(kwargs)
-        if 'name' not in kwargs.keys():
+        if 'name' not in list(kwargs.keys()):
             if inverse:
                 self.name = 'iDFT'
             else:
@@ -800,9 +800,9 @@ class LinOper():
     """
     def __init__(self, name='LinOper', dtype=None, X=None, **kwargs):
         self.name = name
-        if 'mat_rev' in kwargs.keys():
+        if 'mat_rev' in list(kwargs.keys()):
             self.mat_rev = kwargs['mat_rev']
-        elif 'mat' in kwargs.keys():
+        elif 'mat' in list(kwargs.keys()):
             self.mat_rev = []
             for summand in kwargs['mat']:
                 no_oper = len(summand)
@@ -879,7 +879,7 @@ class LinOper():
             self.X_reshape = X.val.shape
             self.Y_reshape = Y.val.shape
         else:
-            print 'LinOper : This operand is not implemented!'
+            print('LinOper : This operand is not implemented!')
 
     def matvec(self, x):
         """
@@ -1251,4 +1251,4 @@ def div_norm(j, Y):
 
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

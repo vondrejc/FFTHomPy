@@ -6,9 +6,9 @@ from optparse import OptionParser
 parser = OptionParser()
 _, args = parser.parse_args()
 
-print '###################################################'
-print '## FFT-based homogenization in Python (FFTHomPy) ##'
-print '###################################################'
+print('###################################################')
+print('## FFT-based homogenization in Python (FFTHomPy) ##')
+print('###################################################')
 
 if (len(args) == 1):
     input_file = args[0]
@@ -24,4 +24,4 @@ for conf_problem in conf.problems:
     prob.calculate()
     prob.postprocessing()
 
-print 'The calculation is finished!'
+print('The calculation is finished!')

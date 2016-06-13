@@ -412,4 +412,4 @@ def get_weights_circ(r, Nbar, Y):
     return Wphi
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

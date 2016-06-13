@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from matvec import DFT, VecTri
+from .matvec import DFT, VecTri
 
 
 class Test_matvec(unittest.TestCase):

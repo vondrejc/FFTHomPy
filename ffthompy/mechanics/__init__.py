@@ -74,7 +74,7 @@ class ElasticTensor():
     def get_plane(val, ind=None):
         if ind is None:
             ind = [0, 1]
-        ind_shear = range(3)
+        ind_shear = list(range(3))
         ind_shear.remove(ind[0])
         ind_shear.remove(ind[1])
         ind.append(ind_shear[0]+3)
@@ -141,9 +141,9 @@ class ElasticTensor():
             vec = np.zeros([sym, sym], dtype=mat.dtype)
             for ii in np.arange(dim):
                 for jj in np.arange(dim):
-                    kk = range(dim)
+                    kk = list(range(dim))
                     kk.remove(ii)
-                    ll = range(dim)
+                    ll = list(range(dim))
                     ll.remove(jj)
                     vec[ii, jj] = mat[ii, ii, jj, jj]
                     vec[ii, jj+dim] = 2**.5*mat[ii, ii, ll[0], ll[1]]
@@ -156,7 +156,7 @@ class ElasticTensor():
                 vec[dim] = 2**.5*mat[0, 1]
             elif dim == 3:
                 for ii in np.arange(sym-dim):
-                    ind = range(sym-dim)
+                    ind = list(range(sym-dim))
                     ind.remove(ii)
                     vec[dim+ii] = 2**.5*mat[ind[0], ind[1]]
             else:
@@ -178,9 +178,9 @@ class ElasticTensor():
 
             for ii in np.arange(dim):
                 for jj in np.arange(dim):
-                    kk = range(dim)
+                    kk = list(range(dim))
                     kk.remove(ii)
-                    ll = range(dim)
+                    ll = list(range(dim))
                     ll.remove(jj)
                     mat[ii, ii, jj, jj] = vec[ii, jj]
                     mat[ii, ii, ll[0], ll[1]] = vec[ii, jj+dim] / 2**.5
@@ -198,7 +198,7 @@ class ElasticTensor():
                 mat[1, 0] = vec[-1]/2**0.5
             elif dim == 3:
                 for ii in np.arange(sym-dim):
-                    ind = range(sym-dim)
+                    ind = list(range(sym-dim))
                     ind.remove(ii)
                     mat[ind[0], ind[1]] = vec[dim+ii]/2.**.5
                     mat[ind[1], ind[0]] = vec[dim+ii]/2.**.5
@@ -231,9 +231,9 @@ class ElasticTensor():
             vec = np.zeros([sym, sym], dtype=mat.dtype)
             for ii in np.arange(dim):
                 for jj in np.arange(dim):
-                    kk = range(dim)
+                    kk = list(range(dim))
                     kk.remove(ii)
-                    ll = range(dim)
+                    ll = list(range(dim))
                     ll.remove(jj)
                     vec[ii, jj] = mat[ii, ii, jj, jj]
                     vec[ii, jj+dim] = mat[ii, ii, ll[0], ll[1]]
@@ -256,7 +256,7 @@ class ElasticTensor():
                 vec[dim] = coef*mat[0, 1]
             elif dim == 3:
                 for ii in np.arange(sym-dim):
-                    ind = range(sym-dim)
+                    ind = list(range(sym-dim))
                     ind.remove(ii)
                     vec[dim+ii] = coef*mat[ind[0], ind[1]]
             else:

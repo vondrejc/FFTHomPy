@@ -16,9 +16,9 @@ def scalar(problem):
     ----------
     problem : object
     """
-    print ' '
+    print(' ')
     pb = problem
-    print pb
+    print(pb)
 
     # Fourier projections
     _, hG1N, hG2N = proj.scalar(pb.solve['N'], pb.Y, centered=True,
@@ -39,7 +39,7 @@ def scalar(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print '\nproblem: ' + primaldual
+        print('\nproblem: ' + primaldual)
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -61,7 +61,7 @@ def scalar(problem):
         for iL in np.arange(pb.dim): # iteration over unitary loads
             E = np.zeros(pb.dim)
             E[iL] = 1
-            print 'macroscopic load E = ' + str(E)
+            print('macroscopic load E = ' + str(E))
             EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
             # initial approximation for solvers
             x0 = VecTri(name='x0', N=Nbar, Fourier=False)
@@ -76,13 +76,13 @@ def scalar(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print 'solver : %s' % pb.solver['kind']
+            print('solver : %s' % pb.solver['kind'])
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
-            print cb
+            print(cb)
         tim.measure()
 
         # POSTPROCESSING
@@ -98,9 +98,9 @@ def elasticity(problem):
     ----------
     problem : object
     """
-    print ' '
+    print(' ')
     pb = problem
-    print pb
+    print(pb)
 
     # Fourier projections
     _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb.solve['N'], pb.Y,
@@ -124,7 +124,7 @@ def elasticity(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print '\nproblem: ' + primaldual
+        print('\nproblem: ' + primaldual)
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -147,7 +147,7 @@ def elasticity(problem):
         for iL in np.arange(D): # iteration over unitary loads
             E = np.zeros(D)
             E[iL] = 1
-            print 'macroscopic load E = ' + str(E)
+            print('macroscopic load E = ' + str(E))
             EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
             # initial approximation for solvers
             x0 = VecTri(N=Nbar, d=D, Fourier=False)
@@ -162,13 +162,13 @@ def elasticity(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print 'solver : %s' % pb.solver['kind']
+            print('solver : %s' % pb.solver['kind'])
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
-            print cb
+            print(cb)
         tim.measure()
 
         # POSTPROCESSING
@@ -177,4 +177,4 @@ def elasticity(problem):
 
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

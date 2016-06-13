@@ -8,7 +8,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
     The function post-process the results.
     """
     tim = Timer(name='postprocessing')
-    print '\npostprocessing'
+    print('\npostprocessing')
     matrices = {}
     for pp in pb.postprocess:
         if pp['kind'] in ['GaNi', 'gani']:
@@ -37,7 +37,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             ValueError()
 
         name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
-        print 'calculated: ' + name
+        print('calculated: ' + name)
 
         AH = assembly_matrix(A, solutions)
 

@@ -14,15 +14,15 @@ def run_file(filen=''):
     base_dir = get_base_dir()
     main = base_dir + '/main.py'
     sys.argv = [main, filen]
-    execfile(main)
+    exec(compile(open(main).read(), main, 'exec'))
 
 def print_dict(d):
-    print '-- print dictionary -------------------'
-    for key, vals in d.items():
-        print key + ' =', vals
+    print('-- print dictionary -------------------')
+    for key, vals in list(d.items()):
+        print(key + ' =', vals)
 
 def end():
-    print 'end'
+    print('end')
     sys.exit()
 
 
@@ -39,7 +39,7 @@ class Timer():
     def measure(self, print_time=True):
         self.vals.append([time.clock()-self.ttin[0], time.time()-self.ttin[1]])
         if print_time:
-            print self
+            print(self)
 
     def __repr__(self):
         return 'time (%s): %s' % (self.name, str(self.vals))
@@ -90,7 +90,7 @@ class Struct(object):
         ss += '\n'
 
         if keys is None:
-            keys = self.__dict__.keys()
+            keys = list(self.__dict__.keys())
 
         str_attrs = sorted(Struct.get(self, '_str_attrs', keys))
         printed_keys = []
@@ -122,7 +122,7 @@ class Struct(object):
                     ss += '  %s:\n%s\n' % (key, aux[1:])
 
             elif isinstance(val, dict):
-                sval = self._format_sequence(val.keys(), threshold)
+                sval = self._format_sequence(list(val.keys()), threshold)
                 sval = sval.replace('\n', '\n    ')
                 ss += '  %s:\n    dict with keys: %s\n' % (key, sval)
 
@@ -160,7 +160,7 @@ class Struct(object):
 
     def __add__(self, other):
         new = copy(self)
-        for key, val in other.__dict__.iteritems():
+        for key, val in other.__dict__.items():
             if hasattr(new, key):
                 sval = getattr(self, key)
                 if issubclass(sval.__class__, Struct) and \
@@ -173,11 +173,11 @@ class Struct(object):
         return new
 
     def str_class(self):
-        return self._str(self.__class__.__dict__.keys())
+        return self._str(list(self.__class__.__dict__.keys()))
 
     def str_all(self):
         ss = "%s\n" % self.__class__
-        for key, val in self.__dict__.iteritems():
+        for key, val in self.__dict__.items():
             if issubclass(self.__dict__[key].__class__, Struct):
                 ss += "  %s:\n" % key
                 aux = "\n" + self.__dict__[key].str_all()
@@ -201,10 +201,10 @@ class Struct(object):
         return out
 
     def keys(self):
-        return self.__dict__.keys()
+        return list(self.__dict__.keys())
 
     def values(self):
-        return self.__dict__.values()
+        return list(self.__dict__.values())
 
     def update(self, other, **kwargs):
         if other is None: return
@@ -229,7 +229,7 @@ class Struct(object):
 
     def to_array(self):
         log = deepcopy(self)
-        for key, val in log.__dict__.iteritems():
+        for key, val in log.__dict__.items():
             try:
                 log.__dict__.update({key: np.array(val)})
             except:

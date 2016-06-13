@@ -244,4 +244,4 @@ def elasticity(N, Y, centered=True, NyqNul=True):
     return mean, G1h, G1s, G2h, G2s
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

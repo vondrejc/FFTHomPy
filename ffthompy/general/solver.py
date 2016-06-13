@@ -90,9 +90,9 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         x0 = B
     if par is None:
         par = dict()
-    if 'tol' not in par.keys():
+    if 'tol' not in list(par.keys()):
         par['tol'] = 1e-6
-    if 'maxiter' not in par.keys():
+    if 'maxiter' not in list(par.keys()):
         par['maxiter'] = 1e3
 
     res = dict()
@@ -194,4 +194,4 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
     return xBiCG, res
 
 if __name__ == '__main__':
-    execfile('../main_test.py')
+    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

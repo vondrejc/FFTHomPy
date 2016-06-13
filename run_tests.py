@@ -3,7 +3,7 @@
 import unittest
 import numpy as np
 from ffthompy.problem import Problem, import_file
-import cPickle as Pickle
+import pickle as Pickle
 import os
 
 class Test_main(unittest.TestCase):
@@ -47,7 +47,7 @@ class Test_main(unittest.TestCase):
 
     def test_tutorials(self): # test tutorials
         for filen in self.tutorial_files:
-            execfile(filen, {'__name__': 'test'})
+            exec(compile(open(filen).read(), filen, 'exec'), {'__name__': 'test'})
 
 if __name__ == "__main__":
     from ffthompy.unittest_matvec import Test_matvec
