@@ -13,17 +13,19 @@ class Test_main(unittest.TestCase):
                             'examples/scalar/scalar_3d.py',
                             'examples/scalar/from_file.py',
                             'examples/elasticity/linelas_3d.py']
+        self.tutorial_files = ['tutorials/01_trig_pol.py',
+                               'tutorials/02_homogenisation.py',
+#                                'tutorials/03'
+                               ]
 
     def tearDown(self):
         pass
 
-    def test_main(self):
-        # the main routine for testing
+    def test_examples(self): # testing example files
         for input_file in self.input_files:
-            self.main(input_file)
+            self.examples(input_file)
 
-    def main(self, input_file):
-        # test a particular file
+    def examples(self, input_file): # test a particular example file
         basen = os.path.basename(input_file)
         conf = import_file(input_file)
 
@@ -41,6 +43,10 @@ class Test_main(unittest.TestCase):
                     val = np.linalg.norm(prob.output[kwpd][kw] - res[kwpd][kw])
                     msg = 'Incorrect (%s) in problem (%s)' % (kw, prob.name)
                     self.assertAlmostEqual(0, val, msg=msg, delta=1e-14)
+
+    def test_tutorials(self): # test tutorials
+        for filen in self.tutorial_files:
+            execfile(filen, {'__name__': 'test'})
 
 if __name__ == "__main__":
     from ffthompy.test_matvec import Test_matvec

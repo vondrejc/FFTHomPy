@@ -65,7 +65,6 @@ print "FN = "
 print FN
 print "FiN = "
 print FiN
-
 print "FxN = FN*xN = FN(xN) ="
 FxN = FN*xN # Fourier coefficients of xN
 
@@ -137,6 +136,7 @@ evaluated on a fine grid sizing
 M = 16*N ="""
 M = 16*N
 print M
+
 print "phi_fine = phi.project(M) ="
 phi_fine = phi.project(M)
 print phi_fine
@@ -145,6 +145,7 @@ a calculation of Fourier coefficients, putting zeros to Fourier coefficients
 with high frequencies, and inverse FFT that evaluates the polynomial on
 a fine grid.
 """
+
 
 print """In order to plot this polynomial, we also set a size of a cell
 Y ="""
