@@ -90,7 +90,6 @@ def scalar(problem):
         postprocess(pb, A, mat, solutions, results, primaldual)
 
 
-
 def elasticity(problem):
     """
     Homogenization of linear elasticity.

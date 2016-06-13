@@ -155,7 +155,7 @@ def enlarge(xN, M):
     N = np.array(np.shape(xN))
     if np.allclose(M, N):
         return xN
-    dim = np.size(N)
+    dim = N.size
     ibeg = (M-N+(N % 2))/2
     iend = (M+N+(N % 2))/2
     if dim == 3:

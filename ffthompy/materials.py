@@ -61,7 +61,7 @@ class Material():
         elif order not in [None, 'exact', 0, 1]:
             raise ValueError('Wrong material order (%s)!' % str(order))
 
-        if order in [None, 'exact']:
+        if order in [None, 'exact']: # inclusion-based composite
             shape_funs = self.get_shape_functions(Nbar)
             val = np.zeros(self.conf['vals'][0].shape + shape_funs[0].shape)
             for ii in range(len(self.conf['inclusions'])):
@@ -72,7 +72,7 @@ class Material():
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
             name = 'A_Ga'
 
-        else:
+        else: # grid-based composite
             if P is None and 'P' in self.conf:
                 P = self.conf['P']
             coord = Grid.get_coordinates(P, self.Y)

@@ -295,14 +295,12 @@ class VecTri(FieldFun, Grid):
                 y2 = y.resize(2*M)
                 return VecTri(name=self.name+y.name, val=x2.val*y2.val)
 
-
     def mul_elementwise(self, x):
         if self.Fourier != x.Fourier:
             msg = "Mismatch of Fourier coefficients and nodal values!"
             raise ValueError(msg)
         name = self.name + '*' + x.name
         return VecTri(name=name, val=self.val*x.val, Fourier=self.Fourier)
-
 
     def mul_tensorL(self, val):
         return VecTri(name=self.name,
@@ -510,7 +508,6 @@ class Matrix(FieldFun):
             return Matrix(name=name, val=get_inverse(self.val), Fourier=False)
         else:
             raise NotImplementedError("The inverse for Fourier coefficients!")
-
 
     def mul_tensorR(self, val):
         if val.shape == (self.d, self.d):
@@ -1098,12 +1095,12 @@ def enlargeF(xN, M):
     It enlarges an array of grid values. First, Fourier coefficients are
     calculated and complemented by zeros. Then an inverse DFT provides
     the grid values on required grid.
- 
+
     Parameters
     ----------
     xN : numpy.ndarray of shape = N
         input array that is to be enlarged
- 
+
     Returns
     -------
     xM : numpy.ndarray of shape = M
