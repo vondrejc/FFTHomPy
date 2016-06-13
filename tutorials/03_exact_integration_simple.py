@@ -76,7 +76,7 @@ print('zero', np.linalg.norm(Cex-Cex2))
 # projection operator
 Gamma  = np.zeros([dim, dim, dN, dN], dtype=np.float)
 for i, j in itertools.product(list(range(dim)), repeat=2):
-    for x, y in itertools.product(list(range((dN-N)/2, (dN-N)/2+N)), repeat=dim):
+    for x, y in itertools.product(list(range(int((dN-N)/2), int((dN-N)/2+N))), repeat=dim):
         q = np.array([freq[x], freq[y]]) # frequency vector
         # Gamma non-zero only for non-zero frequency (associated with the mean)
         if not q.dot(q) == 0:
