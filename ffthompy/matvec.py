@@ -363,6 +363,43 @@ class VecTri(FieldFun, Grid):
     def T(self):
         return self
 
+    def plot(self, ind=0, N=None, filen=None, Y=None, ptype='surface'):
+        dim = self.N.size
+        if dim != 2:
+            raise ValueError("The plotting is suited only for dim=2!")
+        if Y is None:
+            Y = np.ones(dim)
+        if N is None:
+            N = self.N
+
+        from mpl_toolkits.mplot3d import axes3d
+        import matplotlib.pyplot as plt
+        from ffthompy.matvec_fun import Grid
+        fig = plt.figure()
+        coord = Grid.get_coordinates(N, Y)
+        if np.all(np.greater(N, self.N)):
+            Z = DFT.ifftnc(enlarge(DFT.fftnc(self.val[ind], self.N), N), N).real
+        elif np.all(np.less(N, self.N)):
+            Z = DFT.ifftnc(decrease(DFT.fftnc(self.val[ind], self.N), N), N).real
+        elif np.allclose(N, self.N):
+            Z = self.val[ind]
+
+        if ptype in ['wireframe']:
+            ax = fig.add_subplot(111, projection='3d')
+            ax.plot_wireframe(coord[0], coord[1], Z)
+        elif ptype in ['surface']:
+            from matplotlib import cm
+            ax = fig.gca(projection='3d')
+            surf = ax.plot_surface(coord[0], coord[1], Z,
+                                   rstride=1, cstride=1, cmap=cm.coolwarm,
+                                   linewidth=0, antialiased=False)
+            fig.colorbar(surf, shrink=0.5, aspect=5)
+
+        if filen is None:
+            plt.show()
+        else:
+            plt.savefig(filen)
+
 
 def get_name(x_name, oper, y_name):
     name = x_name + oper + y_name
