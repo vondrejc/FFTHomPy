@@ -61,7 +61,7 @@ def assembly_matrix(Afun, solutions):
         Nbar = Afun.N
         sol = []
         for ii in np.arange(dim):
-            sol.append(solutions[ii].enlarge(Nbar))
+            sol.append(solutions[ii].project(Nbar))
     else:
         sol = solutions
 

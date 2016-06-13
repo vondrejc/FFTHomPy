@@ -25,5 +25,18 @@ class Test_matvec(unittest.TestCase):
                 val = np.linalg.norm(ur.vec()-FiN.matrix().dot(Fur.vec()))
                 self.assertAlmostEqual(0, val, msg=msg, delta=1e-13)
 
+    def test_projection(self):
+        for dim in [2, 3]:
+            for n in [5]:
+                N = n*np.ones(dim, dtype=np.int)
+                uN = VecTri(name='rand', dim=dim, N=N, valtype='rand')
+                msg='Bug in projection of trigonometric polynomials!'
+                print uN
+                print uN.project(2*N)
+                self.assertAlmostEqual(0, uN==uN.project(2*N).project(N),
+                                       msg=msg, delta=1e-13)
+                self.assertAlmostEqual(0, uN==uN.project(2*N-1).project(N),
+                                       msg=msg, delta=1e-13)
+
 if __name__ == "__main__":
     unittest.main()

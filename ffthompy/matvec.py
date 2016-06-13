@@ -6,7 +6,7 @@ relating operators for homogenization.
 
 import numpy as np
 import numpy.matlib as npmatlib
-from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
+from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse, decrease
 import copy
 import itertools
 
@@ -195,7 +195,6 @@ class VecTri(FieldFun, Grid):
         else:
             raise ValueError()
 
-
     def __add__(self, x):
         if isinstance(x, VecTri):
             name = get_name(self.name, '+', x.name)
@@ -271,21 +270,36 @@ class VecTri(FieldFun, Grid):
             res = False
         return res
 
-    def enlarge(self, M):
+    def project(self, M):
         """
         It enlarges a trigonometric polynomial by adding zeros to the Fourier
         coefficients with high frequencies.
         """
         if np.allclose(self.N, M):
             return self
-        val = np.zeros(np.hstack([self.d, M]), dtype=self.val.dtype)
-        if self.Fourier is False:
-            for m in np.arange(self.d):
-                val[m] = enlargeF(self.val[m], M)
+        elif np.all(np.greater(M, self.N)):
+            val = np.zeros(np.hstack([self.d, M]), dtype=self.val.dtype)
+            if self.Fourier is False:
+                for m in np.arange(self.d):
+                    val[m] = enlargeF(self.val[m], M)
+            else:
+                for m in np.arange(self.d):
+                    val[m] = enlarge(self.val[m], M)
+            return VecTri(name=self.name, val=val, Fourier=self.Fourier)
+        elif np.all(np.less(M, self.N)):
+            val = np.zeros(np.hstack([self.d, M]), dtype=np.complex)
+            if self.Fourier is False:
+                Fval = DFT.fftnc(self.val, self.N)
+            else:
+                Fval = self.val
+            for ii in range(self.d):
+                val[ii] = decrease(Fval[ii], M)
+
+            if self.Fourier is False:
+                val = DFT.ifftnc(val, M).real
+            return VecTri(name=self.name, val=val, Fourier=self.Fourier)
         else:
-            for m in np.arange(self.d):
-                val[m] = enlarge(self.val[m], M)
-        return VecTri(name=self.name, val=val, Fourier=self.Fourier)
+            raise NotImplementedError()
 
     def mulTri(self, y, resize=True):
         if isinstance(y, VecTri):
