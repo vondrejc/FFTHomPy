@@ -90,7 +90,7 @@ class Material():
             val = np.zeros(np.hstack([dim, dim, Nbar]))
             for m in np.arange(dim):
                 for n in np.arange(dim):
-                    hAM0 = DFT.fftnc(vals[m, n], P)
+                    hAM0 = np.prod(P)*DFT.fftnc(vals[m, n], P)
                     if np.allclose(P, Nbar):
                         hAM = hAM0
                     elif np.all(np.greater_equal(P, Nbar)):
@@ -101,12 +101,11 @@ class Material():
                                           2*np.array(factor, dtype=np.int)-1)
                         hAM = decrease(hAM0per, Nbar)
                     else:
-                        raise ValueError()
+                        msg = """This combination of double N (%s) and P (%s) "
+                            implemented.""" % (str(Nbar), str(P))
+                        raise NotImplementedError(msg)
 
-                    pNbar = np.prod(Nbar)
-                    """ if DFT is normalized in accordance with articles there
-                    should be np.prod(M) instead of np.prod(Nbar)"""
-                    val[m, n] = np.real(pNbar*DFT.ifftnc(Wraw*hAM, Nbar))
+                    val[m, n] = np.real(DFT.ifftnc(Wraw*hAM, Nbar))
 
             name = 'A_Ga_o%d_P%d' % (order, P.max())
 
@@ -140,7 +139,7 @@ class Material():
 
             if incl in inclusion_keys['cube']:
                 Wraw = get_weights_con(params[ii], N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
 
             elif incl in inclusion_keys['ball']:
                 r = params[ii]/2
@@ -148,11 +147,11 @@ class Material():
                     Wraw = np.zeros(N2)
                 else:
                     Wraw = get_weights_circ(r, N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
 
             elif incl in inclusion_keys['pyramid']:
                 Wraw = get_weights_lin(params[ii]/2., N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2))*np.prod(N2))
+                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
 
             elif incl == 'all':
                 chars.append(np.ones(N2))

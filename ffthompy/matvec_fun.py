@@ -9,9 +9,10 @@ class Grid():
         ZNl[i][j]\in\set{Z} : -N[i]/2 <= ZNl[i] < N[i]/2
         """
         ZNl = []
-        N = np.atleast_1d(np.array(N))
-        for m in np.arange(np.size(N)):
-            ZNl.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5)))
+        N = np.atleast_1d(np.array(N, dtype=np.int))
+        for m in range(N.size):
+            ZNl.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5),
+                                 dtype=np.int))
         return ZNl
 
     @staticmethod
@@ -35,7 +36,7 @@ class Grid():
         ZNl = Grid.get_ZNl(N)
         coord = np.zeros(np.hstack([d, N]))
         for ii in np.arange(d):
-            x = ZNl[ii]/N[ii]*Y[ii]
+            x = Y[ii]*ZNl[ii]/N[ii]
             Nshape = np.ones(d, dtype=np.int)
             Nshape[ii] = N[ii]
             Nrep = np.copy(N)

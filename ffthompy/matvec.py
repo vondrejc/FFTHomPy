@@ -8,6 +8,7 @@ import numpy as np
 import numpy.matlib as npmatlib
 from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse
 import copy
+import itertools
 
 
 class FieldFun():
@@ -131,7 +132,7 @@ class VecTri(FieldFun, Grid):
             elif valtype is 'ones':
                 self.name = 'ones'
                 self.val = np.ones(self.dN())
-            elif valtype is 'random':
+            elif valtype in ['random', 'rand']:
                 self.name = 'random'
                 self.val = np.random.random(self.dN())
             else:
@@ -343,11 +344,8 @@ class VecTri(FieldFun, Grid):
         """
         Either discrete Fourier- or discrete inverse Fourier transform
         """
-        if self.Fourier:
-            val = DFT.ifftnc(self.val, self.N).real*np.prod(self.N)
-        else:
-            val = DFT.fftnc(self.val, self.N)/np.prod(self.N)
-        return VecTri(name=self.name, val=val, Fourier=not self.Fourier)
+        DFT(inverse=not self.Fourier, N=self.N)
+        return DFT(self)
 
     @property
     def T(self):
@@ -667,17 +665,16 @@ class DFT(FieldFun):
     def __call__(self, x):
         if isinstance(x, VecTri):
             if not self.inverse:
-                name = get_name('F', '*', x.name)
-                return VecTri(name=name,
-                              val=self.fftnc(x.val, self.N)/self.norm_coef,
+                return VecTri(name=get_name('F', '*', x.name),
+                              val=self.fftnc(x.val, self.N),
                               Fourier=not x.Fourier)
             else:
-                name = get_name('Fi', '*', x.name)
-                val = np.real(self.ifftnc(x.val, self.N))*self.norm_coef
-                return VecTri(name=name, val=val, Fourier=not x.Fourier)
+                return VecTri(name=get_name('Fi', '*', x.name),
+                              val=np.real(self.ifftnc(x.val, self.N)),
+                              Fourier=not x.Fourier)
 
         elif (isinstance(x, LinOper) or isinstance(x, Matrix)
-              or isinstance(x, DFT)):
+                or isinstance(x, DFT)):
             return LinOper(mat=[[self, x]])
 
         else:
@@ -696,25 +693,25 @@ class DFT(FieldFun):
         """
         This function returns the object as a matrix of DFT or iDFT resp.
         """
-        prodN = np.prod(self.N)
+        N = self.N
+        prodN = np.prod(N)
         proddN = self.d*prodN
-        DTM = np.zeros(np.hstack([self.N, self.N]), dtype=np.complex128)
-        ZNl = Grid.get_ZNl(self.N)
+        ZNl = Grid.get_ZNl(N)
 
         if self.inverse:
-            DFToper = lambda x: np.prod(self.N)*DFT.ifftnc(x, self.N)
+            DFTcoef = lambda k, l, N: np.exp(2*np.pi*1j*np.sum(k*l/N))
         else:
-            DFToper = lambda x: 1./np.prod(self.N)*DFT.fftnc(x, self.N)
+            DFTcoef = lambda k, l, N: np.exp(-2*np.pi*1j*np.sum(k*l/N))/np.prod(N)
 
-        for nx in ZNl[0]:
-            for ny in ZNl[1]:
-                IM = np.zeros(np.array(self.N), dtype=np.float64)
-                IM[nx, ny] = 1
-                DTM[nx, ny, :, :] = DFToper(IM)
-        DTM = DTM.reshape([self.pN(), self.pN()])
+        DTM = np.zeros([self.pN(), self.pN()], dtype=np.complex128)
+        for ii, kk in enumerate(itertools.product(*tuple(ZNl))):
+            for jj, ll in enumerate(itertools.product(*tuple(ZNl))):
+                DTM[ii, jj] = DFTcoef(np.array(kk, dtype=np.float),
+                                      np.array(ll), N)
+
         DTMd = npmatlib.zeros([proddN, proddN], dtype=np.complex128)
-        for ii in np.arange(self.d):
-            DTMd[prodN*ii:prodN**(ii+1), prodN*ii:prodN**(ii+1)] = DTM
+        for ii in range(self.d):
+            DTMd[prodN*ii:prodN*(ii+1), prodN*ii:prodN*(ii+1)] = DTM
         return DTMd
 
     def __repr__(self):
@@ -732,16 +729,14 @@ class DFT(FieldFun):
         """
         centered n-dimensional FFT algorithm
         """
-        Fx = np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N))
-        return Fx
+        return np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N))/np.prod(N)
 
     @staticmethod
     def ifftnc(Fx, N):
         """
         centered n-dimensional inverse FFT algorithm
         """
-        x = np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(Fx), N))
-        return x
+        return np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(Fx), N))*np.prod(N)
 
 
 class LinOper():
@@ -1116,11 +1111,9 @@ def enlargeF(xN, M):
     M : array like
         number of grid points
     """
-    N = np.array(np.shape(xN))
-    M = np.array(M, dtype=np.int32)
-    FxM = enlarge(DFT.fftnc(xN, N)*np.float(np.prod(M))/np.prod(N), M)
-    xM = np.real(DFT.ifftnc(FxM, M))
-    return xM
+    N = np.array(xN.shape, dtype=np.int)
+    M = np.array(M, dtype=np.int)
+    return np.real(DFT.ifftnc(enlarge(DFT.fftnc(xN, N), M), M))
 
 
 def curl_norm(e, Y):
