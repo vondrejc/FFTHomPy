@@ -112,9 +112,15 @@ class Problem(object):
                 os.makedirs(dirs)
 
             import pickle
-            filew = open(filename, 'w')
-            pickle.dump(self.output, filew)
-            filew.close()
+            py_version = sys.version_info[0]
+            if py_version == 2:
+                with open(filename, 'w') as fop:
+                    pickle.dump(self.output, fop, protocol=2)
+            elif py_version == 3:
+                with open(filename, 'wb') as fop:
+                    pickle.dump(self.output, fop, protocol=3)
+            else:
+                raise NotImplementedError('Python version!')
 
     def __repr__(self):
         ss = "Class : %s\n" % self.__class__.__name__

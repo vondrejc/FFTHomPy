@@ -5,6 +5,7 @@ import numpy as np
 from ffthompy.problem import Problem, import_file
 import pickle as Pickle
 import os
+import sys
 
 class Test_main(unittest.TestCase):
 
@@ -32,9 +33,17 @@ class Test_main(unittest.TestCase):
         for conf_problem in conf.problems:
             prob = Problem(conf_problem, conf)
             prob.calculate()
-            file_res = 'tests/results/%s_%s' % (basen.split('.')[0], prob.name)
-            with open(file_res, 'r') as frs:
-                res = Pickle.load(frs)
+            py_version = sys.version_info[0]
+            file_res = 'test_results/python%d/%s_%s' \
+                % (py_version, basen.split('.')[0], prob.name)
+            if py_version == 2:
+                with open(file_res, 'r') as frs:
+                    res = Pickle.load(frs)
+            elif py_version == 3:
+                with open(file_res, 'rb') as frs:
+                    res = Pickle.load(frs)
+            else:
+                raise NotImplementedError('Python version!')
 
             # check the homogenized matrices
             for primdual in prob.solve['primaldual']:

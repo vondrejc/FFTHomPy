@@ -143,8 +143,8 @@ def elasticity(problem):
 
         Afun = LinOper(name='FiGFA', mat=[[GN, A]])
 
-        D = pb.dim*(pb.dim+1)/2
-        for iL in np.arange(D): # iteration over unitary loads
+        D = int(pb.dim*(pb.dim+1)/2)
+        for iL in range(D): # iteration over unitary loads
             E = np.zeros(D)
             E[iL] = 1
             print('macroscopic load E = ' + str(E))
