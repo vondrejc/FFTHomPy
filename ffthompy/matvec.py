@@ -477,10 +477,10 @@ class Matrix(FieldFun):
             prod = LinOper(name=name, mat=[[self, x]])
         elif isinstance(x, Scalar):
             name = get_name(self.name, '*', 'c')
-            prod = Matrix(name=name, val=self.val*x.val)
+            prod = Matrix(name=name, val=self.val*x.val, Fourier=self.Fourier)
         elif np.size(x) == 1: # Matrix by Constant multiplication
             name = get_name(self.name, '*', 'c')
-            prod = Matrix(name=name, val=self.val*x)
+            prod = Matrix(name=name, val=self.val*x, Fourier=self.Fourier)
         elif np.size(x) == self.pdN():
             val = np.einsum('ij...,j...->i...', self.val,
                             np.reshape(x, self.dN()))
@@ -488,7 +488,8 @@ class Matrix(FieldFun):
         else:
             name = get_name(self.name, '*', 'np.array')
             prod = VecTri(name=name,
-                          val=np.einsum('ij...,j...->i...', self.val, x))
+                          val=np.einsum('ij...,j...->i...', self.val, x),
+                          Fourier=self.Fourier)
         return prod
 
     def __rmul__(self, x):
@@ -521,9 +522,9 @@ class Matrix(FieldFun):
     def __add__(self, x):
         if isinstance(x, Matrix):
             name = get_name(self.name, '+', x.name)
-            summ = Matrix(name=name, val=self.val+x.val)
+            summ = Matrix(name=name, val=self.val+x.val, Fourier=self.Fourier)
         else:
-            summ = Matrix(val=self.val+x)
+            summ = Matrix(val=self.val+x, Fourier=self.Fourier)
         return summ
 
     def __call__(self, x):
