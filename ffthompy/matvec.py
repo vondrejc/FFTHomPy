@@ -622,7 +622,7 @@ class Matrix(FieldFun):
         for ii in np.arange(self.d):
             for jj in np.arange(self.d):
                 submatrix = np.diag(self.val[ii, jj].ravel())
-                matrix[pN*ii:pN**(ii+1), pN*jj:pN**(jj+1)] = submatrix
+                matrix[pN*ii:pN*(ii+1), pN*jj:pN*(jj+1)] = submatrix
         return matrix
 
 
