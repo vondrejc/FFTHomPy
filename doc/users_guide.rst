@@ -8,7 +8,9 @@ There is no special installation required. It can be downloaded from https://git
 
     git clone https://github.com/vondrejc/FFTHomPy.git
 
-However, the software requires numerical libraries:
+The code is implemented in `python <http://www.python.org/>`_ and supports versions 2 and 3.
+
+The software also requires the following numerical libraries:
     * `numpy <http://www.numpy.org/>`_
     * `scipy <http://www.scipy.org/>`_
 
