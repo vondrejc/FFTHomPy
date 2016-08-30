@@ -9,6 +9,7 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
     """
     Wraper for various linear solvers suited for FFT-based homogenization.
     """
+    tim = Timer('Solving linsys by %s' % solver)
     if callback is not None:
         callback(x0)
 
@@ -43,7 +44,8 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
     else:
         msg = "This kind (%s) of linear solver is not implemented" % solver
         raise NotImplementedError(msg)
-
+    tim.measure(print_time=False)
+    info.update({'time': tim.vals})
     return x, info
 
 
@@ -96,7 +98,6 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         par['maxiter'] = 1e3
 
     res = dict()
-    res['time'] = Timer()
     xCG = x0
     Ax = Afun*x0
     R = B - Ax
@@ -120,7 +121,6 @@ def CG(Afun, B, x0=None, par=None, callback=None):
         norm_res_log.append(res['norm_res'])
         if callback is not None:
             callback(xCG)
-    res['time'].measure()
     if res['kit'] == 0:
         res['norm_res'] = 0
     return xCG, res
