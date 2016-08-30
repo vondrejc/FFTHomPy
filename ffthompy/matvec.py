@@ -400,6 +400,12 @@ class VecTri(FieldFun, Grid):
         else:
             plt.savefig(filen)
 
+    def copy(self, name='copied'):
+        return VecTri(name=name, val=self.val)
+
+    def zeros_like(self, name='zeros like '):
+        return VecTri(name=name+self.name, val=np.zeros_like(self.val))
+
 
 def get_name(x_name, oper, y_name):
     name = x_name + oper + y_name
