@@ -216,9 +216,7 @@ class VecTri(FieldFun, Grid):
         return self.__add__(-x)
 
     def norm(self, ntype='L2'):
-        if ntype == 'L2':
-            scal = (self*self)**0.5
-        elif ntype == 2:
+        if ntype in ['L2', 2]:
             scal = (self*self)**0.5
         elif ntype == 1:
             scal = np.sum(np.abs(self.val))
@@ -970,6 +968,8 @@ class MultiVector():
             for n in self._iter:
                 val[n] = val[n]*x
             return MultiVector(val=val)
+        else:
+            raise NotImplementedError()
 
     def __rmul__(self, x):
         return self*x
