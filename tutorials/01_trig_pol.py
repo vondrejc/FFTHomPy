@@ -65,15 +65,19 @@ print("FN = ")
 print(FN)
 print("FiN = ")
 print(FiN)
-print("FxN = FN*xN = FN(xN) =")
+print("""
+The result of DFT is again the same trigonometric polynomial
+with representation in Fourier domain (with Fourier coefficients);
+FxN = FN*xN = FN(xN) =""")
 FxN = FN*xN # Fourier coefficients of xN
+print(FxN)
 
 print("""
 The forward and inverse DFT are mutually inverse operations that can
 be observed by calculation of variable 'xN2':
 xN2 = FiN(FxN) = FiN(FN(xN)) =""")
 xN2 = FiN(FxN) # values of trigonometric polynomial at grid points
-print(FxN)
+print(xN2)
 print("and its comparison with initial trigonometric polynomial 'xN2'")
 print("(xN == xN2) = ")
 print(xN == xN2)
