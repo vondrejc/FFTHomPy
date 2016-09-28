@@ -221,7 +221,7 @@ class VecTri(FieldFun, Grid):
         elif ntype == 1:
             scal = np.sum(np.abs(self.val))
         elif ntype == 'inf':
-            scal = np.sum(np.abs(self.val))
+            scal = np.max(np.abs(self.val))
         elif ntype == 'curl':
             scal = curl_norm(self.val, self.Y)
         elif ntype == 'div':
