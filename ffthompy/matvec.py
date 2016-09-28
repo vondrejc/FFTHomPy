@@ -399,10 +399,15 @@ class VecTri(FieldFun, Grid):
             plt.savefig(filen)
 
     def copy(self, name='copied'):
-        return VecTri(name=name, val=self.val)
+        return VecTri(name=name, val=self.val, Fourier=self.Fourier)
 
     def zeros_like(self, name='zeros like '):
-        return VecTri(name=name+self.name, val=np.zeros_like(self.val))
+        return VecTri(name=name+self.name, val=np.zeros_like(self.val),
+                      Fourier=self.Fourier)
+
+    def empty_like(self, name='zeros like '):
+        return VecTri(name=name+self.name, val=np.empty_like(self.val),
+                      Fourier=self.Fourier)
 
 
 def get_name(x_name, oper, y_name):
