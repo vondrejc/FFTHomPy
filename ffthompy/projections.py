@@ -2,6 +2,8 @@ import numpy as np
 import scipy as sp
 from ffthompy.matvec_fun import Grid, get_Nodd
 from ffthompy.matvec import Matrix
+from ffthompy.tensors import Tensor
+import itertools
 
 
 def scalar(N, Y, centered=True, NyqNul=True):
@@ -242,6 +244,46 @@ def elasticity(N, Y, centered=True, NyqNul=True):
         G2h = G2h.enlarge(N)
         G2s = G2s.enlarge(N)
     return mean, G1h, G1s, G2h, G2s
+
+
+def elasticity2(N, Y, centered=True, NyqNul=True):
+    N = np.array(N, dtype=np.int)
+    dim = N.size
+    assert(dim==3)
+    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N]))
+    freq = Grid.get_xil(N, Y)
+    delta  = lambda i,j: np.float(i==j)
+
+    for i, j, k, l in itertools.product(range(dim), repeat=4):
+        for x, y, z in np.ndindex(*N):
+            q = np.array([freq[0][x], freq[1][y], freq[2][z]])
+            if not q.dot(q) == 0:
+                Ghat[i,j,k,l,x,y,z] = -q[i]*q[j]*q[k]*q[l]/(q.dot(q))**2 + \
+                    .5*(delta(i,k)*q[j]*q[l]+delta(i,l)*q[j]*q[k] +\
+                        delta(j,k)*q[i]*q[l]+delta(j,l)*q[i]*q[k] ) / (q.dot(q))
+
+    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
+                         multype=42)
+    return Ghat_tensor
+
+
+def elasticity_large_deformation(N, Y, centered=True, NyqNul=True):
+    N = np.array(N, dtype=np.int)
+    dim = N.size
+    assert(dim==3)
+    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N]))
+    freq = Grid.get_xil(N, Y)
+    delta  = lambda i,j: np.float(i==j)
+
+    for i, j, k, l in itertools.product(range(dim), repeat=4):
+        for x, y, z in np.ndindex(*N):
+            q = np.array([freq[0][x], freq[1][y], freq[2][z]])
+            if not q.dot(q) == 0:
+                Ghat[i,j,k,l,x,y,z] = -q[i]*q[j]*q[k]*q[l]/(q.dot(q))**2 + \
+                    delta(i,k)*q[j]*q[l] / (q.dot(q))
+    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
+                         multype=42)
+    return Ghat_tensor
 
 if __name__ == '__main__':
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))
