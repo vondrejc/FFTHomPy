@@ -71,16 +71,16 @@ Cex2 = np.einsum('ij...,...->ij...', 11*np.eye(dim),   char_square)
 Cex2 += np.einsum('ij...,...->ij...', 1*np.eye(dim), 1.-char_square)
 
 ## checking that the Cex2 is the same
-print('zero', np.linalg.norm(Cex-Cex2))
+print('zero check:', np.linalg.norm(Cex-Cex2))
 
 # projection operator
 Gamma  = np.zeros([dim, dim, dN, dN], dtype=np.float)
-for i, j in itertools.product(list(range(dim)), repeat=2):
-    for x, y in itertools.product(list(range(int((dN-N)/2), int((dN-N)/2+N))), repeat=dim):
+for i, j in itertools.product(range(dim), repeat=2):
+    for x, y in itertools.product(range(int((dN-N)/2), int((dN-N)/2+N)), repeat=dim):
         q = np.array([freq[x], freq[y]]) # frequency vector
         # Gamma non-zero only for non-zero frequency (associated with the mean)
         if not q.dot(q) == 0:
-            Gamma[i,j,x,y] = -q[i]*q[j]/(q.dot(q))
+            Gamma[i,j,x,y] = q[i]*q[j]/(q.dot(q))
 
 # - convert to operators
 G  = lambda X: np.real(ifft(dot(Gamma, fft(X, dN)), dN)).reshape(-1)
