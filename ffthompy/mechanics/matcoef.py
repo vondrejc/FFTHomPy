@@ -60,25 +60,54 @@ class ElasticTensor():
 
         if (stiffness and plane == 'strain') or \
                 (not stiffness and plane == 'stress'):
-            self.mandel = self.get_plane(self.mandel)
-            self.voight = self.get_plane(self.voight)
+            self.mandel = self.get_plane_in_engineering(self.mandel)
+            self.voight = self.get_plane_in_engineering(self.voight)
         elif (not stiffness and plane == 'strain') or \
                 (stiffness and plane == 'stress'):
             inv = np.linalg.inv
-            self.mandel = inv(self.get_plane(inv(self.mandel)))
-            self.voight = inv(self.get_plane(inv(self.voight)))
+            self.mandel = inv(self.get_plane_in_engineering(inv(self.mandel)))
+            self.voight = inv(self.get_plane_in_engineering(inv(self.voight)))
         else:
             pass
 
     @staticmethod
-    def get_plane(val, ind=None):
+    def get_plane_in_engineering(val, ind=None):
+        """
+        get plane (strain or stress) of matrix in Mandel or Voigth notation
+
+        Parameters:
+        val : numpy.ndarray of shape (6,6)
+            matrix to transfer to plane
+        ind : list or tuple of len 2
+            indicies of plane axis
+
+        Returns:
+        mat : numpy.ndarray of shape (3,3)
+            plane matrix
+        """
         if ind is None:
             ind = [0, 1]
+        else:
+            ind = list(ind)
         ind_shear = list(range(3))
         ind_shear.remove(ind[0])
         ind_shear.remove(ind[1])
         ind.append(ind_shear[0]+3)
         mat = val[ind][:, ind]
+        return mat
+
+    @staticmethod
+    def get_plane_in_tensor(val, ind=None):
+        assert(isinstance(val, np.ndarray))
+        if ind is None:
+            ind = [0, 1]
+
+        if val.shape[:4]==4*(3,): # dimension = 4
+            mat = val[ind][:,ind][:,:,ind][:,:,:,ind]
+        elif val.shape[:2]==2*(3,): # dimension = 2
+            mat = val[ind][:, ind]
+        else:
+            raise ValueError('Shape {0} of input!'.format(val.shape))
         return mat
 
     def __repr__(self):
@@ -120,7 +149,7 @@ class ElasticTensor():
         return idsym, volumetric, deviatoric
 
     @staticmethod
-    def create_mandel(mat, grid=False):
+    def create_mandel(mat, ndim=None):
         """
         It transfer symmetric four-order tensor (or matrix) to
         second order tensor (or vector) using Mandel's notation.
@@ -129,8 +158,8 @@ class ElasticTensor():
         ----------
         mat : numpy.array of shape = (d, d, d, d) or (d, d) for dimension d
             fourth-order tensor of elastic parameters
-        grid : boolean
-            if true, the input array mat is evaluated at grid points
+        ndim : 2 or 4
+            dimensionality of input
 
         Returns
         -------
@@ -139,17 +168,14 @@ class ElasticTensor():
         """
         dim = mat.shape[0]
         sym = dim*(dim+1)/2
-        if grid:
-            grid_shape = mat.shape[-dim:]
-            grid_dim = dim
-        else:
-            grid_shape = ()
-            grid_dim = 0
+        if ndim is None:
+            ndim = mat.ndim
+        grid_shape = mat.shape[ndim:]
 
-        if mat.ndim - grid_dim == 4:
+        if ndim == 4:
             res = np.zeros((sym, sym) + grid_shape, dtype=mat.dtype)
-            for ii in np.arange(dim):
-                for jj in np.arange(dim):
+            if dim == 3:
+                for ii, jj in np.ndindex(dim, dim):
                     kk = list(range(dim))
                     kk.remove(ii)
                     ll = list(range(dim))
@@ -158,8 +184,15 @@ class ElasticTensor():
                     res[ii, jj+dim] = 2**.5*mat[ii, ii, ll[0], ll[1]]
                     res[jj+dim, ii] = res[ii, jj+dim]
                     res[ii+dim, jj+dim] = 2*mat[kk[0], kk[1], ll[0], ll[1]]
+            if dim==2:
+                res[2,2] = 2*mat[0,1,0,1]
+                for ii in range(dim):
+                    res[ii,2] = 2**.5*mat[ii,ii,0,1]
+                    res[2,ii] = 2**.5*mat[0,1,ii,ii]
+                    for jj in range(dim):
+                        res[ii, jj] = mat[ii, ii, jj, jj]
 
-        elif mat.ndim - grid_dim == 2:
+        elif ndim == 2:
             res = np.zeros((sym,)  + grid_shape, dtype=mat.dtype)
             res[:dim] = np.diag(mat)
             if dim == 2:
@@ -174,7 +207,8 @@ class ElasticTensor():
         return res
 
     @staticmethod
-    def dispose_mandel(vec):
+    def dispose_mandel(vec, ndim=2):
+        assert(isinstance(vec, np.ndarray))
         vec = vec.squeeze()
         sym = vec.shape[0]
 
@@ -185,28 +219,46 @@ class ElasticTensor():
             return int((-1.+(1+8*sym)**.5)/2)
 
         dim = dimfun(sym)
+        if ndim is None:
+            ndim = vec.ndim
+        grid_shape = vec.shape[ndim:]
 
-        if vec.ndim == 2: # matrix
-            if np.allclose(vec.shape[0], vec.shape[1]):
-                raise ValueError()
+        if ndim == 2: # matrix -> tensor4
+            assert(vec.shape[0] == vec.shape[1])
 
-            mat = np.zeros(dim*np.ones(2*vec.ndim))
+            mat = np.zeros(4*(dim,)+grid_shape, dtype=vec.dtype)
 
-            for ii in np.arange(dim):
-                for jj in np.arange(dim):
-                    kk = list(range(dim))
-                    kk.remove(ii)
-                    ll = list(range(dim))
-                    ll.remove(jj)
-                    mat[ii, ii, jj, jj] = vec[ii, jj]
-                    mat[ii, ii, ll[0], ll[1]] = vec[ii, jj+dim] / 2**.5
-                    mat[ll[0], ll[1], ii, ii] = mat[ii, ii, ll[0], ll[1]]
-                    mat[kk[0], kk[1], ll[0], ll[1]] = vec[ii+dim, jj+dim] / 2.
-                    mat[kk[1], kk[0], ll[0], ll[1]] = vec[ii+dim, jj+dim] / 2.
-                    mat[kk[0], kk[1], ll[1], ll[0]] = vec[ii+dim, jj+dim] / 2.
-                    mat[kk[1], kk[0], ll[1], ll[0]] = vec[ii+dim, jj+dim] / 2.
+            if dim==3:
+                for ii in np.arange(dim):
+                    for jj in np.arange(dim):
+                        kk = list(range(dim))
+                        kk.remove(ii)
+                        ll = list(range(dim))
+                        ll.remove(jj)
+                        mat[ii, ii, jj, jj] = vec[ii, jj]
+                        mat[ii, ii, ll[0], ll[1]] = vec[ii, jj+dim] / 2**.5
+                        mat[ii, ii, ll[1], ll[0]] = vec[ii, jj+dim] / 2**.5
+                        mat[ll[0], ll[1], ii, ii] = mat[ii, ii, ll[0], ll[1]]
+                        mat[ll[1], ll[0], ii, ii] = mat[ii, ii, ll[0], ll[1]]
+                        mat[kk[0], kk[1], ll[0], ll[1]] = vec[ii+dim, jj+dim] / 2.
+                        mat[kk[1], kk[0], ll[0], ll[1]] = vec[ii+dim, jj+dim] / 2.
+                        mat[kk[0], kk[1], ll[1], ll[0]] = vec[ii+dim, jj+dim] / 2.
+                        mat[kk[1], kk[0], ll[1], ll[0]] = vec[ii+dim, jj+dim] / 2.
+            elif dim==2:
+                mat[0,1,0,1] = vec[2,2]/2.
+                mat[0,1,1,0] = vec[2,2]/2.
+                mat[1,0,0,1] = vec[2,2]/2.
+                mat[1,0,1,0] = vec[2,2]/2.
+                for ii in range(dim):
+                    mat[ii,ii,0,1] = vec[ii,2]/2**.5
+                    mat[ii,ii,1,0] = vec[ii,2]/2**.5
+                    mat[0,1,ii,ii] = vec[2,ii]/2**.5
+                    mat[1,0,ii,ii] = vec[2,ii]/2**.5
+                    for jj in range(dim):
+                        mat[ii,ii,jj,jj] = vec[ii,jj]
+                        mat[ii,ii,jj,jj] = vec[ii,jj]
 
-        elif vec.ndim == 1: # vector
+        elif ndim == 1: # vector -> matrix
             mat = np.diag(vec[:dim])
 
             if dim == 2:

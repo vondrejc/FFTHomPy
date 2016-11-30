@@ -60,9 +60,12 @@ class Test_main(unittest.TestCase):
 
 if __name__ == "__main__":
     from ffthompy.unittest_matvec import Test_matvec
+    from ffthompy.mechanics.unittest_matcoef import Test_matcoef
+
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_main))
     suite.addTest(unittest.makeSuite(Test_matvec))
+    suite.addTest(unittest.makeSuite(Test_matcoef))
 
     runner=unittest.TextTestRunner()
     runner.run(suite)

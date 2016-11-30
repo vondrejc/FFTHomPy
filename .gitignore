@@ -17,4 +17,5 @@ output/*
 *~
 _*
 !__*
+!unittest*
 *.py[cod]
