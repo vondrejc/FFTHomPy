@@ -29,6 +29,7 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
                             tol=par['tol'],
                             maxiter=par['maxiter'],
                             xtype=None, M=None, callback=callback)
+            info = {'info': info}
         elif solver == 'scipy_bicg':
             Afun.define_operand(B)
             ATfun.define_operand(B)
