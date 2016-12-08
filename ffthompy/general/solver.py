@@ -97,7 +97,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     if 'tol' not in list(par.keys()):
         par['tol'] = 1e-6
     if 'maxiter' not in list(par.keys()):
-        par['maxiter'] = 1e3
+        par['maxiter'] = int(1e3)
 
     res = dict()
     xCG = x0
