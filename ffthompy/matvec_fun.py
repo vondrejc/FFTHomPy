@@ -27,6 +27,10 @@ class Grid():
         return xil
 
     @staticmethod
+    def get_freq(N, Y):
+        return Grid.get_xil(N, Y)
+
+    @staticmethod
     def get_coordinates(N, Y):
         """
         It produces coordinates of the set of nodal points
