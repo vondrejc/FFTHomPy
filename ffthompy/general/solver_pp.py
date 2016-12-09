@@ -53,8 +53,9 @@ class CallBack_GA():
             eN = X + self.E2N
 
         self.res_norm.append(res.norm())
-        GeN = self.GN*eN + self.E2N
-        self.bound.append(self.Aex*GeN*GeN)
+        GeN = self.GN*eN
+        GeNE = GeN + self.E2N
+        self.bound.append(self.Aex*GeNE*GeNE)
         self.in_subspace_norm.append((GeN-eN).norm())
         return
 
