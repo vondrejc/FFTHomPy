@@ -185,9 +185,20 @@ class Tensor(TensorFuns):
             for di in np.ndindex(*self.shape):
                 mean[di] = np.real(self.val[di][ind])
         else:
-            for di in np.ndindex(*tuple(self.shape)):
+            for di in np.ndindex(*self.shape):
                 mean[di] = np.mean(self.val[di])
         return mean
+
+    def set_mean(self, mean):
+        assert(self.shape==mean.shape)
+
+        if self.Fourier:
+            ind = self.mean_ind()
+            for di in np.ndindex(*self.shape):
+                self.val[di+ind] = mean[di]
+        else:
+            for di in np.ndindex(*self.shape):
+                self.val[di] += mean[di]
 
     def __eq__(self, x, full=True, tol=1e-10):
         """
@@ -195,8 +206,8 @@ class Tensor(TensorFuns):
         """
         _bool = False
         res = None
-        if isinstance(x, Tensor) and self.val.shape==x.val.shape:
-            res = np.linalg.norm(self.val-x.val)
+        if isinstance(x, Tensor) and self.val.squeeze().shape==x.val.squeeze().shape:
+            res = np.linalg.norm(self.val.squeeze()-x.val.squeeze())
             if res<tol:
                 _bool = True
         if full:
