@@ -1,3 +1,7 @@
+"""
+This module contains operators working with Tensor from ffthompy.tensors
+"""
+
 import numpy as np
 import numpy.matlib as npmatlib
 from ffthompy.tensors import Tensor, TensorFuns, get_name
@@ -222,3 +226,96 @@ class Operator():
             mat.append(summand)
         name = '(%s)^T' % self.name
         return Operator(name=name, mat=mat)
+
+def grad(X):
+    if X.shape == (1,):
+        shape = (X.dim,)
+    else:
+        shape = X.shape+(X.dim,)
+    gX = Tensor(name='grad({0})'.format(X.name), shape=shape, N=X.N, Fourier=True)
+    if X.Fourier:
+        FX = X
+    else:
+        F = DFT(N=X.N)
+        FX = F(X)
+
+    dim = len(X.N)
+    freq = Grid.get_freq(X.N, X.Y)
+    strfreq = 'xyz'
+    coef = -2*np.pi*1j
+    val = np.empty((X.dim,)+X.shape+X.N, dtype=np.complex)
+
+    for ii in range(X.dim):
+        mul_str = '{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
+        val[ii] = np.einsum(mul_str, coef*freq[ii], FX.val, dtype=np.complex)
+
+    if X.shape == (1,):
+        gX.val = np.squeeze(val)
+    else:
+        gX.val = np.moveaxis(val, 0, X.order)
+
+    if X.Fourier:
+        return gX
+    else:
+        iF = DFT(N=X.N, inverse=True)
+        return iF(gX)
+
+def symgrad(X):
+    gX = grad(X)
+    return 0.5 * (gX + gX.transpose())
+
+def potential_scalar(x, freq, mean_ind):
+    # get potential for scalar-valued function in Fourier space
+    dim = x.shape[0]
+    assert(dim==len(x.shape)-1)
+    strfreq='xyz'
+    coef = -2*np.pi*1j
+    val = np.empty(x.shape[1:], dtype=np.complex)
+    for d in range(0,dim):
+        factor = np.zeros_like(freq[d], dtype=np.complex)
+        inds = np.setdiff1d(np.arange(factor.size, dtype=np.int), mean_ind[d])
+        factor[inds] = 1./(coef*freq[d][inds])
+        val[mean_ind[:d]] = np.einsum('x,{0}->{0}'.format(strfreq[:dim-d]),
+                                      factor, x[d][mean_ind[:d]], dtype=np.complex)
+    return val
+
+def potential(X, small_strain=False):
+    if X.Fourier:
+        FX = X
+    else:
+        F = DFT(N=X.N)
+        FX = F(X)
+
+    freq = Grid.get_freq(X.N, X.Y)
+    if X.order == 1:
+        assert(X.dim == X.shape[0])
+        iX = Tensor(name='potential({0})'.format(X.name), shape=(1,), N=X.N, Fourier=True)
+        iX.val[0] = potential_scalar(FX.val, freq=freq, mean_ind=FX.mean_ind())
+
+    elif X.order == 2:
+        assert(X.dim == X.shape[0])
+        assert(X.dim == X.shape[1])
+        iX = Tensor(name='potential({0})'.format(X.name),
+                    shape=(X.dim,), N=X.N, Fourier=True)
+        if not small_strain:
+            for ii in range(X.dim):
+                iX.val[ii] = potential_scalar(FX.val[ii], freq=freq, mean_ind=FX.mean_ind())
+
+        else:
+            assert((X-X.transpose()).norm()<1e-14) # symmetricity
+            omeg = FX.zeros_like() # non-symmetric part of the gradient
+            gomeg = Tensor(name='potential({0})'.format(X.name),
+                           shape=FX.shape+(X.dim,), N=X.N, Fourier=True)
+            grad_ep = grad(FX) # gradient of strain
+            gomeg.val = np.einsum('ikj...->ijk...',grad_ep.val) - np.einsum('jki...->ijk...',grad_ep.val)
+            for ij in itertools.product(range(X.dim), repeat=2):
+                omeg.val[ij] = potential_scalar(gomeg.val[ij], freq=freq, mean_ind=FX.mean_ind())
+
+            gradu = FX + omeg
+            iX = potential(gradu, small_strain=False)
+
+    if X.Fourier:
+        return iX
+    else:
+        iF = DFT(N=X.N, inverse=True)
+        return iF(iX)
