@@ -41,11 +41,11 @@ class DFT(TensorFuns):
     def __call__(self, x):
         if isinstance(x, Tensor):
             if not self.inverse:
-                return Tensor(name=get_name('F', '*', x.name),
+                return Tensor(name='F({0})'.format(x.name),
                               val=self.fftnc(x.val, self.N),
                               order=x.order, Fourier=not x.Fourier)
             else:
-                return Tensor(name=get_name('Fi', '*', x.name),
+                return Tensor(name='iF({0})'.format(x.name),
                               val=np.real(self.ifftnc(x.val, self.N)),
                               order=x.order, Fourier=not x.Fourier)
 
@@ -115,13 +115,13 @@ class Operator():
             it provides the information about size and shape of operand
         dtype : data type of operand, usually numpy.float64
     """
-    def __init__(self, name='LinOper', dtype=None, X=None, **kwargs):
+    def __init__(self, name='LinOper', mat_rev=None, mat=None, X=None):
         self.name = name
-        if 'mat_rev' in list(kwargs.keys()):
-            self.mat_rev = kwargs['mat_rev']
-        elif 'mat' in list(kwargs.keys()):
+        if mat_rev is not None:
+            self.mat_rev = mat_rev
+        elif mat is not None:
             self.mat_rev = []
-            for summand in kwargs['mat']:
+            for summand in mat:
                 no_oper = len(summand)
                 summand_rev = []
                 for m in np.arange(no_oper):
@@ -131,11 +131,6 @@ class Operator():
 
         if X is not None:
             self.define_operand(X)
-
-        if dtype is not None:
-            self.dtype = dtype
-        else:
-            self.dtype = np.float64
 
     def __call__(self, x):
         res = 0.
@@ -232,7 +227,8 @@ def grad(X):
         shape = (X.dim,)
     else:
         shape = X.shape+(X.dim,)
-    gX = Tensor(name='grad({0})'.format(X.name), shape=shape, N=X.N, Fourier=True)
+    name='grad({0})'.format(X.name)
+    gX = Tensor(shape=shape, N=X.N, Fourier=True)
     if X.Fourier:
         FX = X
     else:
@@ -254,11 +250,11 @@ def grad(X):
     else:
         gX.val = np.moveaxis(val, 0, X.order)
 
-    if X.Fourier:
-        return gX
-    else:
+    if not X.Fourier:
         iF = DFT(N=X.N, inverse=True)
-        return iF(gX)
+        gX = iF(gX)
+    gX.name='grad({0})'.format(X.name)
+    return gX
 
 def symgrad(X):
     gX = grad(X)
@@ -319,3 +315,9 @@ def potential(X, small_strain=False):
     else:
         iF = DFT(N=X.N, inverse=True)
         return iF(iX)
+
+def matrix2tensor(M):
+    return Tensor(name=M.name, val=M.val, order=2, Fourier=M.Fourier, multype=21)
+
+def vector2tensor(V):
+    return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)

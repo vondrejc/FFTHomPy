@@ -88,6 +88,10 @@ class Tensor(TensorFuns):
         if multype in ['scal', 'scalar']:
             self.mul_str = 'scalar'
             self.__mul__ = self.scalar_product
+        elif multype in [21, '21']:
+            self.mul_str = 'ij...,j...->i...'
+            self.__mul__ = self._mul
+            self.__call__ = self._mul
         elif multype in [42, '42']:
             self.mul_str = 'ijkl...,kl...->ij...'
             self.__mul__ = self._mul

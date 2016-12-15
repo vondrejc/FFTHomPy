@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 from ffthompy.tensors import Tensor
-from ffthompy.operators import DFT, grad, symgrad, potential
-
+from ffthompy.operators import DFT, grad, symgrad, potential, Operator, matrix2tensor
+from ffthompy.projections import scalar, elasticity_small_strain, elasticity_large_deformation
 
 class Test_operators(unittest.TestCase):
 
@@ -13,7 +13,7 @@ class Test_operators(unittest.TestCase):
         pass
 
     def test_operators(self):
-        print('Checking compatiblity...')
+        print('Checking operators...')
         for dim in [2, 3]:
             N = 5*np.ones(dim, dtype=np.int)
             F = DFT(N=N, inverse=False)
@@ -62,6 +62,39 @@ class Test_operators(unittest.TestCase):
                                    msg='vectorial - sym, Fourier=False')
 
         print('...done')
+
+    def test_compatibility(self):
+        print('Checking compatibility...')
+        for dim in [3]:
+            N = 5*np.ones(dim, dtype=np.int)
+            F = DFT(inverse=False, N=N)
+            iF = DFT(inverse=True, N=N)
+
+            # scalar problem
+            G0l, G1l, G2l = scalar(N, Y=np.ones(dim), centered=True, NyqNul=True)
+            P1 = Operator(name='P1', mat=[[iF, matrix2tensor(G1l), F]])
+            P2 = Operator(name='P2', mat=[[iF, matrix2tensor(G2l), F]])
+            u = Tensor(name='u', shape=(1,), N=N, Fourier=False).randomize()
+            grad_u = grad(u)
+            self.assertAlmostEqual(0, (P1(grad_u)-grad_u).norm(), delta=1e-13)
+            self.assertAlmostEqual(0, P2(grad_u).norm(), delta=1e-13)
+
+            # vectorial problem
+            hG = elasticity_large_deformation(N=N, Y=np.ones(dim), centered=True)
+            P = Operator(name='P', mat=[[iF, hG, F]])
+            u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
+            grad_u = grad(u)
+            val = (P(grad_u)-grad_u).norm()
+            self.assertAlmostEqual(0, val, delta=1e-13)
+
+            # vectorial problem - symetric gradient
+            hG = elasticity_small_strain(N=N, Y=np.ones(dim), centered=True)
+            P = Operator(name='P', mat=[[iF, hG, F]])
+            u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
+            grad_u = symgrad(u)
+            val = (P(grad_u)-grad_u).norm()
+            self.assertAlmostEqual(0, val, delta=1e-13)
+
 
 
 if __name__ == "__main__":

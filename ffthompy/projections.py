@@ -246,7 +246,7 @@ def elasticity(N, Y, centered=True, NyqNul=True):
     return mean, G1h, G1s, G2h, G2s
 
 
-def elasticity2(N, Y, centered=True, NyqNul=True):
+def elasticity_small_strain(N, Y, centered=True, NyqNul=True):
     N = np.array(N, dtype=np.int)
     dim = N.size
     assert(dim==3)
@@ -279,8 +279,8 @@ def elasticity_large_deformation(N, Y, centered=True, NyqNul=True):
         for x, y, z in np.ndindex(*N):
             q = np.array([freq[0][x], freq[1][y], freq[2][z]])
             if not q.dot(q) == 0:
-                Ghat[i,j,k,l,x,y,z] = -q[i]*q[j]*q[k]*q[l]/(q.dot(q))**2 + \
-                    delta(i,k)*q[j]*q[l] / (q.dot(q))
+                Ghat[i,j,k,l,x,y,z] = delta(i,k)*q[j]*q[l] / (q.dot(q))
+
     Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
                          multype=42)
     return Ghat_tensor
