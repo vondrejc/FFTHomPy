@@ -189,7 +189,7 @@ class Tensor(TensorFuns):
                 mean[di] = np.mean(self.val[di])
         return mean
 
-    def set_mean(self, mean):
+    def add_mean(self, mean):
         assert(self.shape==mean.shape)
 
         if self.Fourier:
@@ -199,6 +199,20 @@ class Tensor(TensorFuns):
         else:
             for di in np.ndindex(*self.shape):
                 self.val[di] += mean[di]
+        return self
+
+    def set_mean(self, mean):
+        assert(self.shape==mean.shape)
+        self.add_mean(-self.mean()) # set mean to zero
+
+        if self.Fourier:
+            ind = self.mean_ind()
+            for di in np.ndindex(*self.shape):
+                self.val[di+ind] = mean[di]
+        else:
+            for di in np.ndindex(*self.shape):
+                self.val[di] += mean[di]
+        return self
 
     def __eq__(self, x, full=True, tol=1e-10):
         """
