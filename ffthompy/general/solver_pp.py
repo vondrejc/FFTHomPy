@@ -36,7 +36,7 @@ class CallBack_GA():
         self.iter = -1
         self.res_norm = []
         self.bound = []
-        self.in_subspace_norm = []
+        self.nonconformity = []
 
     def __call__(self, x):
         self.iter += 1
@@ -53,18 +53,19 @@ class CallBack_GA():
             eN = X + self.E2N
 
         self.res_norm.append(res.norm())
-        GeN = self.GN*eN
-        GeNE = GeN + self.E2N
-        self.bound.append(self.Aex*GeNE*GeNE)
-        self.in_subspace_norm.append((GeN-eN).norm())
+        GeN = self.GN*eN + self.E2N
+        GeN_E = GeN + self.E2N
+        self.bound.append(self.Aex*GeN_E*GeN_E)
+        self.nonconformity.append((GeN-eN).norm())
         return
 
     def __repr__(self):
         try:
             ss = ''
-            ss += '    iterations : %d\n' % self.iter
-            ss += '    res_norm : %g\n' % self.res_norm[-1]
-            ss += '    bound : %g' % self.bound[-1]
+            ss += '    iterations    : %d\n' % self.iter
+            ss += '    res_norm      : %g\n' % self.res_norm[-1]
+            ss += '    bound         : %g\n' % self.bound[-1]
+            ss += '    nonconformity : %g' % self.bound[-1]
         except:
             ss = 'no output'
         return ss
