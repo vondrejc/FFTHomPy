@@ -135,7 +135,7 @@ class Tensor(TensorFuns):
         return scal
 
     def _mul(self, x):
-        return self.einsum(self.mul_str, x)
+        return self.einsum(self.mul_str, self, x)
 
     def __rmul__(self, x):
         if isinstance(x, Scalar):
@@ -149,12 +149,14 @@ class Tensor(TensorFuns):
         else:
             raise ValueError()
 
-    def einsum(self, str_operator, x):
-        assert(self.Fourier==x.Fourier)
-        return Tensor(name='{0}({1})'.format(self.name, x.name),
-                      val=np.einsum(str_operator, self.val, x.val),
-                      order=2, # TODO: change,
-                      Fourier=self.Fourier)
+    @staticmethod
+    def einsum(str_operator, x, y):
+        assert(x.Fourier==y.Fourier)
+        assert(x.N==y.N)
+        val = np.einsum(str_operator, x.val, y.val)
+        order = len(val.shape)-len(x.N)
+        return Tensor(name='{0}({1})'.format(x.name, y.name),
+                      val=val, order=order, Fourier=x.Fourier)
 
     @staticmethod
     def norm_fun(obj, ntype):
