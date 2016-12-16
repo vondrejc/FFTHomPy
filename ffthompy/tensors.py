@@ -4,12 +4,8 @@ of trigonometric polynomials and relating operators.
 """
 
 import numpy as np
-#import numpy.matlib as npmatlib
 from ffthompy.matvec import get_name
-from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse, decrease
-#import copy
-#import itertools
-from matvec import Scalar #, FieldFun
+from matvec import Scalar
 from ffthompy.mechanics.matcoef import ElasticTensor
 
 
