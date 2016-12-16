@@ -297,13 +297,16 @@ class Tensor(TensorFuns):
         elif self.order == 4:
             if mandel:
                 matrixfun = lambda x: ElasticTensor.create_mandel(x)
+                d = self.shape[2]
+                eigdim = d*(d+1)/2
             else:
                 matshape = (self.shape[0]*self.shape[1], self.shape[2]*self.shape[3])
                 matrixfun = lambda x: np.reshape(val[ind], matshape)
+                eigdim = self.shape[2]*self.shape[3]
 
-            eigs = np.zeros(self.N + (self.shape[2]*self.shape[3],))
+            eigs = np.zeros(self.N + (eigdim,))
             val = np.copy(self.val)
-            for ii in range(2):
+            for ii in range(self.dim):
                 val = np.rollaxis(val, self.val.ndim-self.dim+ii, ii)
 
             for ind in np.ndindex(*self.N):
