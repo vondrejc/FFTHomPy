@@ -79,21 +79,33 @@ class Test_operators(unittest.TestCase):
             self.assertAlmostEqual(0, (P1(grad_u)-grad_u).norm(), delta=1e-13)
             self.assertAlmostEqual(0, P2(grad_u).norm(), delta=1e-13)
 
+            e = P1(Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize())
+            e2 = grad(potential(e))
+            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
+
             # vectorial problem
             hG = elasticity_large_deformation(N=N, Y=np.ones(dim), centered=True)
-            P = Operator(name='P', mat=[[iF, hG, F]])
+            P1 = Operator(name='P', mat=[[iF, hG, F]])
             u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
             grad_u = grad(u)
-            val = (P(grad_u)-grad_u).norm()
+            val = (P1(grad_u)-grad_u).norm()
             self.assertAlmostEqual(0, val, delta=1e-13)
+
+            e = P1(Tensor(name='F', shape=(dim,dim), N=N, Fourier=False).randomize())
+            e2 = grad(potential(e))
+            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
 
             # vectorial problem - symetric gradient
             hG = elasticity_small_strain(N=N, Y=np.ones(dim), centered=True)
-            P = Operator(name='P', mat=[[iF, hG, F]])
+            P1 = Operator(name='P', mat=[[iF, hG, F]])
             u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
             grad_u = symgrad(u)
-            val = (P(grad_u)-grad_u).norm()
+            val = (P1(grad_u)-grad_u).norm()
             self.assertAlmostEqual(0, val, delta=1e-13)
+
+            e = P1(Tensor(name='strain', shape=(dim,dim), N=N, Fourier=False).randomize())
+            e2 = symgrad(potential(e, small_strain=True))
+            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
 
 
 
