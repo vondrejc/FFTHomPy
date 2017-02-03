@@ -354,8 +354,8 @@ class VecTri(FieldFun, Grid):
         """
         Either discrete Fourier- or discrete inverse Fourier transform
         """
-        DFT(inverse=not self.Fourier, N=self.N)
-        return DFT(self)
+        dft = DFT(inverse=self.Fourier, N=self.N)
+        return dft(self)
 
     @property
     def T(self):
