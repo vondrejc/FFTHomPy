@@ -9,8 +9,8 @@ import itertools
 
 from ffthompy.matvec_fun import Grid, enlarge, enlarge_M, get_inverse, decrease
 import numpy as np
+import numpy.fft as fft
 import numpy.matlib as npmatlib
-import scipy.fftpack as fft
 
 
 class FieldFun():
