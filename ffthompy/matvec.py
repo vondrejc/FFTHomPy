@@ -73,12 +73,11 @@ class Scalar():
         self.name=name
 
     def __call__(self, x):
-        return x*self.val
+        return self*x
 
     def __repr__(self):
-        ss="Class : %s\n"%(self.__class__.__name__)
-        ss+='val = \n'
-        ss+=str(self.val)
+        ss="Class : {0}\n".format(self.__class__.__name__)
+        ss+="    val = {0}".format(self.val)
         return ss
 
     def transpose(self):
