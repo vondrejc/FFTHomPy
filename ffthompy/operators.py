@@ -8,7 +8,7 @@ from ffthompy.matvec_fun import Grid
 from ffthompy.tensors import Tensor, TensorFuns, get_name
 import numpy as np
 import numpy.matlib as npmatlib
-import scipy.fftpack as fft
+import numpy.fft as fft
 
 
 class DFT(TensorFuns):
