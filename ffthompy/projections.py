@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 from ffthompy.matvec_fun import Grid, get_Nodd
-from ffthompy.matvec import Matrix
+from ffthompy.matvec import Matrix, mean_index
 from ffthompy.tensors import Tensor
 import itertools
 
@@ -44,7 +44,7 @@ def scalar(N, Y, centered=True, NyqNul=True):
     num = np.zeros(np.hstack([d, d, Nred]))
     denom = np.zeros(Nred)
 
-    ind_center = tuple(Nred/2)
+    ind_center = mean_index(Nred)
     for m in np.arange(d): # diagonal components
         Nshape = np.ones(d, dtype=np.int)
         Nshape[m] = Nred[m]
@@ -115,7 +115,7 @@ def elasticity(N, Y, centered=True, NyqNul=True):
     xi = Grid.get_xil(N, Y)
     N = np.array(N, dtype=np.int)
     d = N.size
-    D = d*(d+1)/2
+    D = int(d*(d+1)/2)
 
     if NyqNul:
         Nred = get_Nodd(N)
@@ -137,7 +137,7 @@ def elasticity(N, Y, centered=True, NyqNul=True):
         norm2_xi += num[mm][mm]
 
     norm4_xi = norm2_xi**2
-    ind_center = tuple(Nred/2)
+    ind_center = mean_index(Nred)
     # avoid division by zero
     norm2_xi[ind_center] = 1
     norm4_xi[ind_center] = 1

@@ -12,6 +12,9 @@ import numpy as np
 import numpy.fft as fft
 import numpy.matlib as npmatlib
 
+def mean_index(N):
+    return tuple(np.array(np.fix(np.array(N)/2), dtype=np.int))
+
 
 class FieldFun():
     """
@@ -36,8 +39,8 @@ class FieldFun():
         X.val[:]=0
         return X
 
-    def mean_ind(self):
-        return tuple(np.round(np.array(self.N)/2))
+    def mean_index(self):
+        return mean_index(self.N)
 
     def __getitem__(self, i):
         return self.val[i]
@@ -55,10 +58,6 @@ class FieldFun():
             ss+='val = \n'
             ss+=str(self.val)
         return ss
-
-    @staticmethod
-    def get_mean_index(N):
-        return tuple(np.round(np.array(N)/2))
 
 
 class Scalar():
@@ -239,7 +238,7 @@ class VecTri(FieldFun, Grid):
         """
         mean=np.zeros(self.d)
         if self.Fourier:
-            ind=tuple(np.round(np.array(self.N)/2))
+            ind=mean_index(self.N)
             for di in np.arange(self.d):
                 mean[di]=np.real(self.val[di][ind])
         else:

@@ -262,7 +262,7 @@ def symgrad(X):
     gX=grad(X)
     return 0.5*(gX+gX.transpose())
 
-def potential_scalar(x, freq, mean_ind):
+def potential_scalar(x, freq, mean_index):
     # get potential for scalar-valued function in Fourier space
     dim=x.shape[0]
     assert(dim==len(x.shape)-1)
@@ -271,10 +271,10 @@ def potential_scalar(x, freq, mean_ind):
     val=np.empty(x.shape[1:], dtype=np.complex)
     for d in range(0, dim):
         factor=np.zeros_like(freq[d], dtype=np.complex)
-        inds=np.setdiff1d(np.arange(factor.size, dtype=np.int), mean_ind[d])
+        inds=np.setdiff1d(np.arange(factor.size, dtype=np.int), mean_index[d])
         factor[inds]=1./(coef*freq[d][inds])
-        val[mean_ind[:d]]=np.einsum('x,{0}->{0}'.format(strfreq[:dim-d]),
-                                      factor, x[d][mean_ind[:d]], dtype=np.complex)
+        val[mean_index[:d]]=np.einsum('x,{0}->{0}'.format(strfreq[:dim-d]),
+                                      factor, x[d][mean_index[:d]], dtype=np.complex)
     return val
 
 def potential(X, small_strain=False):
@@ -288,7 +288,7 @@ def potential(X, small_strain=False):
     if X.order==1:
         assert(X.dim==X.shape[0])
         iX=Tensor(name='potential({0})'.format(X.name), shape=(1,), N=X.N, Fourier=True)
-        iX.val[0]=potential_scalar(FX.val, freq=freq, mean_ind=FX.mean_ind())
+        iX.val[0]=potential_scalar(FX.val, freq=freq, mean_index=FX.mean_index())
 
     elif X.order==2:
         assert(X.dim==X.shape[0])
@@ -297,7 +297,7 @@ def potential(X, small_strain=False):
                     shape=(X.dim,), N=X.N, Fourier=True)
         if not small_strain:
             for ii in range(X.dim):
-                iX.val[ii]=potential_scalar(FX.val[ii], freq=freq, mean_ind=FX.mean_ind())
+                iX.val[ii]=potential_scalar(FX.val[ii], freq=freq, mean_index=FX.mean_index())
 
         else:
             assert((X-X.transpose()).norm()<1e-14) # symmetricity
@@ -307,7 +307,7 @@ def potential(X, small_strain=False):
             grad_ep=grad(FX) # gradient of strain
             gomeg.val=np.einsum('ikj...->ijk...', grad_ep.val)-np.einsum('jki...->ijk...', grad_ep.val)
             for ij in itertools.product(range(X.dim), repeat=2):
-                omeg.val[ij]=potential_scalar(gomeg.val[ij], freq=freq, mean_ind=FX.mean_ind())
+                omeg.val[ij]=potential_scalar(gomeg.val[ij], freq=freq, mean_index=FX.mean_index())
 
             gradu=FX+omeg
             iX=potential(gradu, small_strain=False)

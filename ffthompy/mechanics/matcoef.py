@@ -167,7 +167,7 @@ class ElasticTensor():
             second-order tensor of elastic parameters with Mandel's notation
         """
         dim = mat.shape[0]
-        sym = dim*(dim+1)/2
+        sym = int(dim*(dim+1)/2)
         if ndim is None:
             ndim = mat.ndim
         grid_shape = mat.shape[ndim:]
@@ -294,7 +294,7 @@ class ElasticTensor():
             second-order tensor of elastic parameters with Voight's notation
         """
         dim = mat.shape[0]
-        sym = dim*(dim+1)/2
+        sym = int(dim*(dim+1)/2)
         if mat.ndim == 4:
             vec = np.zeros([sym, sym], dtype=mat.dtype)
             for ii in np.arange(dim):

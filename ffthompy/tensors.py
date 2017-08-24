@@ -4,15 +4,14 @@ of trigonometric polynomials and relating operators.
 """
 
 import numpy as np
-from ffthompy.matvec import get_name
-from matvec import Scalar
+from ffthompy.matvec import Scalar, get_name, mean_index
 from ffthompy.mechanics.matcoef import ElasticTensor
 
 
 class TensorFuns():
 
-    def mean_ind(self):
-        return tuple(np.round(np.array(self.N)/2))
+    def mean_index(self):
+        return mean_index(self.N)
 
     def __getitem__(self, ii):
         return self.val[ii]
@@ -183,7 +182,7 @@ class Tensor(TensorFuns):
         """
         mean = np.zeros(self.shape)
         if self.Fourier:
-            ind = self.mean_ind()
+            ind = self.mean_index()
             for di in np.ndindex(*self.shape):
                 mean[di] = np.real(self.val[di][ind])
         else:
@@ -195,7 +194,7 @@ class Tensor(TensorFuns):
         assert(self.shape==mean.shape)
 
         if self.Fourier:
-            ind = self.mean_ind()
+            ind = self.mean_index()
             for di in np.ndindex(*self.shape):
                 self.val[di+ind] = mean[di]
         else:
@@ -208,7 +207,7 @@ class Tensor(TensorFuns):
         self.add_mean(-self.mean()) # set mean to zero
 
         if self.Fourier:
-            ind = self.mean_ind()
+            ind = self.mean_index()
             for di in np.ndindex(*self.shape):
                 self.val[di+ind] = mean[di]
         else:

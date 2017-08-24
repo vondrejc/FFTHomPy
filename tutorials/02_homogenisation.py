@@ -104,7 +104,7 @@ coefficients composed of random values, symmetrize them, and sum them with
 a multiplication of identity to obtain positive definite matrix, i.e.
 A =""")
 from ffthompy.matvec import Matrix
-D = dim*(dim+1)/2
+D = int(dim*(dim+1)/2)
 A = Matrix(N=N, d=D, Fourier=False, valtype='random')
 A = A + A.transpose() # symmetrization
 # adding a multiplication of identity matrix:

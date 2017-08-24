@@ -32,9 +32,9 @@ class Problem(object):
         self.dim = self.Y.size
 
         if self.physics == 'scalar':
-            self.shape = (self.dim)
+            self.shape = (self.dim,)
         elif self.physics == 'elasticity':
-            self.shape = (self.dim*(self.dim+1)/2)
+            self.shape = (int(self.dim*(self.dim+1)/2),)
 
         self.output = {}
 

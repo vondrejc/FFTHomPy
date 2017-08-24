@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
-from matcoef import ElasticTensor as ET
+from .matcoef import ElasticTensor as ET
 
 
 class Test_matcoef(unittest.TestCase):

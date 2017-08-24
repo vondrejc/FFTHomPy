@@ -169,8 +169,8 @@ def enlarge(xN, M):
     if np.allclose(M, N):
         return xN
     dim = N.size
-    ibeg = (M-N+(N % 2))/2
-    iend = (M+N+(N % 2))/2
+    ibeg = np.array(np.fix((M-N+(M % 2))/2), dtype=np.int)
+    iend = np.array(np.fix((M+N+(M % 2))/2), dtype=np.int)
     if dim == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
     elif dim == 2:
@@ -229,8 +229,8 @@ def decrease(xN, M):
     M = np.array(M, dtype=np.int32)
     N = np.array(xN.shape, dtype=np.int32)
     dim = N.size
-    ibeg = (N-M+(M % 2))/2
-    iend = (N+M+(M % 2))/2
+    ibeg = np.array(np.fix((N-M+(M % 2))/2), dtype=np.int)
+    iend = np.array(np.fix((N+M+(M % 2))/2), dtype=np.int)
     if dim == 2:
         xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
     elif dim == 3:

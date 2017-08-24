@@ -2,7 +2,7 @@ import numpy as np
 import scipy.special as sp
 from ffthompy.matvec import DFT, VecTri, Matrix
 from ffthompy.matvec_fun import Grid, decrease
-
+from ffthompy.tensors import mean_index
 
 inclusion_keys = {'ball': ['ball', 'circle'],
                   'cube': ['cube', 'square'],
@@ -403,7 +403,7 @@ def get_weights_circ(r, Nbar, Y):
         xi_p2 = np.tile(np.reshape((ZN2l[m]/Y[m])**2, Nshape), Nrep)
         circ += xi_p2
     circ = circ**0.5
-    ind = tuple(np.round(Nbar/2))
+    ind = mean_index(Nbar)
     circ[ind] = 1.
 
     Wphi = r**2 * sp.jn(1, 2*np.pi*circ*r) / (circ*r)

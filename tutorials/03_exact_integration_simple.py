@@ -44,8 +44,8 @@ def get_weights(h): # calculation of integral weights of rectangular function
     return Wphi
 
 def decrease(val, dN): # auxiliary function to remove unnecesary Fourier freq.
-    ibeg = (3*N-dN+(dN % 2))/2
-    iend = (3*N+dN+(dN % 2))/2
+    ibeg = np.array(np.fix((3*N-dN+(dN % 2))/2), dtype=np.int)
+    iend = np.array(np.fix((3*N+dN+(dN % 2))/2), dtype=np.int)
     return val[:,:,ibeg:iend,ibeg:iend]
 
 ## GRID-BASED COMPOSITE ######### evaluate the matrix of Galerkin approximation

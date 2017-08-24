@@ -1,4 +1,4 @@
-from general.base import Struct, Timer
+from ffthompy.general.base import Struct, Timer
 
 __author__ = "Jaroslav Vondrejc"
 __copyright__ = """Copyright 2016, Jaroslav Vondrejc"""
