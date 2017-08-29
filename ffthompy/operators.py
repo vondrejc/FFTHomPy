@@ -45,11 +45,11 @@ class DFT(TensorFuns):
             if not self.inverse:
                 return Tensor(name='F({0})'.format(x.name),
                               val=self.fftnc(x.val, self.N),
-                              order=x.order, Fourier=not x.Fourier)
+                              order=x.order, Fourier=not x.Fourier, multype=x.multype)
             else:
                 return Tensor(name='iF({0})'.format(x.name),
                               val=np.real(self.ifftnc(x.val, self.N)),
-                              order=x.order, Fourier=not x.Fourier)
+                              order=x.order, Fourier=not x.Fourier, multype=x.multype)
 
         elif (isinstance(x, Operator) or isinstance(x, DFT)):
             return Operator(mat=[[self, x]])
@@ -230,7 +230,7 @@ def grad(X):
     else:
         shape=X.shape+(X.dim,)
     name='grad({0})'.format(X.name)
-    gX=Tensor(shape=shape, N=X.N, Fourier=True)
+    gX=Tensor(name=name, shape=shape, N=X.N, Fourier=True)
     if X.Fourier:
         FX=X
     else:

@@ -80,21 +80,21 @@ class Tensor(TensorFuns):
             self.Y = np.array(Y, dtype=np.float)
 
         # definition of __mul__ operation
+        self.multype = multype
         if multype in ['scal', 'scalar']:
-            self.mul_str = 'scalar'
-            self.__mul__ = self.scalar_product
+            self.mul_method = self.scalar_product
         elif multype in [21, '21']:
             self.mul_str = 'ij...,j...->i...'
-            self.__mul__ = self._mul
-            self.__call__ = self._mul
+            self.mul_method = self._mul
+            self.call_method = self._mul
         elif multype in [42, '42']:
             self.mul_str = 'ijkl...,kl...->ij...'
-            self.__mul__ = self._mul
-            self.__call__ = self._mul
+            self.mul_method = self._mul
+            self.call_method = self._mul
         else:
             self.mul_str = multype
-            self.__mul__ = self._mul
-            self.__call__ = self._mul
+            self.mul_method = self._mul
+            self.call_method = self._mul
 
     def randomize(self):
         self.val = np.random.random(self.val.shape)
@@ -111,7 +111,7 @@ class Tensor(TensorFuns):
             assert(self.val.shape==x.val.shape)
             name = get_name(self.name, '+', x.name)
             return Tensor(name=name, val=self.val+x.val, Fourier=self.Fourier,
-                          order=self.order, multype=self.mul_str)
+                          order=self.order, multype=self.multype)
         elif isinstance(x, np.ndarray) or isinstance(x, float):
             self.val += x
             return self
@@ -143,6 +143,12 @@ class Tensor(TensorFuns):
 
         else:
             raise ValueError()
+
+    def __call__(self, *args, **kwargs):
+        return self.call_method(*args, **kwargs)
+
+    def __mul__(self,  *args, **kwargs):
+        return self.mul_method(*args, **kwargs)
 
     @staticmethod
     def einsum(str_operator, x, y):

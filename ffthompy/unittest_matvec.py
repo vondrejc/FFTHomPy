@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from .matvec import DFT, VecTri
+from ffthompy.matvec import DFT, VecTri
 
 
 class Test_matvec(unittest.TestCase):
@@ -30,8 +30,8 @@ class Test_matvec(unittest.TestCase):
             for n in [5]:
                 N = n*np.ones(dim, dtype=np.int)
                 uN = VecTri(name='rand', dim=dim, N=N, valtype='rand')
-                msg='Bug in projection of trigonometric polynomials!'
                 for i in range(2):
+                    msg='dim={0}, n={1}, i={2}'.format(dim, n, i)
                     self.assertAlmostEqual(0, uN==uN.project(2*N-i).project(N),
                                            msg=msg, delta=1e-13)
 

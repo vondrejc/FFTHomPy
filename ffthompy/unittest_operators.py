@@ -71,7 +71,7 @@ class Test_operators(unittest.TestCase):
             iF = DFT(inverse=True, N=N)
 
             # scalar problem
-            G0l, G1l, G2l = scalar(N, Y=np.ones(dim), centered=True, NyqNul=True)
+            _, G1l, G2l = scalar(N, Y=np.ones(dim), centered=True, NyqNul=True)
             P1 = Operator(name='P1', mat=[[iF, matrix2tensor(G1l), F]])
             P2 = Operator(name='P2', mat=[[iF, matrix2tensor(G2l), F]])
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False).randomize()
@@ -106,7 +106,6 @@ class Test_operators(unittest.TestCase):
             e = P1(Tensor(name='strain', shape=(dim,dim), N=N, Fourier=False).randomize())
             e2 = symgrad(potential(e, small_strain=True))
             self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
-
 
 
 if __name__ == "__main__":
