@@ -27,7 +27,7 @@ class TensorFuns():
 
     def __repr__(self, full=False, detailed=False):
         keys = ['name', 'Y', 'shape', 'N', 'Fourier', 'norm']
-        ss = "Class : %s(%d) \n" % (self.__class__.__name__, self.order)
+        ss = "Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
         skip = 4*' '
         nstr = np.array([key.__len__() for key in keys]).max()
 
@@ -168,7 +168,7 @@ class Tensor(TensorFuns):
         elif ntype == 'inf':
             scal = np.max(np.abs(obj.val))
         else:
-            msg = "The norm (%s) of VecTri is not implemented!" % ntype
+            msg = "The norm ({}) of VecTri is not implemented!".format(ntype)
             raise NotImplementedError(msg)
         return scal
 

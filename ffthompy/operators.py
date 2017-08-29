@@ -83,10 +83,10 @@ class DFT(TensorFuns):
         return DTMd
 
     def __repr__(self):
-        ss="Class : %s\n"%(self.__class__.__name__,)
-        ss+='    name : %s\n'%self.name
-        ss+='    inverse = %s\n'%self.inverse
-        ss+='    size N = %s\n'%str(self.N)
+        ss="Class : {}\n".format(self.__class__.__name__)
+        ss+='    name : {}\n'.format(self.name)
+        ss+='    inverse = {}\n'.format(self.inverse)
+        ss+='    size N = {}\n'.format(self.N)
         return ss
 
     def transpose(self):
@@ -141,12 +141,12 @@ class Operator():
             for matrix in summand:
                 prod=matrix(prod)
             res=prod+res
-        res.name='%s(%s)'%(self.name, x.name)
+        res.name='{0}({1})'.format(self.name, x.name)
         return res
 
     def __repr__(self):
-        s='Class : %s\nname : %s\nexpression : '%(self.__class__.__name__,
-                                                      self.name)
+        s='Class : {0}\nname : {1}\nexpression : '.format(self.__class__.__name__,
+                                                          self.name)
         flag_sum=False
         no_sum=len(self.mat_rev)
         for isum in np.arange(no_sum):
@@ -221,7 +221,7 @@ class Operator():
             for n in np.arange(len(self.mat_rev[m])):
                 summand.append(self.mat_rev[m][n].transpose())
             mat.append(summand)
-        name='(%s)^T'%self.name
+        name='({0})^T'.format(self.name)
         return Operator(name=name, mat=mat)
 
 def grad(X):
@@ -319,7 +319,8 @@ def potential(X, small_strain=False):
         return iF(iX)
 
 def matrix2tensor(M):
-    return Tensor(name=M.name, val=M.val, order=2, Fourier=M.Fourier, multype=21)
+    T = Tensor(name=M.name, val=M.val, order=2, Fourier=M.Fourier, multype=21)
+    return T
 
 def vector2tensor(V):
     return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)
