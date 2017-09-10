@@ -66,6 +66,7 @@ class Tensor(TensorFuns):
             self.N = tuple(np.array(N, dtype=np.int))
             self.shape = tuple(np.array(shape, dtype=np.int))
             self.order = len(self.shape)
+
             if self.Fourier:
                 self.val = np.zeros(self.shape + self.N, dtype=np.complex)
             else:
@@ -98,6 +99,8 @@ class Tensor(TensorFuns):
 
     def randomize(self):
         self.val = np.random.random(self.val.shape)
+        if self.Fourier:
+            self.val += 1j*np.random.random(self.val.shape)
         return self
 
     def __neg__(self):
