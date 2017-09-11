@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from numpy.linalg import norm
 from ffthompy.tensors import Tensor
 from ffthompy.operators import DFT, grad, symgrad, potential, Operator, matrix2tensor
 from ffthompy.projections import scalar, elasticity_small_strain, elasticity_large_deformation
@@ -17,6 +18,7 @@ class Test_operators(unittest.TestCase):
         for dim in [2, 3]:
             N = 5*np.ones(dim, dtype=np.int)
             F = DFT(N=N, inverse=False)
+            print(F)
 
             # scalar problem
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False).randomize()
@@ -31,6 +33,10 @@ class Test_operators(unittest.TestCase):
             self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
                                    msg='scalar problem, Fourier=False')
 
+            # matrix version of DFT
+            dft = F.matrix(shape=u.shape)
+            Fu2 = dft.dot(u.val.ravel())
+            self.assertAlmostEqual(0, norm(Fu.val.ravel()-Fu2), delta=1e-13)
 
             # vectorial problem
             u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
@@ -95,6 +101,13 @@ class Test_operators(unittest.TestCase):
             e2 = grad(potential(e))
             self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
 
+            # transpose
+            P1TT = P1.transpose().transpose()
+            self.assertTrue(P1(grad_u)==P1TT(grad_u))
+
+            self.assertTrue(hG==(hG.transpose_left().transpose_left()))
+            self.assertTrue(hG==(hG.transpose_right().transpose_right()))
+
             # vectorial problem - symetric gradient
             hG = elasticity_small_strain(N=N, Y=np.ones(dim), centered=True)
             P1 = Operator(name='P', mat=[[iF, hG, F]])
@@ -107,6 +120,18 @@ class Test_operators(unittest.TestCase):
             e2 = symgrad(potential(e, small_strain=True))
             self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
 
+            # means
+            Fu=F(u)
+            E = np.random.random(u.shape)
+            u.set_mean(E)
+            self.assertAlmostEqual(0, norm(u.mean()-E), delta=1e-13)
+            Fu.set_mean(E)
+            self.assertAlmostEqual(0, norm(Fu.mean()-E), delta=1e-13)
+
+            # __repr__
+            print(P1)
+            print(u)
+            self.assertAlmostEqual(0, (P1==P1.transpose()), delta=1e-13)
 
 if __name__ == "__main__":
     unittest.main()

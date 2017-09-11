@@ -16,11 +16,14 @@ class TensorFuns():
     def __getitem__(self, ii):
         return self.val[ii]
 
+    def pN(self):
+        return np.prod(self.N)
+
     def point(self, ii):
-            val = np.empty(self.shape)
-            for ind in np.ndindex(*self.shape):
-                val[ind] = self.val[ind][ii]
-            return val
+        val = np.empty(self.shape)
+        for ind in np.ndindex(*self.shape):
+            val[ind] = self.val[ind][ii]
+        return val
 
     def sub(self, ii):
         self.val[ii]
@@ -224,7 +227,7 @@ class Tensor(TensorFuns):
                 self.val[di] += mean[di]
         return self
 
-    def __eq__(self, x, full=True, tol=1e-10):
+    def __eq__(self, x, full=True, tol=1e-13):
         """
         Check the equality with other objects comparable to trig. polynomials.
         """
@@ -289,7 +292,7 @@ class Tensor(TensorFuns):
         if name is None:
             name = 'empty like ' + self.name
         return Tensor(name=name, val=np.empty_like(self.val), order=self.order,
-                      Fourier=self.Fourier)
+                      Fourier=self.Fourier, multype=self.multype)
 
     def calc_eigs(self, sort=True, symmetric=False, mandel=False):
         if symmetric:

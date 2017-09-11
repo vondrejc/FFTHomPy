@@ -57,13 +57,20 @@ class DFT(TensorFuns):
         else:
             raise ValueError('DFT.__call__')
 
-    def matrix(self):
+    def matrix(self, shape=None):
         """
         This function returns the object as a matrix of DFT or iDFT resp.
         """
         N=self.N
         prodN=np.prod(N)
-        proddN=self.d*prodN
+        if shape is not None:
+            dim=np.prod(np.array(shape))
+        elif hasattr(self, 'shape'):
+            dim=np.prod(np.array(shape))
+        else:
+            raise ValueError('Missing shape of the DFT.')
+
+        proddN=dim*prodN
         ZNl=Grid.get_ZNl(N)
 
         if self.inverse:
@@ -78,7 +85,7 @@ class DFT(TensorFuns):
                                       np.array(ll), N)
 
         DTMd=npmatlib.zeros([proddN, proddN], dtype=np.complex128)
-        for ii in range(self.d):
+        for ii in range(dim):
             DTMd[prodN*ii:prodN*(ii+1), prodN*ii:prodN*(ii+1)]=DTM
         return DTMd
 
