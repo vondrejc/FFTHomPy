@@ -8,11 +8,11 @@ Welcome to FFTHomPy's documentation!
 
 *FFTHomPy* is a Python implementation of FFT-based homogenization based on following papers:
 
-    * \J. Zeman, T. W. J. de Geus, J. Vondřejc, R. H. J. Peerlings, and M. G. D. Geers: A finite element perspective on non-linear FFT-based micromechanical simulations. 2016. arXiv:1601.05970
+    * \J. Zeman, T. W. J. de Geus, J. Vondřejc, R. H. J. Peerlings, and M. G. D. Geers: A finite element perspective on non-linear FFT-based micromechanical simulations. 111 (10), pp. 903-926, 2017. arXiv:1601.05970
 
     * \N. Mishra, J. Vondřejc, J. Zeman: A comparative study on low-memory iterative solvers for FFT-based homogenization of periodic media, *Journal of Computational Physics*, 321, pp. 151-168, 2016. arXiv: 1508.02045
 
-    * \J. Vondřejc: Improved guaranteed computable bounds on homogenized properties of periodic media by Fourier-Galerkin Method with exact integration, *International Journal for Numerical Methods in Engineering*, 2015. arXiv:1412.2033
+    * \J. Vondřejc: Improved guaranteed computable bounds on homogenized properties of periodic media by Fourier-Galerkin Method with exact integration, *International Journal for Numerical Methods in Engineering*, 107 (13), pp.~1106-1135, 2016. arXiv:1412.2033
 
     * \J. Vondřejc, J. Zeman, I. Marek: Guaranteed upper-lower bounds on homogenized properties by FFT-based Galerkin method, *Comuter methods in Applied Mechanics and Engineering*, 297, pp.~258-291, 2015. arXiv:1404.3614
 
