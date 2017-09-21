@@ -53,6 +53,7 @@ class Test_main(unittest.TestCase):
                     val = np.linalg.norm(dif.ravel(), np.inf)
                     msg = 'Incorrect (%s) in problem (%s)' % (kw, prob.name)
                     self.assertAlmostEqual(0, val, msg=msg, delta=1e-13)
+        prob.postprocessing()
 
     def test_tutorials(self): # test tutorials
         for filen in self.tutorial_files:
