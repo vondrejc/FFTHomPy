@@ -1,14 +1,14 @@
 FFTHomPy
 ========
 
-FFT-based homogenization in Python is a numerical software for evaluating guaranteed upper-lower bounds on homogenized properties. The algorithms implemented here are based on the following papers.
+FFT-based homogenization in Python is a numerical software for evaluating guaranteed upper-lower bounds on homogenized properties. The algorithms implemented here are based on the papers in [references](#references) .
 
-News
-----
+## News
+
 - The code now contains tutorials including self-contained implementation of the method based on exact integration.
 
-Manual
-------
+## Manual
+
 The basic manual can be found at
 - http://FFTHomPy.bitbucket.io
 
@@ -17,8 +17,8 @@ or downloaded at
 
 Tutorials can be found in a folder '/tutorial'.
 
-Papers
-------
+## References
+
 The code is based on the following papers, where you can find more theoretical information.
 
 - J. Zeman, T. W. J. de Geus, J. Vondřejc, R. H. J. Peerlings, and M. G. D. Geers: *A finite element perspective on non-linear FFT-based micromechanical simulations.* 111 (10), pp. 903-926, 2017. arXiv:1601.05970
