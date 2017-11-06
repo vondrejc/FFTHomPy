@@ -28,7 +28,7 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
             xcol, info = cg(Afunvec, B.vec(), x0=x0.vec(),
                             tol=par['tol'],
                             maxiter=par['maxiter'],
-                            xtype=None, M=None, callback=callback)
+                            M=None, callback=callback)
             info = {'info': info}
         elif solver == 'scipy_bicg':
             Afun.define_operand(B)
@@ -38,7 +38,7 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
             xcol, info = bicg(Afunvec, B.vec(), x0=x0.vec(),
                               tol=par['tol'],
                               maxiter=par['maxiter'],
-                              xtype=None, M=None, callback=callback)
+                              M=None, callback=callback)
         res = dict()
         res['info'] = info
         x = VecTri(val=np.reshape(xcol, B.dN()))
