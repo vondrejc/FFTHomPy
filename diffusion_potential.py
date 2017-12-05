@@ -43,22 +43,48 @@ print('auxiliary field for macroscopic load E = {1}:\n{0}'.format(aux.reshape(ve
                                                                   format((1,)+(ndim-1)*(0,))))
 print('homogenised properties A11 = {}'.format(np.inner(A_fun(aux).reshape(-1), aux)/prodN))
 
-###########################################################################
-# VARIANT OF DIFFUSION WITHOUT fft.shift
-axes=np.arange(1,ndim+1)
-dot21  = lambda A,v: np.einsum('ij...,j...  ->i...',A,v)
-fft    = lambda V: np.fft.fftshift(np.fft.fftn(V,N), axes=axes)
-ifft   = lambda V: np.fft.ifftn(np.fft.ifftshift(V, axes=axes),N)
-G_fun  = lambda V: np.real(ifft(dot21(Ghat,fft(V)))).reshape(-1)
-A_fun  = lambda v: dot21(A,v.reshape(vec_shape))
-GA_fun = lambda v: G_fun(A_fun(v))
+### POTENTIAL SOLVER in real space #####################################################################
+print('\n== Potential solver in real space =======================')
+# GRADIENT IN FOURIER SPACE #############################################
+Ghat = np.zeros((ndim,)+ N) # zero initialize
+freq = [np.arange(-(N[ii]-1)/2.,+(N[ii]+1)/2.) for ii in range(ndim)]
+for ind in itertools.product(*[range(n) for n in N]):
+    q = np.empty(ndim)
+    for ii in range(ndim):
+        q[ii] = freq[ii][ind[ii]]  # frequency vector
+    if not q.dot(q) == 0:          # zero freq. -> mean
+        for i in range(ndim):
+            Ghat[i][ind] = - q[i]
+Ghat = Ghat*2*np.pi*1j
 
-# conjugate gradient solver
-b = -GA_fun(E) # right-hand side
-e, _=sp.cg(A=sp.LinearOperator(shape=(ndof, ndof), matvec=GA_fun, dtype='float'), b=b)
+# OPERATORS ###############################################################
+FGrad = lambda Fu: np.einsum('i...,...->i...', Ghat, Fu)
+FDiv = lambda Fe: np.einsum('i...,i...->...', Ghat, Fe)
+Grad = lambda u: ifft(FGrad(fft(u))).real
+Div = lambda e: ifft(FDiv(fft(e))).real
+DivAGrad_fun = lambda u: Div(dot21(A, Grad(u.reshape(N)))).ravel()
 
-aux = e+E.reshape(-1)
+# CONJUGATE GRADIENT SOLVER ###############################################
+b = -Div(dot21(A,E)).ravel() # right-hand side
+u, _=sp.cg(A=sp.LinearOperator(shape=(prodN, prodN), matvec=DivAGrad_fun, dtype='float'), b=b)
+
+e = Grad(u.reshape(N))
+aux = e+E
+# print('auxiliary field for macroscopic load E = {1}:\n{0}'.format(aux.reshape(vec_shape),
+#                                                                   format((1,)+(ndim-1)*(0,))))
+print('homogenised properties A11 = {}'.format(np.sum(dot21(A,aux)*aux)/prodN))
+
+### POTENTIAL SOLVER in Fourier space #####################################################################
+print('\n== Potential solver in Fourier space =======================')
+GFAFG_fun = lambda Fu: FDiv(fft(dot21(A, ifft(FGrad(Fu.reshape(N)))))).ravel()
+b = -FDiv(fft(dot21(A,E))).ravel() # right-hand side
+
+Fu, _=sp.cg(A=sp.LinearOperator(shape=(prodN, prodN), matvec=GFAFG_fun, dtype='complex'), b=b)
+
+e = ifft(FGrad(Fu.reshape(N))).real
+aux = e+E
 print('auxiliary field for macroscopic load E = {1}:\n{0}'.format(aux.reshape(vec_shape),
-                                                                  format((1,)+(ndim-1)*(0,))))
-print('homogenised properties A11 = {}'.format(np.inner(A_fun(aux).reshape(-1), aux)/prodN))
+                                                                   format((1,)+(ndim-1)*(0,))))
+print('homogenised properties A11 = {}'.format(np.sum(dot21(A,aux)*aux)/prodN))
+
 print('END')
