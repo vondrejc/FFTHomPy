@@ -4,35 +4,28 @@ This is to test the PCA module
 """ 
 
 import numpy as np 
-import PCA
+ 
 import PCA_matrix_input
  
 
 import time
 from time import clock 
  
-
-def func(x, y):     
-    return np.sin(x[np.newaxis, :] + y[:, np.newaxis]) * (x[np.newaxis, :] + y[:, np.newaxis])
-
-def get_row(i, x, y):    
-    return np.sin(x + y[i]) * (x + y[i])    
-
-def get_column(i, x, y):    
-    return np.sin(x[i] + y) * (x[i] + y)  
+ 
 
     
 #######################################################################################################
 if __name__ == "__main__":
     
-    N = 6
-    M = 4  
+    N = 70
+    M = 90
     x = np.linspace(-np.pi, np.pi, M)
     y = np.linspace(-np.pi, np.pi, N)
     
-    #S = np.sin(x[np.newaxis, :] + y[:, np.newaxis]) * (x[np.newaxis, :] + y[:, np.newaxis])
+    S = np.sin(x[np.newaxis, :] + y[:, np.newaxis]) * (x[np.newaxis, :] + y[:, np.newaxis])
     
-    S = np.random.rand(N, M)
+    S =S + 0.001*np.random.rand(N, M)
+    #S = np.random.rand(N, M)
     
 #    print S
 #   
@@ -41,12 +34,11 @@ if __name__ == "__main__":
 #    
 #    print get_row(0,x,y)
 #    print get_row(2,x,y)
-   
-    
-    k = 3
+       
+    k = 60
     
     #A, B, err = PCA.PCA(N, M, k, get_column, get_row, x, y)
-    A2, B2, err2 = PCA_matrix_input.PCA_matrix_input(S, N, M, k)   
+    A2, B2, k_actual, err2 = PCA_matrix_input.PCA_matrix_input(S, N, M, k, tol=0.1)   
     # print A
     # print B
     
@@ -63,6 +55,7 @@ if __name__ == "__main__":
     
     print "Frobenius norm of err is  ", np.linalg.norm(S - np.dot(A2, B2))
     print "error estimate is ", err2
+    print "actual k is ", k_actual
     
     """ 
     ###################################################################################

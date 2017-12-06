@@ -37,7 +37,7 @@ if __name__=="__main__":
     C = cor_fun(X[:,:,np.newaxis],X[:,np.newaxis,:],theta[:,np.newaxis,np.newaxis])   
   
     
-    A, max_err=dCA_matrix_input.dCA_matrix_input(C,  k)  
+    A, k_actual, max_err=dCA_matrix_input.dCA_matrix_input(C,  k, tol=1e-5)  
     
     # and the approximate  matrix computed from A  
     C_approx = np.dot( A, A.T )
