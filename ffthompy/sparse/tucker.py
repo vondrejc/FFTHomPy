@@ -90,7 +90,7 @@ if __name__=='__main__':
     # addition
     c = a+b
     print(c)
-    c2 = a.full()-b.full()
+    c2 = a.full()+b.full()
     print(np.linalg.norm(c.full()-c2))
     # multiplication
     c = a*b
