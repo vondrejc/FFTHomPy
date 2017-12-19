@@ -47,31 +47,28 @@ class Tucker(TensorFuns):
 
     def __mul__(self, Y, tol=None, rank=None):
         "element-wise multiplication of two Tucker tensors"
-       
-        new_r = self.r*Y.r  
-        A=self.basis[0]
-        B=self.basis[1]
+        X = self
+        new_r=X.r*Y.r
+        A=X.basis[0]
+        B=X.basis[1]
         A2=Y.basis[0]
         B2=Y.basis[1]
-        
-        newA= np.zeros((new_r[0], self.N[0] ))
-        newB= np.zeros((new_r[1], self.N[1]))
-        newC= np.zeros((new_r))
-        for i in range(0, self.r[0]):
-            for j in range(0, Y.r[0]):                   
-                newA[i*Y.r[0]+j,:]= A[i,:]*A2[j,:]
-                
-        for i in range(0, self.r[1]):
-            for j in range(0, Y.r[1]):                  
-                newB[i*Y.r[1]+j,:]= B[i,:]*B2[j,:]
-                
-                
-        newC = np.kron(self.core, Y.core)
-        
-        newBasis= [newA, newB]
-                        
+
+        newA=np.zeros((new_r[0], X.N[0]))
+        newB=np.zeros((new_r[1], X.N[1]))
+        for i in range(0, X.r[0]):
+            for j in range(0, Y.r[0]):
+                newA[i*Y.r[0]+j, :]=A[i, :]*A2[j, :]
+
+        for i in range(0, X.r[1]):
+            for j in range(0, Y.r[1]):
+                newB[i*Y.r[1]+j, :]=B[i, :]*B2[j, :]
+
+        newC=np.kron(X.core, Y.core)
+
+        newBasis=[newA, newB]
+
         return (Tucker(name='a*b', core=newC, basis=newBasis))
-    
 
     def fourier(self):
         "discrete Fourier transform"
@@ -93,7 +90,7 @@ class Tucker(TensorFuns):
         raise NotImplementedError()
 
     def __repr__(self, full=False, detailed=False):
-        keys = ['name', 'N', 'Fourier', 'r']
+        keys = ['name', 'Fourier', 'N', 'r']
         ss = "Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
         skip = 4*' '
         nstr = np.array([key.__len__() for key in keys]).max()
