@@ -1,11 +1,14 @@
+import sys
 import numpy as np
-from ffthompy.tensors import TensorFuns
+sys.path.append("/home/disliu/ffthompy-sparse")
 
+from ffthompy.tensors import TensorFuns
+from scipy.linalg import block_diag
 
 class Tucker(TensorFuns):
 
     def __init__(self, name='', core=None, basis=None, Fourier=False,
-                 r=[1,1], N=[5,5], randomise=False):
+                 r=[3,3], N=[5,5], randomise=False):
         self.name=name
         self.Fourier=Fourier
         if core is not None and basis is not None:
@@ -32,9 +35,10 @@ class Tucker(TensorFuns):
 
     def __add__(self, Y, tol=None, rank=None):
         X=self
-        core = np.zeros([X.r[0]+Y.r[0],X.r[1]+Y.r[1]])
-        core[:X.r[0],:X.r[1]]=X.core
-        core[X.r[0]:,X.r[1]:]=Y.core
+#        core = np.zeros([X.r[0]+Y.r[0],X.r[1]+Y.r[1]])
+#        core[:X.r[0],:X.r[1]]=X.core
+#        core[X.r[0]:,X.r[1]:]=Y.core        
+        core= block_diag(X.core,Y.core)
         basis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(self.order)]
         return Tucker(name=X.name+'+'+Y.name, core=core, basis=basis)
 
@@ -43,8 +47,31 @@ class Tucker(TensorFuns):
 
     def __mul__(self, Y, tol=None, rank=None):
         "element-wise multiplication of two Tucker tensors"
-        X=self
-        raise NotImplementedError()
+       
+        new_r = self.r*Y.r  
+        A=self.basis[0]
+        B=self.basis[1]
+        A2=Y.basis[0]
+        B2=Y.basis[1]
+        
+        newA= np.zeros((new_r[0], self.N[0] ))
+        newB= np.zeros((new_r[1], self.N[1]))
+        newC= np.zeros((new_r))
+        for i in range(0, self.r[0]):
+            for j in range(0, Y.r[0]):                   
+                newA[i*Y.r[0]+j,:]= A[i,:]*A2[j,:]
+                
+        for i in range(0, self.r[1]):
+            for j in range(0, Y.r[1]):                  
+                newB[i*Y.r[1]+j,:]= B[i,:]*B2[j,:]
+                
+                
+        newC = np.kron(self.core, Y.core)
+        
+        newBasis= [newA, newB]
+                        
+        return (Tucker(name='a*b', core=newC, basis=newBasis))
+    
 
     def fourier(self):
         "discrete Fourier transform"
@@ -83,8 +110,8 @@ class Tucker(TensorFuns):
 
 if __name__=='__main__':
     N=[11,12]
-    a = Tucker(name='a', r=[2,3], N=N, randomise=True)
-    b = Tucker(name='b', r=[4,5], N=N, randomise=True)
+    a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
+    b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
     print(a)
     print(b)
     # addition
@@ -93,8 +120,10 @@ if __name__=='__main__':
     c2 = a.full()+b.full()
     print(np.linalg.norm(c.full()-c2))
     # multiplication
+    
     c = a*b
     c2 = a.full()*b.full()
     print(np.linalg.norm(c.full()-c2))
-    # DFT
+    
+    #DFT 
     print('END')
