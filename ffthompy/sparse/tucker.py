@@ -21,8 +21,8 @@ class Tucker(TensorFuns):
                 self.r[ii],self.N[ii]=basis[ii].shape
         else:
             self.order=r.__len__()
-            self.r=r
-            self.N=N
+            self.r=np.array(r)
+            self.N=np.array(N)
             if randomise:
                 self.randomise()
             else:
@@ -35,11 +35,8 @@ class Tucker(TensorFuns):
 
     def __add__(self, Y, tol=None, rank=None):
         X=self
-#        core = np.zeros([X.r[0]+Y.r[0],X.r[1]+Y.r[1]])
-#        core[:X.r[0],:X.r[1]]=X.core
-#        core[X.r[0]:,X.r[1]:]=Y.core        
         core= block_diag(X.core,Y.core)
-        basis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(self.order)]
+        basis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]
         return Tucker(name=X.name+'+'+Y.name, core=core, basis=basis)
 
     def __neg__(self):
@@ -106,18 +103,19 @@ class Tucker(TensorFuns):
 
 
 if __name__=='__main__':
-    N=[11,12]
+    N=np.array([5,5])
     a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
     b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
     print(a)
     print(b)
+
     # addition
     c = a+b
     print(c)
     c2 = a.full()+b.full()
     print(np.linalg.norm(c.full()-c2))
+
     # multiplication
-    
     c = a*b
     c2 = a.full()*b.full()
     print(np.linalg.norm(c.full()-c2))
