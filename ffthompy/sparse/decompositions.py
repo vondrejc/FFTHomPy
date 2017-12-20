@@ -27,8 +27,7 @@ def dCA_matrix_input(M,   k, tol=1e-16):
       
     diagonal = np.copy(np.diag(M))
    
-    A=np.empty((N, k),dtype=np.float)
- 
+    A=np.empty((N, k),dtype=np.float) 
     
     for i in range(0,k):
 
@@ -36,16 +35,19 @@ def dCA_matrix_input(M,   k, tol=1e-16):
  
         dia_max = diagonal[p]
  
-        A[:, i] =   (M[:,p] - np.dot(A[:, :i], A[p, :i].T))/ sqrt(dia_max)   
+        A[:, i] =   (M[:,p] - np.dot(A[:, :i], A[p, :i].T))/ np.sqrt(dia_max)   
         
         diagonal = diagonal - A[:, i]**2 
     
         max_err= np.max( diagonal ) 
-        print max_err
+        #print max_err
         if max_err <= tol:
             break
     
     k_actual = i+1
+    if k != k_actual:
+        print "The actual rank k is %d in stead of %d" & (k_actual, k)
+        
     A = A[:, :k_actual]
     return A, k_actual, max_err 
 
@@ -142,7 +144,7 @@ def ICD_matrix_input(M, tol=0):
 
     return A[:, 0:k], k, max_err, new_ind
 
-def PCA_matrix_input(C, N, M, k, tol=1e-16):
+def PCA_matrix_input(C, N, M, k, tol=2.22e-16):
     r"""
     Partially pivoted Cross Approximation. A low rank approximation algorithm that approximates an N-by-N SPSD matrix :math:`C` with an N-by-k matrix :math:`A` and a k-by-M matrix :math:`B`  so that :math:`C` and :math:`A\;B` is rou
     ghly equal. It also gives an error estimate in the output.
@@ -201,11 +203,17 @@ def PCA_matrix_input(C, N, M, k, tol=1e-16):
         istar = i_list_small[istar]
     		
         err = np.linalg.norm(A[:, i]) * np.linalg.norm(B[i, :])  
-        print err
+        #print err
         if err<= tol:
             break
     
     k_actual=i+1
+    
+    if np.sum(np.abs(A[:,i]))<=2.22e-16 or np.sum(np.abs(B[i,:]))<=2.22e-16 :
+        k_actual = k_actual-1 
+    
+    if k != k_actual:
+        print "Warning: the output's actual rank k is %d in stead of %d" %(k_actual, k)
     A = A[:,:k_actual]
     B = B[:k_actual, :]
     
