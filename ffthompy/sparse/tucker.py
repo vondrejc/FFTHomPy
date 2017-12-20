@@ -4,6 +4,8 @@ sys.path.append("/home/disliu/ffthompy-sparse")
 
 from ffthompy.tensors import TensorFuns
 from scipy.linalg import block_diag
+import numpy.fft as fft
+
 
 class Tucker(TensorFuns):
 
@@ -68,8 +70,17 @@ class Tucker(TensorFuns):
         return (Tucker(name='a*b', core=newC, basis=newBasis))
 
     def fourier(self):
-        "discrete Fourier transform"
-        raise NotImplementedError()
+        "(inverse) discrete Fourier transform"
+        if self.Fourier:
+            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
+        else:
+            fftfun=lambda x, N: fft.fftshift(fft.fft(fft.ifftshift(x, axes=1), axis=1), axes=1)/N
+
+        basis=[]
+        for ii in range(self.order):
+            basis.append(fftfun(self.basis[ii], self.N[ii]))
+
+        return Tucker(core=self.core, basis=basis, Fourier=not self.Fourier)
 
     def ifourier(self):
         "inverse discrete Fourier transform"
@@ -119,6 +130,11 @@ if __name__=='__main__':
     c = a*b
     c2 = a.full()*b.full()
     print(np.linalg.norm(c.full()-c2))
-    
-    #DFT 
+
+    #DFT
+    from ffthompy.operators import DFT
+    Fa = a.fourier()
+    print(Fa)
+    Fa2 = DFT.fftnc(a.full(), a.N)
+    print(np.linalg.norm(Fa.full()-Fa2))
     print('END')
