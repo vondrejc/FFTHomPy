@@ -1,11 +1,12 @@
+import sys
 import numpy as np
-from numpy.linalg import norm
-# import scipy as sp
-# import sympy as smp
-# import matplotlib.pyplot as pl
-# import sys
-import itertools
+import numpy.fft as fft
+from scipy.linalg import block_diag
 from ffthompy.tensors import TensorFuns
+import itertools
+
+sys.path.append("/home/disliu/ffthompy-sparse")
+
 
 def multiply(A, B, *args, **kwargs):
     """element-wise (Hadamard) product of A and B"""
@@ -21,6 +22,15 @@ def multiply(A, B, *args, **kwargs):
     return C
 
 
+class SparseTensorFuns(TensorFuns):
+    pass
+
+class CanonicalTensor():
+    pass
+
+class TuckerTensor():
+    pass
+
 if __name__=='__main__':
     # check multiplication
     r=2
@@ -33,5 +43,5 @@ if __name__=='__main__':
     C0 = A*B
     C1s = multiply(As, Bs)
     C1 = np.einsum('ij,ik->jk', C1s[0], C1s[1])
-    print(norm(C0-C1))
+    print(np.linalg.norm(C0-C1))
     print('END')
