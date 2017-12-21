@@ -6,7 +6,7 @@ from ffthompy.tensors import TensorFuns
 from scipy.linalg import block_diag
 import decompositions as dc
 
-class canoTensor(TensorFuns):
+class CanoTensor(TensorFuns):
 
     def __init__(self, name='', core=None, basis=None, Fourier=False,
                  r=3, N=[5,5], randomise=False):
@@ -17,7 +17,7 @@ class canoTensor(TensorFuns):
             self.basis=basis
             self.core=core
             self.r = basis[0].shape[0] # since all basis share the same r
-            self.N=np.empty(self.order)
+            self.N=np.empty(self.order, dtype=np.int)
             for ii in range(self.order):
                 self.N[ii]=basis[ii].shape[1]
         else:
@@ -36,12 +36,12 @@ class canoTensor(TensorFuns):
 
     def __add__(self, Y):
         X=self
-        core= np.stack([X.core,Y.core])
+        core= np.hstack([X.core,Y.core])
         basis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(self.order)]
-        return canoTensor(name=X.name+'+'+Y.name, core=core, basis=basis)
+        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis)
 
     def __neg__(self):
-        return canoTensor(core=-self.core, basis=self.basis)
+        return CanoTensor(core=-self.core, basis=self.basis)
 
     def __mul__(self, Y):
         "element-wise multiplication of two Tucker tensors"
@@ -59,7 +59,7 @@ class canoTensor(TensorFuns):
             for j in range(0, Y.r):
                 newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
                 newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
-                coeff[i*Y.r+j ]=self.core[i, i]*Y.core[j, j]
+                coeff[i*Y.r+j]=self.core[i]*Y.core[j]
 
         # # normalize the basis
         norm_A=np.linalg.norm(newA, axis=1)
@@ -73,17 +73,14 @@ class canoTensor(TensorFuns):
 
         newBasis=[newA, newB]
 
-        return (canoTensor(name='a*b', core=np.diag(coeff), basis=newBasis))
+        return (CanoTensor(name='a*b', core=coeff, basis=newBasis))
 
     def add(self, Y, tol=None, rank=None):
-
         return (self+Y).truncate(tol=tol, rank=rank)
-
 
     def multiply(self, Y, tol=None, rank=None):
         # element-wise multiplication
         return (self*Y).truncate(tol=tol, rank=rank)
-
 
     def fourier(self):
         "discrete Fourier transform"
@@ -96,8 +93,8 @@ class canoTensor(TensorFuns):
     def full(self):
         "return a full tensor"
         if self.order==2:
-            # return np.einsum('ij,ik,jl->kl',  self.basis[0],self.core,self.basis[1])
-            return(np.dot(np.dot(self.basis[0].T, self.core), self.basis[1]))
+            return np.einsum('i,ik,il->kl', self.core, self.basis[0],self.basis[1])
+#             return(np.dot(np.dot(self.basis[0].T, self.core), self.basis[1]))
         else:
             raise NotImplementedError()
 
@@ -105,7 +102,7 @@ class canoTensor(TensorFuns):
         "return truncated tensor"
 
         basis=self.basis
-        coeff=np.diag(self.core)
+        coeff=self.core
 
         ind=(-coeff).argsort() # the index of the core diagonal that sorts it into a descending order
         coeff=coeff[ind]
@@ -117,12 +114,12 @@ class canoTensor(TensorFuns):
             rank=np.searchsorted(np.cumsum(np.abs(coeff))/np.sum(np.abs(coeff)), 1.0-tol)+1
 
         # truncation
-        core=np.diag(coeff[:rank])
+        core=coeff[:rank]
 
         for ii in range(self.order):
             basis[ii]=basis[ii][ind[:rank], :]
 
-        return canoTensor(name=self.name+'_truncated', core=core, basis=basis)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
 
     def __repr__(self, full=False, detailed=False):
         keys=['name', 'N', 'Fourier', 'r']
@@ -142,8 +139,8 @@ class canoTensor(TensorFuns):
 
 if __name__=='__main__':
 #    N=[10,20]
-#    a = canoTensor(name='a', r=3, N=N, randomise=True)
-#    b = canoTensor(name='b', r=3, N=N, randomise=True)
+#    a = CanoTensor(name='a', r=3, N=N, randomise=True)
+#    b = CanoTensor(name='b', r=3, N=N, randomise=True)
 #    print(a)
 #    print(b)
 #    # addition
@@ -184,7 +181,7 @@ if __name__=='__main__':
     B1u=B1/np.reshape(dB1, (B1.shape[0], 1))
 
     # put the normalizing coefficient in C
-    C1=np.diag(dA1*dB1)
+    C1=dA1*dB1
 #    temp=np.dot(A1u,C1)
 #    ACB=np.dot(temp,B1u)
 #    print(np.linalg.norm( ACB - np.dot(A1,B1) ))
@@ -197,11 +194,11 @@ if __name__=='__main__':
     B2u=B2/np.reshape(dB2, (B2.shape[0], 1))
 
     # put the normalizing coefficient in C
-    C2=np.diag(dA2*dB2)
+    C2=dA2*dB2
 
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
-    a=canoTensor(name='a', core=C1, basis=[A1u.T, B1u])
-    b=canoTensor(name='b', core=C2, basis=[A2u.T, B2u])
+    a=CanoTensor(name='a', core=C1, basis=[A1u.T, B1u])
+    b=CanoTensor(name='b', core=C2, basis=[A2u.T, B2u])
 
     # addition
     c=a+b
@@ -211,8 +208,6 @@ if __name__=='__main__':
     print
     print "(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add))
     print "add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add))
-
-
 
     # multiplication
     c=a*b
