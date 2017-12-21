@@ -2,12 +2,12 @@ import sys
 import numpy as np
 sys.path.append("/home/disliu/ffthompy-sparse")
 
-from ffthompy.tensors import TensorFuns
+from ffthompy.sparse.tensors import SparseTensorFuns
 from scipy.linalg import block_diag
 import numpy.fft as fft
 
 
-class Tucker(TensorFuns):
+class Tucker(SparseTensorFuns):
 
     def __init__(self, name='', core=None, basis=None, Fourier=False,
                  r=[3,3], N=[5,5], randomise=False):
@@ -69,23 +69,6 @@ class Tucker(TensorFuns):
 
         return (Tucker(name='a*b', core=newC, basis=newBasis))
 
-    def fourier(self):
-        "(inverse) discrete Fourier transform"
-        if self.Fourier:
-            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
-        else:
-            fftfun=lambda x, N: fft.fftshift(fft.fft(fft.ifftshift(x, axes=1), axis=1), axes=1)/N
-
-        basis=[]
-        for ii in range(self.order):
-            basis.append(fftfun(self.basis[ii], self.N[ii]))
-
-        return Tucker(core=self.core, basis=basis, Fourier=not self.Fourier)
-
-    def ifourier(self):
-        "inverse discrete Fourier transform"
-        raise NotImplementedError()
-
     def full(self):
         "return a full tensor"
         if self.order==2:
@@ -114,7 +97,7 @@ class Tucker(TensorFuns):
 
 
 if __name__=='__main__':
-    N=np.array([5,5])
+    N=np.array([5,6])
     a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
     b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
     print(a)
@@ -124,14 +107,17 @@ if __name__=='__main__':
     c = a+b
     print(c)
     c2 = a.full()+b.full()
+    print('testing addition...')
     print(np.linalg.norm(c.full()-c2))
 
     # multiplication
     c = a*b
     c2 = a.full()*b.full()
+    print('testing multiplication...')
     print(np.linalg.norm(c.full()-c2))
 
     #DFT
+    print('testing DFT...')
     from ffthompy.operators import DFT
     Fa = a.fourier()
     print(Fa)

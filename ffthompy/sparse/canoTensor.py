@@ -2,11 +2,12 @@ import sys
 import numpy as np
 sys.path.append("/home/disliu/ffthompy-sparse")
 
-from ffthompy.tensors import TensorFuns
+from ffthompy.sparse.tensors import SparseTensorFuns
 from scipy.linalg import block_diag
 import decompositions as dc
 
-class CanoTensor(TensorFuns):
+
+class CanoTensor(SparseTensorFuns):
 
     def __init__(self, name='', core=None, basis=None, Fourier=False,
                  r=3, N=[5,5], randomise=False):
@@ -81,14 +82,6 @@ class CanoTensor(TensorFuns):
     def multiply(self, Y, tol=None, rank=None):
         # element-wise multiplication
         return (self*Y).truncate(tol=tol, rank=rank)
-
-    def fourier(self):
-        "discrete Fourier transform"
-        raise NotImplementedError()
-
-    def ifourier(self):
-        "inverse discrete Fourier transform"
-        raise NotImplementedError()
 
     def full(self):
         "return a full tensor"
@@ -218,5 +211,10 @@ if __name__=='__main__':
     print  "(a*b).full - (a.full*b.full)         = ", (np.linalg.norm(c.full()-c_mul))
     print  "multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
     # DFT
-
+    print('testing DFT...')
+    from ffthompy.operators import DFT
+    Fa = a.fourier()
+    print(Fa)
+    Fa2 = DFT.fftnc(a.full(), a.N)
+    print(np.linalg.norm(Fa.full()-Fa2))
     print('END')

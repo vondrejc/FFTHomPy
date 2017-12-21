@@ -4,6 +4,7 @@ import numpy.fft as fft
 from scipy.linalg import block_diag
 from ffthompy.tensors import TensorFuns
 import itertools
+from copy import deepcopy as copy
 
 sys.path.append("/home/disliu/ffthompy-sparse")
 
@@ -23,7 +24,29 @@ def multiply(A, B, *args, **kwargs):
 
 
 class SparseTensorFuns(TensorFuns):
-    pass
+    def fourier(self):
+        "(inverse) discrete Fourier transform"
+        if self.Fourier:
+            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
+            name='Fi({})'.format(self.name)
+        else:
+            fftfun=lambda x, N: fft.fftshift(fft.fft(fft.ifftshift(x, axes=1), axis=1), axes=1)/N
+            name='F({})'.format(self.name)
+
+        basis=[]
+        for ii in range(self.order):
+            basis.append(fftfun(self.basis[ii], self.N[ii]))
+
+        res = self.copy(name=name)
+        res.basis=basis
+        return res
+
+    def copy(self, name=None):
+        if name is None:
+            name = 'copy({})'.format(self.name)
+        Cls = self.__class__
+        return Cls(name=name, core=np.copy(self.core), basis=copy(self.basis),
+                   Fourier=self.Fourier)
 
 class CanonicalTensor():
     pass
