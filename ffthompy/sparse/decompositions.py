@@ -45,8 +45,8 @@ def dCA_matrix_input(M, k, tol=1e-16):
             break
 
     k_actual=i+1
-    if k!=k_actual:
-        print "The actual rank k is %d in stead of %d"&(k_actual, k)
+#     if k!=k_actual:
+#         print "The actual rank k is %d in stead of %d"&(k_actual, k)
 
     A=A[:, :k_actual]
     return A, k_actual, max_err
