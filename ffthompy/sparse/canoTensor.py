@@ -12,7 +12,8 @@ class CanoTensor(SparseTensorFuns):
     def __init__(self, name='', core=None, basis=None, Fourier=False,
                  r=3, N=[5,5], randomise=False):
         self.name=name
-        self.Fourier=Fourier
+        self.Fourier=Fourier # TODO: dtype instead of Fourier
+
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
@@ -32,7 +33,7 @@ class CanoTensor(SparseTensorFuns):
                 self.basis=[np.zeros([self.r[ii],self.N[ii]]) for ii in range(self.order)]
 
     def randomise(self):
-        self.core=np.diag(np.random.random((self.r,)))
+        self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r,self.N[ii]]) for ii in range(self.order)]
 
     def __add__(self, Y):
@@ -46,21 +47,26 @@ class CanoTensor(SparseTensorFuns):
 
     def __mul__(self, Y):
         "element-wise multiplication of two Tucker tensors"
+        X=self
         new_r=self.r*Y.r
-        A=self.basis[0]
-        B=self.basis[1]
+        A=X.basis[0]
+        B=X.basis[1]
         A2=Y.basis[0]
         B2=Y.basis[1]
 
-        newA=np.zeros((new_r, self.N[0]))
-        newB=np.zeros((new_r, self.N[1]))
+        if self.Fourier:
+            dtype=np.complex
+        else:
+            dtype=np.float
+        newA=np.zeros((new_r, X.N[0]), dtype=dtype)
+        newB=np.zeros((new_r, X.N[1]), dtype=dtype)
         coeff=np.zeros((new_r,))
 
-        for i in range(0, self.r):
+        for i in range(0, X.r):
             for j in range(0, Y.r):
                 newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
                 newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
-                coeff[i*Y.r+j]=self.core[i]*Y.core[j]
+                coeff[i*Y.r+j]=X.core[i]*Y.core[j]
 
         # # normalize the basis
         norm_A=np.linalg.norm(newA, axis=1)
@@ -74,7 +80,8 @@ class CanoTensor(SparseTensorFuns):
 
         newBasis=[newA, newB]
 
-        return (CanoTensor(name='a*b', core=coeff, basis=newBasis))
+        return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=newBasis,
+                          Fourier=self.Fourier)
 
     def add(self, Y, tol=None, rank=None):
         return (self+Y).truncate(tol=tol, rank=rank)

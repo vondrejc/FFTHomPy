@@ -27,7 +27,7 @@ class SparseTensorFuns(TensorFuns):
     def fourier(self):
         "(inverse) discrete Fourier transform"
         if self.Fourier:
-            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
+            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1).real*N
             name='Fi({})'.format(self.name)
         else:
             fftfun=lambda x, N: fft.fftshift(fft.fft(fft.ifftshift(x, axes=1), axis=1), axes=1)/N
@@ -39,6 +39,7 @@ class SparseTensorFuns(TensorFuns):
 
         res = self.copy(name=name)
         res.basis=basis
+        res.Fourier=not res.Fourier
         return res
 
     def copy(self, name=None):
