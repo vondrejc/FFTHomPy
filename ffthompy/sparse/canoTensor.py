@@ -45,43 +45,64 @@ class CanoTensor(SparseTensorFuns):
     def __neg__(self):
         return CanoTensor(core=-self.core, basis=self.basis)
 
+    def __sub__(self, Y):
+        return self.__add__(-Y)
+
+    def __rmul__(self, X):
+        Y=self
+        if isinstance(X, np.float):
+            R = Y.copy()
+            R.core=X*Y.core
+        else:
+            raise NotImplementedError()
+        return R
+
     def __mul__(self, Y):
         "element-wise multiplication of two Tucker tensors"
-        X=self
-        new_r=self.r*Y.r
-        A=X.basis[0]
-        B=X.basis[1]
-        A2=Y.basis[0]
-        B2=Y.basis[1]
-
-        if self.Fourier:
-            dtype=np.complex
+        if isinstance(Y, float):
+            R = self.copy()
+            R.core=self.core*Y
+            return R
+        elif isinstance(Y, np.ndarray) and Y.shape==(1,):
+            R = self.copy()
+            R.core=self.core*Y[0]
+            return R
         else:
-            dtype=np.float
-        newA=np.zeros((new_r, X.N[0]), dtype=dtype)
-        newB=np.zeros((new_r, X.N[1]), dtype=dtype)
-        coeff=np.zeros((new_r,))
+            X=self
+            new_r=X.r*Y.r
+            A=X.basis[0]
+            B=X.basis[1]
+            A2=Y.basis[0]
+            B2=Y.basis[1]
 
-        for i in range(0, X.r):
-            for j in range(0, Y.r):
-                newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
-                newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
-                coeff[i*Y.r+j]=X.core[i]*Y.core[j]
+            if X.Fourier:
+                dtype=np.complex
+            else:
+                dtype=np.float
+            newA=np.zeros((new_r, X.N[0]), dtype=dtype)
+            newB=np.zeros((new_r, X.N[1]), dtype=dtype)
+            coeff=np.zeros((new_r,))
 
-        # # normalize the basis
-        norm_A=np.linalg.norm(newA, axis=1)
-        norm_B=np.linalg.norm(newB, axis=1)
+            for i in range(0, X.r):
+                for j in range(0, Y.r):
+                    newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
+                    newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
+                    coeff[i*Y.r+j]=X.core[i]*Y.core[j]
 
-        newA=newA/np.reshape(norm_A, (newA.shape[0], 1))
-        newB=newB/np.reshape(norm_B, (newB.shape[0], 1))
+            # # normalize the basis
+            norm_A=np.linalg.norm(newA, axis=1)
+            norm_B=np.linalg.norm(newB, axis=1)
 
-        # put the normalizing coefficient into the coefficient vector
-        coeff=coeff*(norm_A*norm_B)
+            newA=newA/np.reshape(norm_A, (newA.shape[0], 1))
+            newB=newB/np.reshape(norm_B, (newB.shape[0], 1))
 
-        newBasis=[newA, newB]
+            # put the normalizing coefficient into the coefficient vector
+            coeff=coeff*(norm_A*norm_B)
 
-        return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=newBasis,
-                          Fourier=self.Fourier)
+            newBasis=[newA, newB]
+
+            return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=newBasis,
+                              Fourier=self.Fourier)
 
     def add(self, Y, tol=None, rank=None):
         return (self+Y).truncate(tol=tol, rank=rank)
@@ -120,6 +141,25 @@ class CanoTensor(SparseTensorFuns):
             basis[ii]=basis[ii][ind[:rank], :]
 
         return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
+
+    def norm(self, ord='fro'):
+        if ord=='fro':
+            R = self*self
+            val=0.
+            for ii in range(R.r):
+                valii=0.
+                for jj in range(R.ord):
+                    valii += np.sum(R.basis[jj][ii])
+                val += R.core[ii]*valii
+
+        elif ord==2:
+            pass
+
+        elif ord=='core':
+            return np.linalg.norm(self.core)
+
+        else:
+            raise NotImplementedError()
 
     def __repr__(self, full=False, detailed=False):
         keys=['name', 'N', 'Fourier', 'r']
