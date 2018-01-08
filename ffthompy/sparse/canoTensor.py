@@ -1,10 +1,10 @@
-import sys
+#import sys
 import numpy as np
-sys.path.append("/home/disliu/ffthompy-sparse")
+#sys.path.append("/home/disliu/ffthompy-sparse")
 
 from ffthompy.sparse.tensors import SparseTensorFuns
-from scipy.linalg import block_diag
 import decompositions as dc
+import timeit
 
 
 class CanoTensor(SparseTensorFuns):
@@ -13,12 +13,13 @@ class CanoTensor(SparseTensorFuns):
                  r=3, N=[5,5], randomise=False):
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
-
+        
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
             self.core=core
             self.r = basis[0].shape[0] # since all basis share the same r
+            
             self.N=np.empty(self.order, dtype=np.int)
             for ii in range(self.order):
                 self.N[ii]=basis[ii].shape[1]
@@ -44,7 +45,7 @@ class CanoTensor(SparseTensorFuns):
 
     def __neg__(self):
         return CanoTensor(core=-self.core, basis=self.basis)
-
+        
     def __sub__(self, Y):
         return self.__add__(-Y)
 
@@ -58,7 +59,7 @@ class CanoTensor(SparseTensorFuns):
         return R
 
     def __mul__(self, Y):
-        "element-wise multiplication of two Tucker tensors"
+        "element-wise multiplication of two canonical tensors"
         if isinstance(Y, float):
             R = self.copy()
             R.core=self.core*Y
@@ -119,29 +120,29 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def truncate(self, tol=None, rank=None):
+    def truncate(self,  rank=None, tol=None):
         "return truncated tensor"
+        # if tol is not none, it will override rank as the truncation criteria.
+        basis=list(self.basis) # this copying avoids perturbation to the original tensor object 
+        core=self.core         
 
-        basis=self.basis
-        coeff=self.core
-
-        ind=(-coeff).argsort() # the index of the core diagonal that sorts it into a descending order
-        coeff=coeff[ind]
+        ind=(-core).argsort() # the index of the core that sorts it into a descending order
+        core=core[ind]
 
         if tol is None and rank is None:
             rank=self.r
         elif tol is not None:
             # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
-            rank=np.searchsorted(np.cumsum(np.abs(coeff))/np.sum(np.abs(coeff)), 1.0-tol)+1
-
+            rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
+           
         # truncation
-        core=coeff[:rank]
+        core=core[:rank]
 
         for ii in range(self.order):
-            basis[ii]=basis[ii][ind[:rank], :]
-
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
-
+            basis[ii]=basis[ii][ind[:rank], :] 
+          
+        return  CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
+        
     def norm(self, ord='fro'):
         if ord=='fro':
             R = self*self
@@ -160,7 +161,7 @@ class CanoTensor(SparseTensorFuns):
 
         else:
             raise NotImplementedError()
-
+            
     def __repr__(self, full=False, detailed=False):
         keys=['name', 'N', 'Fourier', 'r']
         ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
@@ -196,15 +197,15 @@ if __name__=='__main__':
 
     # DFT
     ########################################## test with "smoother" matices
-    N=30
-    M=20
+    N=100
+    M=80
     x=np.linspace(-np.pi, np.pi, M)
     y=np.linspace(-np.pi, np.pi, N)
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
     S2=np.cos(x[np.newaxis, :]-y[:, np.newaxis])*(x[np.newaxis, :]-y[:, np.newaxis])
 
-    k=10
+    k=20
     # factorize the matrix
     A1, B1, k_actual, err=dc.PCA_matrix_input(S1, N, M, k)
     k1=k_actual
@@ -257,11 +258,30 @@ if __name__=='__main__':
     print
     print  "(a*b).full - (a.full*b.full)         = ", (np.linalg.norm(c.full()-c_mul))
     print  "multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
+    print
+    
+    # truncation    
+    a_trunc = a.truncate(rank=5) 
+ 
+    print  "a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full())
+    print
+    
     # DFT
     print('testing DFT...')
+    
     from ffthompy.operators import DFT
-    Fa = a.fourier()
-    print(Fa)
-    Fa2 = DFT.fftnc(a.full(), a.N)
+ 
+    Fa = a.fourier()   
+    Fa2 = DFT.fftnc(a.full(), a.N) 
+      
     print(np.linalg.norm(Fa.full()-Fa2))
+    
+    print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
+    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=1000)
+    t2=timeit.timeit("DFT.fftnc(a.full(), a.N)", setup='from ffthompy.operators import DFT;from __main__ import a', number=1000)
+    #t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
+    print
+    print "Tensor of 1D FFT costs: %f" %t1
+    print "n-D FFT costs         : %f" %t2
+    
     print('END')

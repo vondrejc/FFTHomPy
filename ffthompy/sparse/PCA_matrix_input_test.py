@@ -24,7 +24,7 @@ if __name__ == "__main__":
     
     S = np.sin(x[np.newaxis, :] + y[:, np.newaxis]) * (x[np.newaxis, :] + y[:, np.newaxis])
     
-    S =S + 0.001*np.random.rand(N, M)
+    #S =S + 0.001*np.random.rand(N, M)
     #S = np.random.rand(N, M)
     
 #    print S
