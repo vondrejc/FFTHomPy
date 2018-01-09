@@ -1,7 +1,8 @@
-#import sys
+import sys
 import numpy as np
-#sys.path.append("/home/disliu/ffthompy-sparse")
+sys.path.append("/home/disliu/ffthompy-sparse")
 
+from scipy.sparse.linalg import svds
 from ffthompy.sparse.tensors import SparseTensorFuns
 import decompositions as dc
 import timeit
@@ -9,11 +10,11 @@ import timeit
 
 class CanoTensor(SparseTensorFuns):
 
-    def __init__(self, name='', core=None, basis=None, Fourier=False,
+    def __init__(self, name='', core=None, basis=None, orthogonal=False, Fourier=False,
                  r=3, N=[5,5], randomise=False):
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
-        
+              
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
@@ -59,7 +60,8 @@ class CanoTensor(SparseTensorFuns):
         return R
 
     def __mul__(self, Y):
-        "element-wise multiplication of two canonical tensors"
+        "element-wise multiplication of two canonical tensors" 
+        
         if isinstance(Y, float):
             R = self.copy()
             R.core=self.core*Y
@@ -68,42 +70,22 @@ class CanoTensor(SparseTensorFuns):
             R = self.copy()
             R.core=self.core*Y[0]
             return R
+            
         else:
             X=self
-            new_r=X.r*Y.r
-            A=X.basis[0]
-            B=X.basis[1]
-            A2=Y.basis[0]
-            B2=Y.basis[1]
-
             if X.Fourier:
                 dtype=np.complex
             else:
-                dtype=np.float
-            newA=np.zeros((new_r, X.N[0]), dtype=dtype)
-            newB=np.zeros((new_r, X.N[1]), dtype=dtype)
-            coeff=np.zeros((new_r,))
-
-            for i in range(0, X.r):
-                for j in range(0, Y.r):
-                    newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
-                    newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
-                    coeff[i*Y.r+j]=X.core[i]*Y.core[j]
-
-            # # normalize the basis
-            norm_A=np.linalg.norm(newA, axis=1)
-            norm_B=np.linalg.norm(newB, axis=1)
-
-            newA=newA/np.reshape(norm_A, (newA.shape[0], 1))
-            newB=newB/np.reshape(norm_B, (newB.shape[0], 1))
-
-            # put the normalizing coefficient into the coefficient vector
-            coeff=coeff*(norm_A*norm_B)
-
-            newBasis=[newA, newB]
-
-            return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=newBasis,
-                              Fourier=self.Fourier)
+                dtype=np.float   
+ 
+            u,s,vt=np.linalg.svd(X.full()*Y.full())
+            
+            #new_r = s.shape[0]
+            newBasis=[u.T, vt]
+            
+            return CanoTensor(name=X.name+'*'+Y.name, core=s, basis=newBasis,
+                              Fourier=self.Fourier)           
+ 
 
     def add(self, Y, tol=None, rank=None):
         return (self+Y).truncate(tol=tol, rank=rank)
@@ -120,26 +102,27 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def truncate(self,  rank=None, tol=None):
+    def truncate(self, rank=None, tol=None, orthogonal=False):
         "return truncated tensor"
         # if tol is not none, it will override rank as the truncation criteria.
         basis=list(self.basis) # this copying avoids perturbation to the original tensor object 
-        core=self.core         
-
-        ind=(-core).argsort() # the index of the core that sorts it into a descending order
-        core=core[ind]
-
+        core=self.core      
+        
+        if rank >=self.r:
+            print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
+            return self
+     
+        # to determine the rank of truncation
         if tol is None and rank is None:
-            rank=self.r
+            rank=self.r -1
         elif tol is not None:
             # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
             rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
            
-        # truncation
-        core=core[:rank]
-
+        # truncation 
+        core=core[:rank] # it is already sorted in case of using svd
         for ii in range(self.order):
-            basis[ii]=basis[ii][ind[:rank], :] 
+            basis[ii]=basis[ii][:rank, :] 
           
         return  CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
         
@@ -198,68 +181,48 @@ if __name__=='__main__':
     # DFT
     ########################################## test with "smoother" matices
     N=100
-    M=80
+    M=100
     x=np.linspace(-np.pi, np.pi, M)
     y=np.linspace(-np.pi, np.pi, N)
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
     S2=np.cos(x[np.newaxis, :]-y[:, np.newaxis])*(x[np.newaxis, :]-y[:, np.newaxis])
-
+    
     k=20
     # factorize the matrix
-    A1, B1, k_actual, err=dc.PCA_matrix_input(S1, N, M, k)
-    k1=k_actual
-
-    A2, B2, k_actual, err=dc.PCA_matrix_input(S2, N, M, k)
-    k2=k_actual
-
-
-    #  nomalize the A and B
-    dA1=np.linalg.norm(A1, axis=0)
-    dB1=np.linalg.norm(B1, axis=1)
-
-    A1u=A1/np.reshape(dA1, (1, A1.shape[1]))
-    B1u=B1/np.reshape(dB1, (B1.shape[0], 1))
-
-    # put the normalizing coefficient in C
-    C1=dA1*dB1
-#    temp=np.dot(A1u,C1)
-#    ACB=np.dot(temp,B1u)
-#    print(np.linalg.norm( ACB - np.dot(A1,B1) ))
-
-    #  nomalize the A and B
-    dA2=np.linalg.norm(A2, axis=0)
-    dB2=np.linalg.norm(B2, axis=1)
-
-    A2u=A2/np.reshape(dA2, (1, A2.shape[1]))
-    B2u=B2/np.reshape(dB2, (B2.shape[0], 1))
-
-    # put the normalizing coefficient in C
-    C2=dA2*dB2
-
+    u1,s1,vt1=np.linalg.svd(S1)
+    
+    u2,s2,vt2=np.linalg.svd(S2)
+     
+    
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
-    a=CanoTensor(name='a', core=C1, basis=[A1u.T, B1u])
-    b=CanoTensor(name='b', core=C2, basis=[A2u.T, B2u])
-
+    a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
+    b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
+    
     # addition
     c=a+b
     c2=a.add(b, tol=0.05)
-
+    
     c_add=a.full()+b.full()
     print
     print "(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add))
     print "add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add))
-
+    
     # multiplication
+    
     c=a*b
     c3=a.multiply(b, tol=0.01)
-
+    
     c_mul=a.full()*b.full()
     print
     print  "(a*b).full - (a.full*b.full)         = ", (np.linalg.norm(c.full()-c_mul))
     print  "multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
     print
     
+    print('rank control on tensor product:')
+    print "full product tensor rank=     ",c.r  
+    print "truncated product tensor rank=",c3.r
+    print
     # truncation    
     a_trunc = a.truncate(rank=5) 
  
