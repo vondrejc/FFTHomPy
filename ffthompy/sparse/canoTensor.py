@@ -38,10 +38,26 @@ class CanoTensor(SparseTensorFuns):
         self.basis=[np.random.random([self.r,self.N[ii]]) for ii in range(self.order)]
 
     def __add__(self, Y):
+        
         X=self
         core= np.hstack([X.core,Y.core])
         basis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(self.order)]
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis)
+        
+        # re-orthogonalize the basis by QR and SVD
+        qa, ra = np.linalg.qr(basis[0].T)            
+        qb, rb = np.linalg.qr(basis[1].T)
+          
+        core = ra*core[np.newaxis,:]
+        core = np.dot(core,rb.T)
+        
+        u,s,vt = np.linalg.svd(core,full_matrices=0)
+        
+        newA = np.dot(qa, u) 
+        newB = np.dot(vt, qb.T) 
+
+        newBasis=[newA.T, newB] 
+        
+        return CanoTensor(name=X.name+'+'+Y.name, core=s, basis=newBasis)
 
     def __neg__(self):
         return CanoTensor(core=-self.core, basis=self.basis)
@@ -93,7 +109,7 @@ class CanoTensor(SparseTensorFuns):
                     newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
                     coeff[i*Y.r+j]=X.core[i]*Y.core[j]
 
-
+            # re-orthogonalize the basis by QR and SVD
             qa, ra = np.linalg.qr(newA.T)            
             qb, rb = np.linalg.qr(newB.T)
               
@@ -125,8 +141,9 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def truncate(self, rank=None, tol=None, orthogonal=False):
+    def truncate(self, rank=None, tol=None):
         "return truncated tensor"
+        # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation. 
         # if tol is not none, it will override rank as the truncation criteria.
         basis=list(self.basis) # this copying avoids perturbation to the original tensor object 
         core=self.core      
@@ -203,15 +220,15 @@ if __name__=='__main__':
 
     # DFT
     ########################################## test with "smoother" matices
-    N=50
-    M=100
+    N=100
+    M=50
 #    L= min(N,M)    
     
     x=np.linspace(-np.pi, np.pi, M)
     y=np.linspace(-np.pi, np.pi, N)
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
-    S2=np.cos(x[np.newaxis, :]-y[:, np.newaxis])*(x[np.newaxis, :]-y[:, np.newaxis]) 
+    S2=np.cos(2*x[np.newaxis, :]-y[:, np.newaxis])*(2*x[np.newaxis, :]-y[:, np.newaxis]) 
      
     # factorize the matrix
     u1,s1,vt1=np.linalg.svd(S1, full_matrices=0)  
@@ -224,17 +241,18 @@ if __name__=='__main__':
     
     # addition
     c=a+b
-    c2=a.add(b, tol=0.05)
+    c2=a.add(b, tol=0.05) 
     
     c_add=a.full()+b.full()
     print
     print "(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add))
     print "add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add))
     
+   
     # multiplication
     
     c=a*b
-    c3=a.multiply(b, tol=0.05)
+    c3=a.multiply(b, tol=0.001)
     
     c_mul=a.full()*b.full()
     print
@@ -247,7 +265,7 @@ if __name__=='__main__':
     print "truncated product tensor rank=",c3.r
     print
     # truncation    
-    a_trunc = a.truncate(rank=5) 
+    a_trunc = a.truncate(rank=4) 
  
     print  "a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full())
     print
