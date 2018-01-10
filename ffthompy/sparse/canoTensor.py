@@ -29,6 +29,7 @@ class CanoTensor(SparseTensorFuns):
             self.N=N
             if randomise:
                 self.randomise()
+                self.sort()
             else:
                 self.core=np.zeros(r)
                 self.basis=[np.zeros([self.r[ii], self.N[ii]]) for ii in range(self.order)]
@@ -141,6 +142,13 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
+    def sort(self):
+        "The function sort the modes in accordance with the magnitude of core"
+        inds = np.flip(np.argsort(np.abs(self.core), kind='mergesort'), 0)
+        self.core=self.core[inds]
+        for ii in range(self.order):
+            self.basis[ii] = self.basis[ii][inds]
+
     def truncate(self, rank=None, tol=None):
         "return truncated tensor"
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
@@ -164,7 +172,7 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return  CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
 
     def norm(self, ord='fro'):
         if ord=='fro':
@@ -221,7 +229,7 @@ if __name__=='__main__':
     # DFT
     ########################################## test with "smoother" matices
     N=100
-    M=50
+    M=100
 #    L= min(N,M)
 
     x=np.linspace(-np.pi, np.pi, M)
@@ -238,10 +246,14 @@ if __name__=='__main__':
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
     b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
+#     N=[100,101]
+#     a=CanoTensor(name='a', r=50, N=N, randomise=True)
+#     b=CanoTensor(name='a', r=60, N=N, randomise=True)
 
     # addition
     c=a+b
-    c2=a.add(b, tol=0.05)
+    c2=a.add(b, tol=1e-5)
+    c2=c.truncate(tol=1e-5)
 
     c_add=a.full()+b.full()
     print
@@ -281,8 +293,9 @@ if __name__=='__main__':
     print(np.linalg.norm(Fa.full()-Fa2))
 
     print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
-    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=1000)
-    t2=timeit.timeit("DFT.fftnc(a.full(), a.N)", setup='from ffthompy.operators import DFT;from __main__ import a', number=1000)
+    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)
+    afull=a.full()
+    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.operators import DFT;from __main__ import a, afull', number=10)
     # t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
     print
     print "Tensor of 1D FFT costs: %f"%t1
