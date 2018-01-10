@@ -1,10 +1,9 @@
-import sys
+#import sys
 import numpy as np
-sys.path.append("/home/disliu/ffthompy-sparse")
-
-from scipy.sparse.linalg import svds
+#sys.path.append("/home/disliu/ffthompy-sparse") 
+ 
 from ffthompy.sparse.tensors import SparseTensorFuns
-import decompositions as dc
+#import decompositions as dc
 import timeit
 
 
@@ -78,14 +77,38 @@ class CanoTensor(SparseTensorFuns):
             else:
                 dtype=np.float   
  
-            u,s,vt=np.linalg.svd(X.full()*Y.full())
+            new_r=X.r*Y.r
+            A=X.basis[0]
+            B=X.basis[1]
+            A2=Y.basis[0]
+            B2=Y.basis[1]
+
+            newA=np.zeros((new_r, X.N[0]), dtype=dtype)
+            newB=np.zeros((new_r, X.N[1]), dtype=dtype)
+            coeff=np.zeros((new_r,)) 
             
-            #new_r = s.shape[0]
-            newBasis=[u.T, vt]
+            for i in range(0, X.r):
+                for j in range(0, Y.r):
+                    newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
+                    newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
+                    coeff[i*Y.r+j]=X.core[i]*Y.core[j]
+
+
+            qa, ra = np.linalg.qr(newA.T)            
+            qb, rb = np.linalg.qr(newB.T)
+              
+            core = ra*coeff[np.newaxis,:]
+            core = np.dot(core,rb.T)
+            
+            u,s,vt = np.linalg.svd(core,full_matrices=0)
+            
+            newA = np.dot(qa, u) 
+            newB = np.dot(vt, qb.T) 
+
+            newBasis=[newA.T, newB]
             
             return CanoTensor(name=X.name+'*'+Y.name, core=s, basis=newBasis,
-                              Fourier=self.Fourier)           
- 
+                              Fourier=self.Fourier)    
 
     def add(self, Y, tol=None, rank=None):
         return (self+Y).truncate(tol=tol, rank=rank)
@@ -180,20 +203,20 @@ if __name__=='__main__':
 
     # DFT
     ########################################## test with "smoother" matices
-    N=100
+    N=50
     M=100
+#    L= min(N,M)    
+    
     x=np.linspace(-np.pi, np.pi, M)
     y=np.linspace(-np.pi, np.pi, N)
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
-    S2=np.cos(x[np.newaxis, :]-y[:, np.newaxis])*(x[np.newaxis, :]-y[:, np.newaxis])
-    
-    k=20
-    # factorize the matrix
-    u1,s1,vt1=np.linalg.svd(S1)
-    
-    u2,s2,vt2=np.linalg.svd(S2)
+    S2=np.cos(x[np.newaxis, :]-y[:, np.newaxis])*(x[np.newaxis, :]-y[:, np.newaxis]) 
      
+    # factorize the matrix
+    u1,s1,vt1=np.linalg.svd(S1, full_matrices=0)  
+    u2,s2,vt2=np.linalg.svd(S2, full_matrices=0) 
+   
     
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
@@ -211,12 +234,12 @@ if __name__=='__main__':
     # multiplication
     
     c=a*b
-    c3=a.multiply(b, tol=0.01)
+    c3=a.multiply(b, tol=0.05)
     
     c_mul=a.full()*b.full()
     print
-    print  "(a*b).full - (a.full*b.full)         = ", (np.linalg.norm(c.full()-c_mul))
-    print  "multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
+    print  "                  (a*b).full - (a.full*b.full) = ", (np.linalg.norm(c.full()-c_mul))
+    print  "truncated multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
     print
     
     print('rank control on tensor product:')
