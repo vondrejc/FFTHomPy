@@ -67,7 +67,7 @@ class Test_operators(unittest.TestCase):
             self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
                                    msg='vectorial - sym, Fourier=False')
 
-        print('...done')
+        print('...ok')
 
     def test_compatibility(self):
         print('Checking compatibility...')
@@ -132,6 +132,7 @@ class Test_operators(unittest.TestCase):
             print(P1)
             print(u)
             self.assertAlmostEqual(0, (P1==P1.transpose()), delta=1e-13)
+        print('...ok')
 
 if __name__ == "__main__":
     unittest.main()
