@@ -19,6 +19,8 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
         x, info = BiCG(Afun, ATfun, B, x0=x0, par=par, callback=callback)
     elif solver.lower() in ['iterative']: # iterative solver
         x, info = richardson(Afun, B, x0, par=par, callback=callback)
+    elif solver.lower() in ['chebyshev', 'cheby']: # iterative solver
+        x, info = cheby2TERM(A=Afun, B=B, x0=x0, par=par, callback=callback)
     elif solver.split('_')[0].lower() in ['scipy']: # solvers in scipy
         from scipy.sparse.linalg import LinearOperator, cg, bicg
         if solver == 'scipy_cg':
@@ -195,5 +197,85 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
         res['norm_res'] = 0
     return xBiCG, res
 
+def cheby2TERM(A, B, x0, M=None, par=None, callback=None):
+    """
+    Chebyshev two-term iterative solver
+
+    Parameters
+    ----------
+    Afun : Matrix, LinOper, or numpy.array of shape (n, n)
+        it stores the matrix data of linear system and provides a matrix by
+        vector multiplication
+    B : VecTri or numpy.array of shape (n,)
+        it stores a right-hand side of linear system
+    x0 : VecTri or numpy.array of shape (n,)
+        initial approximation of solution of linear system
+    par : dict
+        parameters of the method
+    callback :
+
+    Returns
+    -------
+    x : VecTri or numpy.array of shape (n,)
+        resulting unknown vector
+    res : dict
+        results
+    """
+    if par is None:
+        par = dict()
+    if 'tol' not in par:
+        par['tol'] = 1e-06
+    if 'maxit' not in par:
+        par['maxit'] = 1e7
+    if 'eigrange' not in par:
+        raise NotImplementedError("It is necessary to calculate eigenvalues.")
+    else:
+        Egv = par['eigrange']
+
+    res = dict()
+    res['kit'] = 0
+    bnrm2 = (B*B)**0.5
+    Ib = 1.0/bnrm2
+    if bnrm2 == 0:
+        bnrm2 = 1.0
+    x = x0
+    r = B - A(x)
+    r0 = np.double(r*r)**0.5
+    res['norm_res'] = Ib*r0 # For Normal Residue
+    if res['norm_res'] < par['tol']: # if errnorm is less than tol
+        return x, res
+
+    d = (Egv[1]+Egv[0])/2.0 # np.mean(par['eigrange'])
+    c = (Egv[1]-Egv[0])/2.0 # par['eigrange'][1] - d
+    v = 0*x0
+    while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxit']):
+        res['kit'] += 1
+        x_prev = x
+        if res['kit'] == 1:
+            p = 0
+            w = 1/d
+        elif res['kit'] == 2:
+            p = -(1/2)*(c/d)*(c/d)
+            w = 1/(d-c*c/2/d)
+        else:
+            p = -(c*c/4)*w*w
+            w = 1/(d-c*c*w/4)
+        v = r - p*v
+        x = x_prev + w*v
+        r = B - A(x)
+
+        res['norm_res'] = (1.0/r0)*r.norm()
+
+        if callback is not None:
+            callback(x)
+
+    if par['tol'] < res['norm_res']: # if tolerance is less than error norm
+        print("Chebyshev solver does not converges!")
+    else:
+        print("Chebyshev solver converges.")
+
+    if res['kit'] == 0:
+        res['norm_res'] = 0
+    return x, res
 if __name__ == '__main__':
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))
