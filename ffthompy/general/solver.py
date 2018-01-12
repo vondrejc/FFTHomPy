@@ -2,14 +2,18 @@
 import numpy as np
 from ffthompy.general.base import Timer
 from ffthompy.matvec import VecTri
+from ffthompy.tensors import Tensor
+import scipy.sparse.linalg as spslin
 
-
-def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
+def linear_solver(Afun, B, ATfun=None, x0=None, par=None,
                   solver=None, callback=None):
     """
     Wraper for various linear solvers suited for FFT-based homogenization.
     """
     tim = Timer('Solving linsys by %s' % solver)
+    if x0 is None:
+        x0 = B.zeros_like()
+
     if callback is not None:
         callback(x0)
 
@@ -17,36 +21,40 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
         x, info = CG(Afun, B, x0=x0, par=par, callback=callback)
     elif solver.lower() in ['bicg']: # biconjugate gradients
         x, info = BiCG(Afun, ATfun, B, x0=x0, par=par, callback=callback)
-    elif solver.lower() in ['iterative']: # iterative solver
+    elif solver.lower() in ['iterative', 'richardson']: # iterative solver
         x, info = richardson(Afun, B, x0, par=par, callback=callback)
     elif solver.lower() in ['chebyshev', 'cheby']: # iterative solver
         x, info = cheby2TERM(A=Afun, B=B, x0=x0, par=par, callback=callback)
     elif solver.split('_')[0].lower() in ['scipy']: # solvers in scipy
-        from scipy.sparse.linalg import LinearOperator, cg, bicg
-        if solver == 'scipy_cg':
+        if isinstance(x0, np.ndarray):
+            x0vec=x0.ravel()
+        else:
+            x0vec=x0.vec()
+
+        if solver in ['scipy.sparse.linalg.cg','scipy_cg']:
             Afun.define_operand(B)
-            Afunvec = LinearOperator(Afun.shape, matvec=Afun.matvec,
-                                     dtype=np.float64)
-            xcol, info = cg(Afunvec, B.vec(), x0=x0.vec(),
-                            tol=par['tol'],
-                            maxiter=par['maxiter'],
-                            M=None, callback=callback)
+            Afunvec = spslin.LinearOperator(Afun.matshape, matvec=Afun.matvec,
+                                            dtype=np.float64)
+            xcol, info = spslin.cg(Afunvec, B.vec(), x0=x0vec,
+                                   tol=par['tol'], maxiter=par['maxiter'],
+                                   M=None, callback=callback)
             info = {'info': info}
-        elif solver == 'scipy_bicg':
+        elif solver in ['scipy.sparse.linalg.bicg','scipy_bicg']:
             Afun.define_operand(B)
             ATfun.define_operand(B)
-            Afunvec = LinearOperator(Afun.shape, matvec=Afun.matvec,
-                                     rmatvec=ATfun.matvec, dtype=np.float64)
-            xcol, info = bicg(Afunvec, B.vec(), x0=x0.vec(),
-                              tol=par['tol'],
-                              maxiter=par['maxiter'],
-                              M=None, callback=callback)
+            Afunvec = spslin.LinearOperator(Afun.shape, matvec=Afun.matvec,
+                                            rmatvec=ATfun.matvec, dtype=np.float64)
+            xcol, info = spslin.bicg(Afunvec, B.vec(), x0=x0.vec(),
+                                     tol=par['tol'], maxiter=par['maxiter'],
+                                     M=None, callback=callback)
         res = dict()
         res['info'] = info
-        x = VecTri(val=np.reshape(xcol, B.dN()))
+        x = B.empty_like(name='x')
+        x.val = np.reshape(xcol, B.val.shape)
     else:
         msg = "This kind (%s) of linear solver is not implemented" % solver
         raise NotImplementedError(msg)
+
     tim.measure(print_time=False)
     info.update({'time': tim.vals})
     return x, info
@@ -54,21 +62,22 @@ def linear_solver(Afun=None, ATfun=None, B=None, x0=None, par=None,
 
 def richardson(Afun, B, x0, par=None, callback=None):
     omega = 1./par['alpha']
-    res = {'norm_res': 1.,
+    res = {'norm_res': 1e15,
            'kit': 0}
     x = x0
+    norm=get_norm(B, par)
+
     while (res['norm_res'] > par['tol'] and res['kit'] < par['maxiter']):
         res['kit'] += 1
-        x_prev = x
-        x = x - omega*(Afun*x - B)
-        dif = x_prev-x
-        res['norm_res'] = float(dif.T*dif)**0.5
+        residuum=B-Afun(x)
+        x = x + omega*residuum
+        res['norm_res'] = norm(residuum)
         if callback is not None:
             callback(x)
     return x, res
 
 
-def CG(Afun, B, x0=None, par=None, callback=None):
+def CG(Afun, B, x0, par=None, callback=None):
     """
     Conjugate gradients solver.
 
@@ -92,8 +101,6 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     res : dict
         results
     """
-    if x0 is None:
-        x0 = B
     if par is None:
         par = dict()
     if 'tol' not in list(par.keys()):
@@ -101,23 +108,25 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     if 'maxiter' not in list(par.keys()):
         par['maxiter'] = int(1e3)
 
+    scal=get_scal(B, par)
+
     res = dict()
     xCG = x0
-    Ax = Afun*x0
+    Ax = Afun(x0)
     R = B - Ax
     P = R
-    rr = float(R.T*R)
+    rr = scal(R,R)
     res['kit'] = 0
     res['norm_res'] = np.double(rr)**0.5 # /np.norm(E_N)
     norm_res_log = []
     norm_res_log.append(res['norm_res'])
     while (res['norm_res'] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1 # number of iterations
-        AP = Afun*P
-        alp = float(rr/(P.T*AP))
+        AP = Afun(P)
+        alp = float(rr/scal(P,AP))
         xCG = xCG + alp*P
         R = R - alp*AP
-        rrnext = float(R.T*R)
+        rrnext = scal(R,R)
         bet = rrnext/rr
         rr = rrnext
         P = R + bet*P
@@ -130,7 +139,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     return xCG, res
 
 
-def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
+def BiCG(Afun, ATfun, B, x0, par=None, callback=None):
     """
     BiConjugate gradient solver.
 
@@ -154,8 +163,6 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
     res : dict
         results
     """
-    if x0 is None:
-        x0 = B
     if par is None:
         par = dict()
     if 'tol' not in par:
@@ -164,9 +171,8 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
         par['maxiter'] = 1e3
 
     res = dict()
-    res['time'] = dbg.start_time()
     xBiCG = x0
-    Ax = Afun*x0
+    Ax = Afun(x0)
     R = B - Ax
     Rs = R
     rr = float(R.T*Rs)
@@ -192,7 +198,7 @@ def BiCG(Afun, ATfun, B, x0=None, par=None, callback=None):
         norm_res_log.append(res['norm_res'])
         if callback is not None:
             callback(xBiCG)
-    res['time'] = dbg.get_time(res['time'])
+
     if res['kit'] == 0:
         res['norm_res'] = 0
     return xBiCG, res
@@ -277,5 +283,25 @@ def cheby2TERM(A, B, x0, M=None, par=None, callback=None):
     if res['kit'] == 0:
         res['norm_res'] = 0
     return x, res
+
+def get_scal(B, par):
+    "defines scalar multiplication depending on vectors"
+    if 'scal' in par:
+        scal=par['scal']
+    else:
+        if isinstance(B, np.matrix) or isinstance(B, VecTri):
+            scal = lambda X,Y: float(X.T*Y)
+        elif isinstance(B, Tensor):
+            scal = lambda X,Y: X*Y
+        else:
+            scal = lambda X,Y: np.sum(X*Y.conj())
+    return scal
+
+def get_norm(B, par):
+    scal = get_scal(B, par)
+    norm = lambda X: scal(X, X)**0.5
+    return norm
+
+
 if __name__ == '__main__':
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))
