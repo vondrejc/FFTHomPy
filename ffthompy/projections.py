@@ -6,7 +6,7 @@ from ffthompy.tensors import Tensor
 import itertools
 
 
-def scalar(N, Y, centered=True, NyqNul=True):
+def scalar(N, Y, centered=True, NyqNul=True, tensor=False):
     """
     Assembly of discrete kernels in Fourier space for scalar elliptic problems.
 
@@ -90,9 +90,14 @@ def scalar(N, Y, centered=True, NyqNul=True):
                 G1l[m][n] = np.fft.ifftshift(G1l[m][n])
                 G2l[m][n] = np.fft.ifftshift(G2l[m][n])
 
-    G0l = Matrix(name='hG0', val=G0l, Fourier=True)
-    G1l = Matrix(name='hG1', val=G1l, Fourier=True)
-    G2l = Matrix(name='hG2', val=G2l, Fourier=True)
+    if tensor:
+        G0l = Tensor(name='hG0', val=G0l, order=2, Fourier=True, multype=21)
+        G1l = Tensor(name='hG1', val=G1l, order=2, Fourier=True, multype=21)
+        G2l = Tensor(name='hG2', val=G2l, order=2, Fourier=True, multype=21)
+    else:
+        G0l = Matrix(name='hG0', val=G0l, Fourier=True)
+        G1l = Matrix(name='hG1', val=G1l, Fourier=True)
+        G2l = Matrix(name='hG2', val=G2l, Fourier=True)
 
     if NyqNul:
         G0l = G0l.enlarge(N)
@@ -100,6 +105,36 @@ def scalar(N, Y, centered=True, NyqNul=True):
         G2l = G2l.enlarge(N)
     return G0l, G1l, G2l
 
+def scalar_tensor(N, Y, centered=True, NyqNul=True):
+    dim = np.size(N)
+    N = np.array(N, dtype=np.int)
+    if NyqNul:
+        Nred = get_Nodd(N)
+    else:
+        Nred = N
+    assert(np.allclose(N, Nred))
+
+    xi = Grid.get_xil(N, Y)
+    hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
+    for ind in itertools.product(*[range(n) for n in N]):
+        for i in range(dim):
+            hGrad[i][ind] = xi[i][ind[i]]
+
+    kok= np.einsum('i...,j...->ij...', hGrad, hGrad).real
+    k2 = np.einsum('i...,i...', hGrad, hGrad).real
+    ind_center=mean_index(N)
+    k2[ind_center]=1.
+
+    G0lval=np.zeros_like(kok)
+    Ival=np.zeros_like(kok)
+    for ii in range(dim): # diagonal components
+        G0lval[ii, ii][ind_center] = 1
+        Ival[ii, ii] = 1
+    G1l=Tensor(name='G1', val=kok/k2, order=2, Y=Y, Fourier=True, multype=21)
+    G0l=Tensor(name='G1', val=G0lval, order=2, Y=Y, Fourier=True, multype=21)
+    I = Tensor(name='I', val=Ival, order=2, Y=Y, Fourier=True, multype=21)
+    G2l=I-G1l-G0l
+    return G0l, G1l, G2l
 
 def elasticity(N, Y, centered=True, NyqNul=True):
     """
@@ -284,6 +319,7 @@ def elasticity_large_deformation(N, Y, centered=True, NyqNul=True):
     Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
                          multype=42)
     return Ghat_tensor
+
 
 if __name__ == '__main__':
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))
