@@ -130,7 +130,7 @@ class Tensor(TensorFuns):
     def scalar_product(self, x):
         assert isinstance(x, Tensor)
         assert self.val.shape == x.val.shape
-        scal = np.real(np.sum(self.val[:]*np.conj(x.val[:])))
+        scal = np.sum(self.val[:]*np.conj(x.val[:]))
         if not self.Fourier:
             scal = scal / np.prod(self.N)
         return scal
@@ -140,15 +140,14 @@ class Tensor(TensorFuns):
 
     def __rmul__(self, x):
         if isinstance(x, Scalar):
-            self.val *= Scalar.val
-            return self
-
+            R = self.copy(name='c*'+'')
+            R.val = x.val*self.val
         elif np.size(x) == 1 or isinstance(x, 'float'):
-            self.val *= x
-            return self
-
+            R = self.copy(name='c*'+'')
+            R.val = x*self.val
         else:
             raise ValueError()
+        return R
 
     def __call__(self, *args, **kwargs):
         return self.call_method(*args, **kwargs)

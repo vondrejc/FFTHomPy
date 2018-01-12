@@ -885,7 +885,7 @@ class LinOper():
         """
         if isinstance(X, VecTri):
             Y=self(X)
-            self.shape=(Y.size, X.size)
+            self.matshape=(Y.size, X.size)
             self.X_reshape=X.val.shape
             self.Y_reshape=Y.val.shape
         else:
