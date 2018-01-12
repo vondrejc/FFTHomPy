@@ -2,14 +2,15 @@ import numpy as np
 import scipy.sparse.linalg as sp
 import itertools
 import sys
+from ffthompy import Timer
 # from ffthompy.general.solver import richardson
 
 # PARAMETERS ##############################################################
 dim  = 2            # number of dimensions (works for 2D and 3D)
-N    = dim*(15,)    # number of voxels (assumed equal for all directions)
+N    = dim*(105,)   # number of voxels (assumed equal for all directions)
 Amax = 10.          # material contrast
 
-maxiter=10
+maxiter=1e2
 
 tol=None
 rank=25
@@ -51,12 +52,12 @@ GA_fun = lambda v: G_fun(A_fun(v))
 # CONJUGATE GRADIENT SOLVER ###############################################
 print('\n== CG solver for gradient field in real space =======================')
 b = -GA_fun(E) # right-hand side
+tic=Timer(name='scipy.cg (gradient)')
 e, _=sp.cg(A=sp.LinearOperator(shape=(ndof, ndof), matvec=GA_fun, dtype='float'), b=b,
            tol=1e-10, maxiter=maxiter)
+tic.measure()
 
 aux = e+E.reshape(-1)
-# print('auxiliary field for macroscopic load E = {1}:\n{0}'.format(aux.reshape(vec_shape),
-#                                                                   format((1,)+(dim-1)*(0,))))
 print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e))))
 print('homogenised properties A11 = {}'.format(np.inner(A_fun(aux).reshape(-1), aux)/prodN))
 
@@ -82,29 +83,34 @@ Div = lambda e: ifft(FDiv(fft(e))).real
 DivAGrad_fun = lambda u: Div(dot21(A, Grad(u.reshape(N)))).ravel()
 GFAFG_fun=lambda Fu:-FDiv(fft(dot21(A, ifft(FGrad(Fu)))))
 GFAFG_funvec=lambda Fu: GFAFG_fun(Fu.reshape(N)).ravel()
-
-# CONJUGATE GRADIENT SOLVER ###############################################
-print('\n== CG solver for potential field in Fourier space =======================')
+Pfun=lambda X: X/k2
+PGFAFG_fun=lambda X: Pfun(GFAFG_fun(X))
 B=FDiv(fft(dot21(A, E))) # right-hand side
 
-linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GFAFG_funvec, dtype='complex')
-Fu, _=sp.cg(A=linoper, b=B.ravel(), maxiter=1e2)
 
-e2=ifft(FGrad(Fu.reshape(N))).real
-aux=e2+E
-print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu.reshape(N)))))
-print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e2))))
-print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
+# CONJUGATE GRADIENT SOLVER ###############################################
+# print('\n== scipy CG solver for potential in Fourier space =======================')
+# linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GFAFG_funvec, dtype=np.float)
+# tic=Timer(name='scipy.cg (potential)')
+# Fu, _=sp.cg(A=linoper, b=B.ravel(), maxiter=1e3, tol=1e-6)
+# tic.measure()
+# e2=ifft(FGrad(Fu.reshape(N))).real
+# aux=e2+E
+# print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu.reshape(N)))))
+# print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e2))))
+# print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
 
-print('\n== CG solver with preconditioner for potential field in Fourier space =======================')
+print('\n== CG solver with precond.for potential in Fourier space =======================')
 k2r=k2**0.5
 Nfun = lambda X: X/k2r
 GnFAFGn_fun=lambda Fu:-Nfun(FDiv(fft(dot21(A, ifft(FGrad(Nfun(Fu)))))))
 GnFAFGn_funvec=lambda Fu: GnFAFGn_fun(Fu.reshape(N)).ravel()
-B=Nfun(FDiv(fft(dot21(A, E))))
+Bn=Nfun(FDiv(fft(dot21(A, E))))
 
-linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GnFAFGn_funvec, dtype='complex')
-Fu, _=sp.cg(A=linoper, b=B.ravel(), maxiter=maxiter)
+linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GnFAFGn_funvec, dtype=np.float)
+tic=Timer(name='scipy.cg (potential - precond)')
+Fu, _=sp.cg(A=linoper, b=Bn.ravel(), maxiter=maxiter, tol=1e-10)
+tic.measure()
 Fu = Fu.reshape(N)/k2r
 
 e3=ifft(FGrad(Fu)).real
@@ -112,39 +118,31 @@ aux=e3+E
 print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu))))
 print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e3))))
 print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
-
 print('norm(e-e3)={}'.format(np.linalg.norm(e-e3.ravel())))
-Fu = Fu.reshape(N)
-print('mean(Fu)={}'.format(Fu[mean_index(N)]))
-print('mean(u)={}'.format(np.mean(ifft(FGrad(Fu.reshape(N))).real)))
 
 print('\n== CG - own solver =====')
 from ffthompy.general.solver import CG
-# maxiter=1e1
 scal = lambda X,Y: np.sum(X*Y.conj()).real
 
-Fu4, res4=CG(Afun=GnFAFGn_fun, B=B, x0=np.zeros_like(B), scal=scal, par={'maxiter': maxiter})
-Fu4=Fu4/k2r
-e4=ifft(FGrad(Fu4)).real
-aux=e4+E
-print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu4.reshape(N)))))
-print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e4))))
+tic=Timer(name='own CG (potential)')
+Fu, res=CG(Afun=GnFAFGn_fun, B=Bn, x0=np.zeros_like(B), par={'maxiter': maxiter,
+                                                             'scal': scal})
+tic.measure()
+
+Fu=Fu/k2r
+e=ifft(FGrad(Fu)).real
+aux=e+E
+print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu.reshape(N)))))
+print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e))))
 print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
-print(res4)
-print(np.linalg.norm(Fu-Fu4))
-
-u=np.random.random(N)
-v=np.random.random(N)
-
-print(np.sum(GnFAFGn_fun(u)*v.conj()))
-print(np.sum(GnFAFGn_fun(v)*u.conj()))
+print(res)
 
 ## RICHARDSON iteration #######################################################
-def richardson(Afun, B, x0=None, par=None, norm=None):
+def richardson_s(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
     if isinstance(par['alpha'], float):
         omega=1./par['alpha']
     else:
-        raise NotImplementedError()
+        raise NotImplementedError
     res={'norm_res': [],
            'kit': 0}
     if x0 is None:
@@ -158,7 +156,7 @@ def richardson(Afun, B, x0=None, par=None, norm=None):
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
         residuum=B-Afun(x)
-        x=x+residuum*omega
+        x=(x+residuum*omega).truncate(rank=rank, tol=tol)
         norm_res=norm(residuum)
         res['norm_res'].append(norm_res)
     res['norm_res'].append(norm(B-Afun(x)))
@@ -166,17 +164,24 @@ def richardson(Afun, B, x0=None, par=None, norm=None):
 
 ### PRECONDITIONING in Fourier space #####################################################
 print('\n== Richardson with preconditioning for potential field in Fourier space=====')
+normfun=lambda X: np.linalg.norm(X)
 
 parP={'alpha': (1.+Amax)/2.,
       'maxiter': maxiter,
-      'tol': 1e-6}
+      'tol': 1e-6,
+      'norm': normfun}
 B=FDiv(fft(dot21(A, E))) # right-hand side
-Fu3, res3=richardson(Afun=PGFAFG_fun, B=Pfun(B), x0=None, par=parP, norm=np.linalg.norm)
+from ffthompy.general.solver import richardson
+tic=Timer(name='Richardson (full)')
+Fu3, res3=richardson(Afun=GnFAFGn_fun, B=Bn, x0=np.zeros_like(Bn), par=parP)
+tic.measure()
+Fu3 = Fu3.reshape(N)
+print('norm(resP)={}'.format(np.linalg.norm(Bn-GnFAFGn_fun(Fu3))))
+Fu3 = Fu3/k2r
 
 print('iterations={}'.format(res3['kit']))
-print('norm(dif)={}'.format(np.linalg.norm(Fu-Fu3.ravel())))
+print('norm(dif)={}'.format(np.linalg.norm(Fu-Fu3)))
 print('norm(resP)={}'.format(res3['norm_res']))
-print('norm(resP)={}'.format(np.linalg.norm(Pfun(B)-PGFAFG_fun(Fu3))))
 print('norm(res)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu3))))
 
 print('\n== Generating operators for SPARSE solver...')
@@ -209,12 +214,11 @@ Es=CanoTensor(name='E', core=np.array([1.]),
 Bs=-(hGrad_s[0]*(As*Es).fourier())
 print(np.linalg.norm(B-Bs.full()))
 
-
 # linear operator
 def GFAFG_fun_s(Fx, rank=rank, tol=tol):
-    GFx=[hGrad_s[ii]*Fx for ii in range(dim)]
-    FGFx=[GFx[ii].fourier() for ii in range(dim)]
-    AFGFx=[As.multiply(FGFx[ii], rank=rank, tol=tol) for ii in range(dim)]
+    FGFx=[(hGrad_s[ii]*Fx).fourier() for ii in range(dim)]
+    AFGFx=[As.multiply(FGFx[ii], rank=None, tol=None) for ii in range(dim)]
+    AFGFx=[AFGFx[ii].truncate(rank=rank, tol=tol) for ii in range(dim)]
     FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
     GFAFGFx=hGrad_s[0]*FAFGFx[0]
     for ii in range(1, dim):
@@ -224,13 +228,14 @@ def GFAFG_fun_s(Fx, rank=rank, tol=tol):
     return-GFAFGFx
 
 # testing
-print('testing A...')
+print('testing linear operator of system...')
 x=CanoTensor(name='a', r=4, N=N, randomise=True)
 Fx=x.fourier()
-res1=GFAFG_fun_s(Fx)
+res1=GFAFG_fun_s(Fx, rank=None, tol=None)
 res2=GFAFG_fun(fft(x.full()))
 print(np.linalg.norm(res1.full()-res2))
 
+# sys.exit()
 # solver
 # norm = lambda X: X.norm(ord='core')
 norm=lambda X: np.linalg.norm(X.full())
@@ -238,13 +243,14 @@ norm=lambda X: np.linalg.norm(X.full())
 print('\n== SPARSE Richardson solver with preconditioner =======================')
 # preconditioner
 from scipy.linalg import svd
-U, S, Vh=sp.svds(1./k2, k=4)
+Prank = 8
+U, S, Vh=sp.svds(1./k2, k=Prank, which='LM')
 # U,S,Vh = svd(1./k2)
-
 print('singular values of P={}'.format(S))
-
-Ps=CanoTensor(name='P', core=S[:3], basis=[U[:, :3].T, Vh[:3]], Fourier=True)
+Ps=CanoTensor(name='P', core=S[:Prank], basis=[U[:, :Prank].T, Vh[:Prank]], Fourier=True)
+Ps.sort()
 print('norm(P-Ps)={}'.format(np.linalg.norm(1./k2-Ps.full())))
+# sys.exit()
 
 def PGFAFG_fun_s(Fx, rank=rank, tol=tol):
     R=GFAFG_fun_s(Fx, rank=rank, tol=tol)
@@ -253,22 +259,34 @@ def PGFAFG_fun_s(Fx, rank=rank, tol=tol):
     R=R.truncate(rank=rank, tol=tol)
     return R
 
-PBs=Ps*Bs
-Fus, ress=richardson(Afun=PGFAFG_fun_s, B=PBs, par=parP, norm=norm)
-Fus.name='Fus'
-Fus=Fus.truncate(rank=10)
+# testing
+print('testing precond. linear system...')
+x=CanoTensor(name='a', r=4, N=N, randomise=True)
+Fx=x.fourier()
+res1=PGFAFG_fun_s(Fx, rank=None, tol=None)
+res2=PGFAFG_fun(fft(x.full()))
+print(np.linalg.norm(res1.full()-res2))
+# sys.exit()
 
-print('solver results...')
+PBs=Ps*Bs
+print('\nsolver results...')
+parP['tol']=1e-8
+tic=Timer(name='Richardson (sparse)')
+Fus, ress=richardson_s(Afun=PGFAFG_fun_s, B=PBs, par=parP, norm=norm, rank=rank, tol=tol)
+tic.measure()
+Fus.name='Fus'
+Fus = Fus
+# Fus=Fus.truncate(rank=10)
+
 print Fus
 print('iterations={}'.format(ress['kit']))
-print('norm(dif)={}'.format(np.linalg.norm(Fu-Fus.full().ravel())))
+print('norm(dif)={}'.format(np.linalg.norm(Fu3-Fus.full())))
 print('norm(resP)={}'.format(ress['norm_res']))
 print('norm(resP)={}'.format(np.linalg.norm((PBs-PGFAFG_fun_s(Fus)).full())))
-print('norm(res)={}'.format(np.linalg.norm((Bs-GFAFG_fun_s(Fus)).full())))
+print('norm(res)={}'.format(np.linalg.norm((Bs-GFAFG_fun_s(Fus, rank=None, tol=None)).full())))
 
-U, S, Vh=svd(Fus.full())
-print('sing. vals of solution={}'.format(S))
-
-print(Fus.core)
+# U, S, Vh=svd(Fus.full())
+# print('sing. vals of solution={}'.format(S))
+# print('Fus.core={}'.format(Fus.core))
 
 print('END')
