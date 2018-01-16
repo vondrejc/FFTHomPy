@@ -1,11 +1,55 @@
-import sys
+#import sys
 import numpy as np
-sys.path.append("/home/disliu/ffthompy-sparse")
+#sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
 
 from ffthompy.sparse.tensors import SparseTensorFuns
 from scipy.linalg import block_diag
 import numpy.fft as fft
 
+from numpy.linalg import svd, norm
+from numpy import dot, kron,newaxis
+
+
+def unfold(T, dim):
+    """
+    Unfolds a tensor T along dimension dim
+    """
+    return np.rollaxis(T, dim, 0).reshape(T.shape[dim], -1)
+    
+def nModeProduct(T, M, n):
+    """
+    n-Mode product of a tensor(3d for now) and a matrix,  sumation along the nth dim
+    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+
+    """
+    # multiply along the nth dimension
+    if n==1:
+        return  np.einsum('ijk,li->ljk', T, M)
+    elif n==2:
+        return  np.einsum('jik,li->jlk', T, M)
+    elif n==3:
+        return  np.einsum('jki,li->jkl', T, M)
+    else:
+        pass 
+  
+def HOSVD(A):
+    r"""
+    High order svd of 3-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3, "(*n)" means n-mode product. 
+    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+
+    """ 
+    A1=unfold(A, 0)
+    
+    u1,s1,vt1= svd( A1)
+    u2,s2,vt2= svd( unfold(A, 1))
+    u3,s3,vt3= svd( unfold(A, 2))
+    
+    S1 =dot(u1.T,A1)
+    S1= dot(S1,kron(u2,u3))
+    
+    S = np.reshape(S1, A.shape)
+    
+    return S,u1,u2,u3
 
 class Tucker(SparseTensorFuns):
 
@@ -73,6 +117,12 @@ class Tucker(SparseTensorFuns):
         "return a full tensor"
         if self.order==2:
             return np.einsum('ij,ik,jl->kl', self.core, self.basis[0],self.basis[1])
+        elif self.order==3:
+            # A = S (*1) u1 (*2) u2 (*3) u3, "(*n)" means n-mode product. 
+            # from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+            temp= nModeProduct(self.core,self.basis[0].T,1)
+            temp= nModeProduct(temp,self.basis[1].T,2)
+            return nModeProduct(temp,self.basis[2].T,3)
         else:
             raise NotImplementedError()
 
@@ -96,7 +146,9 @@ class Tucker(SparseTensorFuns):
         return ss
 
 
-if __name__=='__main__':
+if __name__=='__main__': 
+    
+    
     N=np.array([5,6])
     a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
     b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
@@ -123,4 +175,32 @@ if __name__=='__main__':
     print(Fa)
     Fa2 = DFT.fftnc(a.full(), a.N)
     print(np.linalg.norm(Fa.full()-Fa2))
+    
+    
+######### 3-d tenssor test #########
+    print
+    print('testing 3d tucker  ...')
+    print
+    
+    N1=3
+    N2=4
+    N3=5
+    x=np.linspace(-np.pi, np.pi, N1)
+    y=np.linspace(-np.pi, np.pi, N2)
+    z=np.linspace(-np.pi, np.pi, N3)
+    
+    # creat 3d tensor for test
+    T=np.sin(x[:,newaxis,newaxis]+y[newaxis,:, newaxis] + z[ newaxis, newaxis, :] )
+    
+    #decompose the tensor into core and orthogonal basis by HOSVD
+    S,u1,u2,u3 = HOSVD(T)
+    
+    #creat tucker format tensor
+    a = Tucker(name='a', core=S, basis=[u1.T, u2.T, u3.T] )  
+    print(a)    
+    
+    print('testing 3d tucker representation error...')
+    print "a.full - T = ",  norm(a.full()-T)
+    
+    
     print('END')
