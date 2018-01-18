@@ -1,13 +1,13 @@
-#import sys
+import sys
 import numpy as np
-#sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
+sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
 
 from ffthompy.sparse.tensors import SparseTensorFuns
 from scipy.linalg import block_diag
 import numpy.fft as fft
 
 from numpy.linalg import svd, norm
-from numpy import dot, kron,newaxis
+from numpy import dot, kron,newaxis, argsort
 
 
 def unfold(T, dim):
@@ -105,23 +105,29 @@ class Tucker(SparseTensorFuns):
             pass
                 
         newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]  
+        
+        result=Tucker(name=X.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False)
       
-        return Tucker(name=X.name+'+'+Y.name, core=core, basis=newBasis)
+        return result.orthogonalize() 
 
     def __neg__(self):
         return Tucker(core=-self.core, basis=self.basis)
 
     def __mul__(self, Y, tol=None, rank=None):
         "element-wise multiplication of two Tucker tensors"
+        #TODO: extend this to 3d case
         X = self
         new_r=X.r*Y.r
         A=X.basis[0]
         B=X.basis[1]
         A2=Y.basis[0]
         B2=Y.basis[1]
-
+        
         newA=np.zeros((new_r[0], X.N[0]))
-        newB=np.zeros((new_r[1], X.N[1]))
+        newB=np.zeros((new_r[1], X.N[1]))   
+
+        newCore=np.kron(X.core, Y.core) 
+        
         for i in range(0, X.r[0]):
             for j in range(0, Y.r[0]):
                 newA[i*Y.r[0]+j, :]=A[i, :]*A2[j, :]
@@ -129,12 +135,23 @@ class Tucker(SparseTensorFuns):
         for i in range(0, X.r[1]):
             for j in range(0, Y.r[1]):
                 newB[i*Y.r[1]+j, :]=B[i, :]*B2[j, :]
-
-        newC=np.kron(X.core, Y.core)
-
+                
         newBasis=[newA, newB]
-
-        return (Tucker(name='a*b', core=newC, basis=newBasis))
+         
+        if X.order==3:
+            C =X.basis[2]
+            C2=Y.basis[2]
+            newC=np.zeros((new_r[2], X.N[2]))      
+            
+            for i in range(0, X.r[2]):
+                for j in range(0, Y.r[2]):
+                    newC[i*Y.r[2]+j, :]=C[i, :]*C2[j, :]    
+              
+            newBasis=[newA, newB, newC]
+            
+        result= Tucker(name='a*b', core=newCore, basis=newBasis)
+        return  result.orthogonalize() 
+ 
 
     def orthogonalize(self):
         "re-orthogonalize the basis"  
@@ -152,6 +169,39 @@ class Tucker(SparseTensorFuns):
         
         return Tucker(name=self.name, core=core, basis=newBasis, orthogonal=True)   
         
+    def sortBasis(self):
+        "Sort the core in term of importance and sort the basis accordinglly"  
+        core=self.core
+        basis=self.basis
+        
+        if self.order==2:
+            # the sort the 2-norm of the rows
+            ind0 = argsort(norm(core, axis=1))[::-1]    
+            core =core[ind0,:]           
+            # the sort the 2-norm of the columns
+            ind1= argsort(norm(core, axis=0))[::-1]            
+            core =core[:,ind1]
+            
+            basis[0]=basis[0][ind0,:]
+            basis[1]=basis[1][ind1,:]
+            
+        elif self.order==3:
+            # sort the 2-norm of the horizontal slices
+            ind0 = argsort(norm(core, axis=(1,2)))[::-1]
+            core =core[ind0,:,:]           
+            
+            ind1= argsort(norm(core, axis=(0,2)))[::-1]        
+            core =core[:,ind1,:]
+            
+            ind2= argsort(norm(core, axis=(0,1)))[::-1]          
+            core =core[:,:,ind2]
+            
+            basis[0]=basis[0][ind0,:]
+            basis[1]=basis[1][ind1,:]                   
+            basis[2]=basis[2][ind2,:]    
+        
+        return Tucker(name=self.name, core=core, basis=basis, orthogonal=self.orthogonal) 
+        
     def full(self):
         "return a full tensor"
         if self.order==2: 
@@ -168,9 +218,7 @@ class Tucker(SparseTensorFuns):
     def truncate(self, tol=None, rank=None):
         "return truncated tensor"        
        
-        # only rank currently
-        basis=list(self.basis) # this copying avoids perturbation to the original tensor object
-        core=self.core
+        # only rank currently 
 
         if rank>= max(self.r):
             print ("Warning: Truncation rank not smaller than any of the original ranks, truncation aborted!")
@@ -179,9 +227,13 @@ class Tucker(SparseTensorFuns):
         # truncation
         
         if not self.orthogonal:
-            self=self.orthogonalize()  
+            self=self.orthogonalize()   
         
-        # TODO: to sort the core and basis 
+        self=self.sortBasis() 
+        
+        basis=list(self.basis) # this copying avoids perturbation to the original tensor object
+        core=self.core
+        
         if self.order==2:
             core=core[:rank,:rank]  
         elif self.order==3:
@@ -214,7 +266,7 @@ class Tucker(SparseTensorFuns):
 if __name__=='__main__': 
     
     
-    N=np.array([5,6])
+    N=np.array([4,5])
     a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
     b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
     print(a)
@@ -222,8 +274,7 @@ if __name__=='__main__':
 
     # addition
     c = a+b
-    print(c) 
-    c.truncate()    
+    print(c)   
     
     c2 = a.full()+b.full()
     print('testing addition...')
@@ -233,7 +284,7 @@ if __name__=='__main__':
     print('testing addition and then orthogonalize ...')
     print(np.linalg.norm(c.full() - c_ortho.full()))
     print
-
+ 
     # multiplication
     c = a*b
     c2 = a.full()*b.full()
@@ -254,21 +305,21 @@ if __name__=='__main__':
     print('----testing 3d tucker ----')
     print
     
-    N1=3
-    N2=4
-    N3=5 
+    N1=10  # warning: in 3d multiplication too large N number could kill the machine.
+    N2=20
+    N3=30 
     
     # creat 3d tensor for test
 
-    x=np.linspace(-np.pi, np.pi, N1)
-    y=np.linspace(-np.pi, np.pi, N2)
-    z=np.linspace(-np.pi, np.pi, N3)   
-    #this is a rank-1 tensor
-    T=np.sin(x[:,newaxis,newaxis]+y[newaxis,:, newaxis] + z[ newaxis, newaxis, :] ) 
+#    x=np.linspace(-np.pi, np.pi, N1)
+#    y=np.linspace(-np.pi, np.pi, N2)
+#    z=np.linspace(-np.pi, np.pi, N3)   
+#    #this is a rank-1 tensor
+#    T=np.sin(x[:,newaxis,newaxis]+y[newaxis,:, newaxis] + z[ newaxis, newaxis, :] ) 
     
-#    # this is a rank-2 tensor
-#    T = np.arange(N1*N2*N3)
-#    T = np.reshape(T,(N1,N2,N3))
+    # this is a rank-2 tensor
+    T = np.arange(N1*N2*N3)
+    T = np.reshape(T,(N1,N2,N3))
     
     # a full rank tensor
     #T = np.random.random((N1,N2,N3))
@@ -283,34 +334,39 @@ if __name__=='__main__':
     print('testing 3d tucker representation error...')
     print "a.full - T = ",  norm(a.full()-T)
     
-    a_trunc= a.truncate(rank=20)  
-    print(a_trunc)    
+
     
-    print('testing 3d tucker truncation ...')
-    print "a_truncated.full - T = ",  norm(a_trunc.full()-T) 
-    print
+#    #decompose the tensor into core and orthogonal basis by HOSVD
+#    T2=np.sin(T)
     
-    a_trunc= a.truncate(rank=2)  
-    print(a_trunc)    
-    
-    print('testing 3d tucker truncation ...')
-    print "a_truncated.full - T = ",  norm(a_trunc.full()-T) 
-    print
-    
-    #decompose the tensor into core and orthogonal basis by HOSVD
-    T2=np.sin(T)
+    # this is a rank-2 tensor
+    T2= np.sqrt(T)
     S2,u12,u22,u32 = HOSVD(T2)
     
-    #creat tucker format tensor
-    b = Tucker(name='b', core=S2, basis=[u12.T, u22.T, u32.T], orthogonal=True)  
     
-    print('testing 3d addition ...')
+    #creat tucker format tensor
+    b = Tucker(name='b', core=S2, basis=[u12.T, u22.T, u32.T], orthogonal=True)   
+
+    b_trunc= b.truncate(rank=8)  
+    print(b_trunc)     
+     
+    print('testing 3d tucker core sorting and  truncation ...')
+    print "b_truncated.full - b.full = ",  norm(b_trunc.full()-b.full()) 
+    print       
+     
     c=a+b
     print(c)
     print
     
+    print('testing 3d re-orthogonalization after addition ...')
     print "(a+b).full - (a.full+b.full) = ",  norm(c.full()-a.full()-b.full()) 
-    print
+    print 
     
- 
+    
+    # multiplication
+    c = a*b
+  
+    print('testing 3d multiplication and re-orthogonalization...')
+    print "(a*b).full - (a.full*b.full) = ",  norm(c.full()-a.full()*b.full()) 
+    
     print('END')
