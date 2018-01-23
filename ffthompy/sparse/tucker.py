@@ -92,6 +92,9 @@ class Tucker(SparseTensorFuns):
 
     def __add__(self, Y, tol=None, rank=None):
         X=self
+        
+        #Y = self.basisCalibrate(Yo)
+        
         r_new = X.r + Y.r 
    
         if X.order==2:
@@ -106,57 +109,48 @@ class Tucker(SparseTensorFuns):
                 
         newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]  
         
-        result=Tucker(name=X.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False)
+        #core = self.core + Y.core
+        
+        result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False)
       
         return result.orthogonalize() 
 
     def __neg__(self):
         return Tucker(core=-self.core, basis=self.basis)
 
-    def __mul__(self, Y, tol=None, rank=None):
-        "element-wise multiplication of two Tucker tensors"
-        #TODO: extend this to 3d case
-        X = self
-        new_r=X.r*Y.r
-        A=X.basis[0]
-        B=X.basis[1]
-        A2=Y.basis[0]
-        B2=Y.basis[1]
+    def __mul__(self, anotherTensor, tol=None, rank=None):
+        "element-wise multiplication of two Tucker tensors" 
         
-        newA=np.zeros((new_r[0], X.N[0]))
-        newB=np.zeros((new_r[1], X.N[1]))   
-
-        newCore=np.kron(X.core, Y.core) 
-        
-        for i in range(0, X.r[0]):
-            for j in range(0, Y.r[0]):
-                newA[i*Y.r[0]+j, :]=A[i, :]*A2[j, :]
-
-        for i in range(0, X.r[1]):
-            for j in range(0, Y.r[1]):
-                newB[i*Y.r[1]+j, :]=B[i, :]*B2[j, :]
-                
-        newBasis=[newA, newB]
+        # truncate X and Y before multiplication, so that the rank after multiplication 
+        # roughly equals to the orginal rank.
+        # how much to truncate could be made further adjustable in future versions.
+        tRankX = np.ceil(np.sqrt(self.r)).astype(int) 
+        tRankY = np.ceil(np.sqrt(anotherTensor.r)).astype(int) 
          
-        if X.order==3:
-            C =X.basis[2]
-            C2=Y.basis[2]
-            newC=np.zeros((new_r[2], X.N[2]))      
-            
-            for i in range(0, X.r[2]):
-                for j in range(0, Y.r[2]):
-                    newC[i*Y.r[2]+j, :]=C[i, :]*C2[j, :]    
-              
-            newBasis=[newA, newB, newC]
-            
-        result= Tucker(name='a*b', core=newCore, basis=newBasis)
-        return  result.orthogonalize() 
- 
+        X = self.truncate(rank=tRankX)
+        Y = anotherTensor.truncate(rank=tRankY) 
+        
+        new_r=X.r*Y.r # this would explode without an truncation of X and Y. 
+             
+        newCore=np.kron(X.core, Y.core)  
+        
+        newBasis = [None] * self.order
+        for d in range(0, self.order):
+            newBasis[d]= np.zeros((new_r[d], X.N[d]))
+            for i in range(0, X.r[d]):
+                for j in range(0, Y.r[d]):
+                    newBasis[d][i*Y.r[d]+j, :]=X.basis[d][i, :]*Y.basis[d][j, :]
+             
 
+        result= Tucker(name=X.name+'*'+Y.name, core=newCore, basis=newBasis)
+        return  result.orthogonalize() 
+       
+ 
     def orthogonalize(self):
         "re-orthogonalize the basis"  
         newBasis=[]
         R=[]
+        # orthogonalize the basis
         for i in range(0, self.order):
             q, r1 =np.linalg.qr(self.basis[i].T)
             newBasis.append(q.T)
@@ -168,17 +162,17 @@ class Tucker(SparseTensorFuns):
             core = nModeProduct(core, R[i], i+1)   
         
         return Tucker(name=self.name, core=core, basis=newBasis, orthogonal=True)   
-        
+          
     def sortBasis(self):
         "Sort the core in term of importance and sort the basis accordinglly"  
         core=self.core
         basis=self.basis
         
         if self.order==2:
-            # the sort the 2-norm of the rows
+            # sort the 2-norm of the rows
             ind0 = argsort(norm(core, axis=1))[::-1]    
             core =core[ind0,:]           
-            # the sort the 2-norm of the columns
+            # sort the 2-norm of the columns
             ind1= argsort(norm(core, axis=0))[::-1]            
             core =core[:,ind1]
             
@@ -189,10 +183,10 @@ class Tucker(SparseTensorFuns):
             # sort the 2-norm of the horizontal slices
             ind0 = argsort(norm(core, axis=(1,2)))[::-1]
             core =core[ind0,:,:]           
-            
+            # sort the 2-norm of the vertical slices
             ind1= argsort(norm(core, axis=(0,2)))[::-1]        
             core =core[:,ind1,:]
-            
+            # sort the 2-norm of the other way  slices
             ind2= argsort(norm(core, axis=(0,1)))[::-1]          
             core =core[:,:,ind2]
             
@@ -216,12 +210,13 @@ class Tucker(SparseTensorFuns):
             raise NotImplementedError()
 
     def truncate(self, tol=None, rank=None):
-        "return truncated tensor"        
+        "return truncated tensor. tol, if presented, would override rank as truncation criteria."       
        
-        # only rank currently 
-
-        if rank>= max(self.r):
-            print ("Warning: Truncation rank not smaller than any of the original ranks, truncation aborted!")
+        if any(tol) is None and rank is None:
+            print ("Warning: No truncation criteria input, truncation aborted!")
+            return self             
+        elif  any(tol) is None and any(rank >= self.r)==True :
+            print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self 
  
         # truncation
@@ -232,17 +227,37 @@ class Tucker(SparseTensorFuns):
         self=self.sortBasis() 
         
         basis=list(self.basis) # this copying avoids perturbation to the original tensor object
-        core=self.core
+        core=self.core 
         
+        # to determine the rank of truncation        
+        if any(tol) is not None:
+            if rank==None: rank=np.zeros((self.order),dtype=int)
+            # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
+            if  self.order==2:
+                sorted_dim0 = norm(core, axis=1)
+                sorted_dim1 = norm(core, axis=0)
+                
+                rank[0]=np.searchsorted(np.cumsum(sorted_dim0)/np.sum(sorted_dim0), 1.0-tol[0])+1
+                rank[1]=np.searchsorted(np.cumsum(sorted_dim1)/np.sum(sorted_dim1), 1.0-tol[1])+1
+                
+            elif self.order==3:
+                sorted_dim0 = norm(core, axis=(1,2))
+                sorted_dim1 = norm(core, axis=(0,2))
+                sorted_dim2 = norm(core, axis=(0,1))
+           
+                rank[0]=np.searchsorted(np.cumsum(sorted_dim0)/np.sum(sorted_dim0), 1.0-tol[0])+1
+                rank[1]=np.searchsorted(np.cumsum(sorted_dim1)/np.sum(sorted_dim1), 1.0-tol[1])+1
+                rank[2]=np.searchsorted(np.cumsum(sorted_dim2)/np.sum(sorted_dim2), 1.0-tol[2])+1
+                
         if self.order==2:
-            core=core[:rank,:rank]  
-        elif self.order==3:
-            core=core[:rank,:rank, :rank]  
+            core=core[:rank[0],:rank[1]]  
+        elif self.order==3: 
+            core=core[:rank[0],:rank[1], :rank[2]]  
         else:
             raise NotImplementedError("currently only support two and three dimensional tensor")
         
         for ii in range(self.order):
-            basis[ii]=basis[ii][:rank, :]
+            basis[ii]=basis[ii][:rank[ii], :]
 
         return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True)
       
@@ -266,9 +281,9 @@ class Tucker(SparseTensorFuns):
 if __name__=='__main__': 
     
     
-    N=np.array([4,5])
-    a = Tucker(name='a', r=np.array([2,3]), N=N, randomise=True)
-    b = Tucker(name='b', r=np.array([4,5]), N=N, randomise=True)
+    N=np.array([40,50])
+    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
+    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
     print(a)
     print(b)
 
@@ -278,18 +293,18 @@ if __name__=='__main__':
     
     c2 = a.full()+b.full()
     print('testing addition...')
-    print(np.linalg.norm(c.full()-c2))
+    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
     
     c_ortho = c.orthogonalize() 
     print('testing addition and then orthogonalize ...')
-    print(np.linalg.norm(c.full() - c_ortho.full()))
+    print(np.linalg.norm(c.full() - c_ortho.full())/np.linalg.norm( c_ortho.full()) )
     print
  
     # multiplication
     c = a*b
     c2 = a.full()*b.full()
     print('testing multiplication...')
-    print(np.linalg.norm(c.full()-c2))
+    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
 
     #DFT
     print('testing DFT...')
@@ -305,9 +320,9 @@ if __name__=='__main__':
     print('----testing 3d tucker ----')
     print
     
-    N1=10  # warning: in 3d multiplication too large N number could kill the machine.
-    N2=20
-    N3=30 
+    N1=25  # warning: in 3d multiplication too large N number could kill the machine.
+    N2=36
+    N3=47 
     
     # creat 3d tensor for test
 
@@ -334,8 +349,6 @@ if __name__=='__main__':
     print('testing 3d tucker representation error...')
     print "a.full - T = ",  norm(a.full()-T)
     
-
-    
 #    #decompose the tensor into core and orthogonal basis by HOSVD
 #    T2=np.sin(T)
     
@@ -346,13 +359,23 @@ if __name__=='__main__':
     
     #creat tucker format tensor
     b = Tucker(name='b', core=S2, basis=[u12.T, u22.T, u32.T], orthogonal=True)   
-
-    b_trunc= b.truncate(rank=8)  
+    print(b)
+    
+    b_trunc= b.truncate(rank=[6, 8, 10])  
     print(b_trunc)     
      
-    print('testing 3d tucker core sorting and  truncation ...')
+    print('testing 3d tucker core sorting and  rank-based truncation ...')
     print "b_truncated.full - b.full = ",  norm(b_trunc.full()-b.full()) 
+    print "norm(b_truncated.full - b.full)/norm(b.full) = ",  norm(b_trunc.full()-b.full())/norm(b.full()) 
     print       
+    
+    b_trunc= b.truncate(tol=[1e-8, 1e-8, 1e-8])  
+    print(b_trunc)     
+     
+    print('testing 3d tucker  tol-based truncation ...')
+    print "b_truncated.full - b.full = ",  norm(b_trunc.full()-b.full()) 
+    print "norm(b_truncated.full - b.full)/norm(b.full) = ",  norm(b_trunc.full()-b.full())/norm(b.full()) 
+    print     
      
     c=a+b
     print(c)
@@ -365,8 +388,12 @@ if __name__=='__main__':
     
     # multiplication
     c = a*b
-  
-    print('testing 3d multiplication and re-orthogonalization...')
-    print "(a*b).full - (a.full*b.full) = ",  norm(c.full()-a.full()*b.full()) 
+    print(c)
     
+    print('testing 3d multiplication and re-orthogonalization...')
+    print "(a*b).full - (a.full*b.full) = ",  norm(c.full()-a.full()*b.full())
+    print "((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ",  norm(c.full()-a.full()*b.full())/norm(a.full()*b.full())
+    print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ",  np.max(c.full()-a.full()*b.full())/np.mean(a.full()*b.full())
+    
+   
     print('END')
