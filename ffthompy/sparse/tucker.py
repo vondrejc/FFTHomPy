@@ -1,48 +1,69 @@
 import sys
 import numpy as np
-sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
+#sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
 
 from ffthompy.sparse.tensors import SparseTensorFuns
 from scipy.linalg import block_diag
 import numpy.fft as fft
 
 from numpy.linalg import svd, norm
-from numpy import dot, kron,newaxis, argsort
+from numpy import dot, kron,newaxis, argsort, tensordot, rollaxis
  
 
 def unfold(T, dim):
     """
     Unfolds a tensor T into a matrix, taking the dimension "dim" of T as the first dimension of the matrix, 
     and flattening all the other dimensions into the other one dimension of the matrix.
+    
+    dim starts from 0.
     """
     return np.rollaxis(T, dim, 0).reshape(T.shape[dim], -1)
     
+#def nModeProduct(T, M, n):
+#    """
+#    n-Mode product of a tensor T(only 2d or 3d for now) and a matrix M,  multiplication and summation is made along the nth dim.
+#    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+#    
+#    n takes value 1, 2, or 3, specify the 1st, 2nd or 3rd dim of the tensor T. 
+#    For the matrix M, this function always take the second dimension.
+#    """
+#    # multiply  along the nth dimension
+#    if  len(T.shape) ==2:  # this equals to matrix multiplication T*M or M*T
+#        if n==1:
+#            return  np.einsum('ik,li->lk', T, M)
+#        elif n==2:
+#            return  np.einsum('ki,li->kl', T, M) 
+#        else:
+#            pass 
+#        
+#    elif  len(T.shape)==3:
+#        if n==1:
+#            return  np.einsum('ijk,li->ljk', T, M)
+#        elif n==2:
+#            return  np.einsum('jik,li->jlk', T, M)
+#        elif n==3:
+#            return  np.einsum('jki,li->jkl', T, M)
+#        else:
+#            pass 
+        
 def nModeProduct(T, M, n):
     """
-    n-Mode product of a tensor T(only 2d or 3d for now) and a matrix M,  multiplication and summation is made along the nth dim.
+    n-Mode product of a tensor T  and a matrix M,  multiplication and summation is made along the nth dim.
     definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
     
-    n takes value 1, 2, or 3, specify the 1st, 2nd or 3rd dim of the tensor T. 
+    n takes value 0, 1, or 2, specify the 1st, 2nd or 3rd dim of the tensor T. 
     For the matrix M, this function always take the second dimension.
     """
-    # multiply  along the nth dimension
-    if  len(T.shape) ==2:  # this equals to matrix multiplication T*M or M*T
-        if n==1:
-            return  np.einsum('ik,li->lk', T, M)
-        elif n==2:
-            return  np.einsum('ki,li->kl', T, M) 
-        else:
-            pass 
-        
-    elif  len(T.shape)==3:
-        if n==1:
-            return  np.einsum('ijk,li->ljk', T, M)
-        elif n==2:
-            return  np.einsum('jik,li->jlk', T, M)
-        elif n==3:
-            return  np.einsum('jki,li->jkl', T, M)
-        else:
-            pass 
+ 
+    P = tensordot(T,M, axes=([n],[1])) 
+    return rollaxis(P,len(T.shape)-1, n) 
+
+def nModedivision(T, M, n):
+    """
+    Inverse function of n-Mode product of a tensor T(only 2d or 3d for now) and a matrix M. 
+    i.e. This function returns a tensor T2 such that the n-mode product of T2 and M is T.
+    """
+     
   
 def HOSVD(A):
     r"""
@@ -159,7 +180,7 @@ class Tucker(SparseTensorFuns):
         # transform the core in term of the new bases
         core=self.core
         for i in range(0, self.order):  
-            core = nModeProduct(core, R[i], i+1)   
+            core = nModeProduct(core, R[i], i)   
         
         return Tucker(name=self.name, core=core, basis=newBasis, orthogonal=True)   
           
@@ -203,18 +224,15 @@ class Tucker(SparseTensorFuns):
         elif self.order==3:
             # A = S (*1) u1 (*2) u2 (*3) u3, with (*n)  means n-mode product. 
             # from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
-            temp= nModeProduct(self.core,self.basis[0].T,1)
-            temp= nModeProduct(temp,self.basis[1].T,2)
-            return nModeProduct(temp,self.basis[2].T,3)
+            temp= nModeProduct(self.core,self.basis[0].T,0)
+            temp= nModeProduct(temp,self.basis[1].T,1)
+            return nModeProduct(temp,self.basis[2].T,2)
         else:
             raise NotImplementedError()
 
     def truncate(self, tol=None, rank=None ):
         "return truncated tensor. tol, if presented, would override rank as truncation criteria."       
-        print tol
-        print "notice"
-        print np.any(tol)
-        print
+    
         if  np.any(tol)  is None and np.any(rank) is None:
             print ("Warning: No truncation criteria input, truncation aborted!")
             return self             
@@ -284,38 +302,38 @@ class Tucker(SparseTensorFuns):
 if __name__=='__main__': 
     
     
-#    N=np.array([40,50])
-#    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
-#    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
-#    print(a)
-#    print(b)
-#
-#    # addition
-#    c = a+b
-#    print(c)   
-#    
-#    c2 = a.full()+b.full()
-#    print('testing addition...')
-#    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
-#    
-#    c_ortho = c.orthogonalize() 
-#    print('testing addition and then orthogonalize ...')
-#    print(np.linalg.norm(c.full() - c_ortho.full())/np.linalg.norm( c_ortho.full()) )
-#    print
-# 
-#    # multiplication
-#    c = a*b
-#    c2 = a.full()*b.full()
-#    print('testing multiplication...')
-#    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
-#
-#    #DFT
-#    print('testing DFT...')
-#    from ffthompy.operators import DFT
-#    Fa = a.fourier()
-#    print(Fa)
-#    Fa2 = DFT.fftnc(a.full(), a.N)
-#    print(np.linalg.norm(Fa.full()-Fa2))
+    N=np.array([40,50])
+    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
+    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
+    print(a)
+    print(b)
+
+    # addition
+    c = a+b
+    print(c)   
+    
+    c2 = a.full()+b.full()
+    print('testing addition...')
+    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
+    
+    c_ortho = c.orthogonalize() 
+    print('testing addition and then orthogonalize ...')
+    print(np.linalg.norm(c.full() - c_ortho.full())/np.linalg.norm( c_ortho.full()) )
+    print
+ 
+    # multiplication
+    c = a*b
+    c2 = a.full()*b.full()
+    print('testing multiplication...')
+    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
+
+    #DFT
+    print('testing DFT...')
+    from ffthompy.operators import DFT
+    Fa = a.fourier()
+    print(Fa)
+    Fa2 = DFT.fftnc(a.full(), a.N)
+    print(np.linalg.norm(Fa.full()-Fa2))
 #    
     
 ######### 3-d tenssor test #########
