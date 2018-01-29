@@ -8,7 +8,7 @@ import numpy.fft as fft
 
 from numpy.linalg import svd, norm
 from numpy import dot, kron,newaxis, argsort
-
+ 
 
 def unfold(T, dim):
     """
@@ -209,13 +209,16 @@ class Tucker(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def truncate(self, tol=None, rank=None):
+    def truncate(self, tol=None, rank=None ):
         "return truncated tensor. tol, if presented, would override rank as truncation criteria."       
-       
-        if any(tol) is None and rank is None:
+        print tol
+        print "notice"
+        print np.any(tol)
+        print
+        if  np.any(tol)  is None and np.any(rank) is None:
             print ("Warning: No truncation criteria input, truncation aborted!")
             return self             
-        elif  any(tol) is None and any(rank >= self.r)==True :
+        elif  np.any(tol) is None and np.any(rank >= self.r)==True :
             print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self 
  
@@ -230,7 +233,7 @@ class Tucker(SparseTensorFuns):
         core=self.core 
         
         # to determine the rank of truncation        
-        if any(tol) is not None:
+        if np.any(tol) is not None:
             if rank==None: rank=np.zeros((self.order),dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
             if  self.order==2:
@@ -281,39 +284,39 @@ class Tucker(SparseTensorFuns):
 if __name__=='__main__': 
     
     
-    N=np.array([40,50])
-    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
-    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
-    print(a)
-    print(b)
-
-    # addition
-    c = a+b
-    print(c)   
-    
-    c2 = a.full()+b.full()
-    print('testing addition...')
-    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
-    
-    c_ortho = c.orthogonalize() 
-    print('testing addition and then orthogonalize ...')
-    print(np.linalg.norm(c.full() - c_ortho.full())/np.linalg.norm( c_ortho.full()) )
-    print
- 
-    # multiplication
-    c = a*b
-    c2 = a.full()*b.full()
-    print('testing multiplication...')
-    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
-
-    #DFT
-    print('testing DFT...')
-    from ffthompy.operators import DFT
-    Fa = a.fourier()
-    print(Fa)
-    Fa2 = DFT.fftnc(a.full(), a.N)
-    print(np.linalg.norm(Fa.full()-Fa2))
-    
+#    N=np.array([40,50])
+#    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
+#    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
+#    print(a)
+#    print(b)
+#
+#    # addition
+#    c = a+b
+#    print(c)   
+#    
+#    c2 = a.full()+b.full()
+#    print('testing addition...')
+#    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
+#    
+#    c_ortho = c.orthogonalize() 
+#    print('testing addition and then orthogonalize ...')
+#    print(np.linalg.norm(c.full() - c_ortho.full())/np.linalg.norm( c_ortho.full()) )
+#    print
+# 
+#    # multiplication
+#    c = a*b
+#    c2 = a.full()*b.full()
+#    print('testing multiplication...')
+#    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
+#
+#    #DFT
+#    print('testing DFT...')
+#    from ffthompy.operators import DFT
+#    Fa = a.fourier()
+#    print(Fa)
+#    Fa2 = DFT.fftnc(a.full(), a.N)
+#    print(np.linalg.norm(Fa.full()-Fa2))
+#    
     
 ######### 3-d tenssor test #########
     print
