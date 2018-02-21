@@ -124,7 +124,7 @@ class Operator():
             it provides the information about size and shape of operand
         dtype : data type of operand, usually numpy.float64
     """
-    def __init__(self, name='LinOper', mat_rev=None, mat=None, X=None):
+    def __init__(self, name='LinOper', mat_rev=None, mat=None, operand=None):
         self.name=name
         if mat_rev is not None:
             self.mat_rev=mat_rev
@@ -138,8 +138,8 @@ class Operator():
                 self.mat_rev.append(summand_rev)
         self.no_summands=len(self.mat_rev)
 
-        if X is not None:
-            self.define_operand(X)
+        if operand is not None:
+            self.define_operand(operand)
 
     def __call__(self, x):
         res=0.
@@ -265,6 +265,39 @@ def grad(X):
     gX.name='grad({0})'.format(X.name)
     return gX
 
+def div(X):
+    if X.shape==(1,):
+        shape=()
+    else:
+        shape=X.shape[:-1]
+    assert(X.shape[-1]==X.dim)
+    assert(X.order==1)
+
+    dX=Tensor(shape=shape, N=X.N, Fourier=True)
+    if X.Fourier:
+        FX=X
+    else:
+        F=DFT(N=X.N)
+        FX=F(X)
+
+    dim=len(X.N)
+    freq=Grid.get_freq(X.N, X.Y)
+    strfreq='xyz'
+    coef=-2*np.pi*1j
+
+    for ii in range(X.dim):
+        mul_str='{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
+        dX.val+=np.einsum(mul_str, coef*freq[ii], FX.val[ii], dtype=np.complex)
+
+    if not X.Fourier:
+        iF=DFT(N=X.N, inverse=True)
+        dX=iF(dX)
+    dX.name='div({0})'.format(X.name)
+    return dX
+
+def laplace(X):
+    return div(grad(X))
+
 def symgrad(X):
     gX=grad(X)
     return 0.5*(gX+gX.transpose())
@@ -331,3 +364,24 @@ def matrix2tensor(M):
 
 def vector2tensor(V):
     return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)
+
+def grad_div_tensor(N, grad=True, div=True):
+    # scalar valued versions of gradient and divergence
+    N = np.array(N, dtype=np.int)
+    dim = N.size
+    hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
+    freq = [np.arange(-(N[ii]-1)/2.,+(N[ii]+1)/2.) for ii in range(dim)]
+    for ind in itertools.product(*[range(n) for n in N]):
+        for i in range(dim):
+            hGrad[i][ind] = freq[i][ind[i]]
+    hGrad = -hGrad*2*np.pi*1j
+    hGrad = Tensor(name='hgrad', val=hGrad, order=1, Fourier=True, multype='grad')
+    hDiv = Tensor(name='hdiv', val=hGrad.val, order=1, Fourier=True, multype='div')
+    if grad and div:
+        return hGrad, hDiv
+    elif grad:
+        return hGrad
+    elif div:
+        return hDiv
+    else:
+        raise ValueError()

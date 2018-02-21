@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 from numpy.linalg import norm
 from ffthompy.tensors import Tensor
-from ffthompy.operators import DFT, grad, symgrad, potential, Operator, matrix2tensor
+from ffthompy.operators import (DFT, grad, div, symgrad, potential, Operator, matrix2tensor,
+                                grad_div_tensor)
 from ffthompy.projections import scalar, elasticity_small_strain, elasticity_large_deformation
 
 class Test_operators(unittest.TestCase):
@@ -18,7 +19,7 @@ class Test_operators(unittest.TestCase):
         for dim in [2, 3]:
             N = 5*np.ones(dim, dtype=np.int)
             F = DFT(N=N, inverse=False)
-            print(F)
+            print(F) # checking representation
 
             # scalar problem
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False).randomize()
@@ -32,6 +33,10 @@ class Test_operators(unittest.TestCase):
             u2 = potential(grad(u))
             self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
                                    msg='scalar problem, Fourier=False')
+
+            hG, hD = grad_div_tensor(N)
+            self.assertAlmostEqual(0, (hD(hG(Fu))==div(grad(Fu)))[1], delta=1e-13,
+                                   msg='scalar problem, Fourier=True')
 
             # matrix version of DFT
             dft = F.matrix(shape=u.shape)
@@ -47,11 +52,9 @@ class Test_operators(unittest.TestCase):
             self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13,
                                    msg='vectorial problem, Fourier=True')
 
-
             u2 = potential(grad(u))
             self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
                                    msg='vectorial problem, Fourier=False')
-
 
             # 'vectorial problem - symetric gradient
             u = Tensor(name='u', shape=(dim,), N=N, Fourier=False).randomize()
@@ -61,7 +64,6 @@ class Test_operators(unittest.TestCase):
             Fu2 = potential(symgrad(Fu), small_strain=True)
             self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13,
                                    msg='vectorial - sym, Fourier=True')
-
 
             u2 = potential(symgrad(u), small_strain=True)
             self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,

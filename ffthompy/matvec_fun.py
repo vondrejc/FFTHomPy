@@ -1,3 +1,5 @@
+"""Basic methods for trigonometric polynomials."""
+
 import numpy as np
 
 
@@ -231,12 +233,14 @@ def decrease(xN, M):
     dim = N.size
     ibeg = np.fix((N-M+(M % 2))/2).astype(dtype=np.int)
     iend = np.fix((N+M+(M % 2))/2).astype(dtype=np.int)
-    if dim == 2:
-        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
-    elif dim == 3:
-        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
-    return xM
 
+    if dim == 3:
+        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
+    elif dim == 2:
+        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
+    elif dim == 1:
+        xM = xN[ibeg[0]:iend[0]]
+    return xM
 
 def get_Nodd(N):
     Nodd = N - ((N + 1) % 2)
