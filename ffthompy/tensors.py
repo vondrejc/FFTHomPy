@@ -6,7 +6,7 @@ of trigonometric polynomials and relating operators.
 import numpy as np
 from ffthompy.matvec import Scalar, get_name, mean_index
 from ffthompy.mechanics.matcoef import ElasticTensor
-from ffthompy.matvec_fun import enlarge, decrease
+from ffthompy.trigpol import enlarge, decrease
 
 
 class TensorFuns():

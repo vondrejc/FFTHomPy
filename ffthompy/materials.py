@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.special as sp
 from ffthompy.matvec import DFT, VecTri, Matrix
-from ffthompy.matvec_fun import Grid, decrease
+from ffthompy.trigpol import Grid, decrease
 from ffthompy.tensors import mean_index
 
 inclusion_keys = {'ball': ['ball', 'circle'],

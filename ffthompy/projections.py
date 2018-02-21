@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-from ffthompy.matvec_fun import Grid, get_Nodd
+from ffthompy.trigpol import Grid, get_Nodd
 from ffthompy.matvec import Matrix, mean_index
 from ffthompy.tensors import Tensor
 import itertools

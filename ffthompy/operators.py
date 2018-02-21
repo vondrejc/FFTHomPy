@@ -4,7 +4,7 @@ This module contains operators working with Tensor from ffthompy.tensors
 
 import itertools
 
-from ffthompy.matvec_fun import Grid
+from ffthompy.trigpol import Grid
 from ffthompy.tensors import Tensor, TensorFuns, get_name
 import numpy as np
 import numpy.matlib as npmatlib
