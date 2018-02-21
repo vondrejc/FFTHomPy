@@ -72,11 +72,11 @@ class Problem(object):
         print('\n==============================')
         tim = Timer(name='application')
         if hasattr(ffthompy.applications, self.physics):
-            eval('ffthompy.applications.%s(self)' % self.physics)
+            eval('ffthompy.applications.{}(self)'.format(self.physics))
         else:
-            msg = 'Not implemented physics (%s).\n' \
-                'Hint: Implement function (%s) into module' \
-                ' ffthompy!' % (self.physics, self.physics)
+            msg = 'Not implemented physics ({0}).\n' \
+                'Hint: Implement function ({1}) into module' \
+                ' ffthompy!'.format(self.physics, self.physics)
             raise NotImplementedError(msg)
         tim.measure()
 
@@ -123,17 +123,17 @@ class Problem(object):
                 raise NotImplementedError('Python version!')
 
     def __repr__(self):
-        ss = "Class : %s\n" % self.__class__.__name__
-        ss += '    name : %s\n' % self.name
-        ss += '    physics = %s\n' % (self.physics)
-        ss += '    dim = %d (dimension)\n' % (self.dim)
-        ss += '    Y = %s (PUC size)\n' % str(self.Y)
+        ss = "Class : {}\n".format(self.__class__.__name__)
+        ss += '    name : {}\n'.format(self.name)
+        ss += '    physics = {}\n'.format(self.physics)
+        ss += '    dim = {} (dimension)\n'.format(self.dim)
+        ss += '    Y = {} (PUC size)\n'.format(self.Y)
         ss += '    material:\n'
         for key, val in self.material.items():
-            ss += '        %s : %s\n' % (key, str(val))
+            ss += '        {0} : {1}\n'.format(key, str(val))
         ss += '    solve:\n'
         for key, val in self.solve.items():
-            ss += '        %s : %s\n' % (key, str(val))
+            ss += '        {0} : {1}\n'.format(key, str(val))
         return ss
 
 

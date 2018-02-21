@@ -1,4 +1,4 @@
-import unittest 
+import unittest
 import numpy as np
 from numpy.linalg import norm
 from ffthompy.tensors import Tensor
