@@ -103,7 +103,7 @@ from 'tutorial_01.py'. In order to show its application, we create a material
 coefficients composed of random values, symmetrize them, and sum them with
 a multiplication of identity to obtain positive definite matrix, i.e.
 A =""")
-from ffthompy.matvec import Matrix
+from ffthompy.matvecs import Matrix
 D = int(dim*(dim+1)/2)
 A = Matrix(N=N, d=D, Fourier=False, valtype='random')
 A = A + A.transpose() # symmetrization
@@ -139,9 +139,10 @@ and FFT operators represented with 'DFT' class.""")
 import ffthompy.projections as proj
 _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb['solve']['N'],
                                                 pb['material']['Y'],
-                                                centered=True, NyqNul=True)
+                                                centered=True, NyqNul=True,
+                                                tensor=False)
 
-from ffthompy.matvec import DFT, VecTri, LinOper
+from ffthompy.matvecs import DFT, VecTri, LinOper
 FN = DFT(name='FN', inverse=False, N=N)
 FiN = DFT(name='FiN', inverse=True, N=N)
 

@@ -3,6 +3,8 @@ import ffthompy.applications
 from ffthompy.general.base import get_base_dir, Timer
 import os
 import sys
+from copy import deepcopy
+
 
 class Problem(object):
     """
@@ -115,7 +117,8 @@ class Problem(object):
             py_version = sys.version_info[0]
             if py_version == 2:
                 with open(filename, 'w') as fop:
-                    pickle.dump(self.output, fop, protocol=2)
+                    data = deepcopy(self.output)
+                    pickle.dump(data, fop, protocol=None)
             elif py_version == 3:
                 with open(filename, 'wb') as fop:
                     pickle.dump(self.output, fop, protocol=3)

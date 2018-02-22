@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 import numpy as np
 from ffthompy.materials import Material
 import ffthompy.projections as proj
-from ffthompy.matvec import DFT, VecTri, LinOper
+from ffthompy.matvecs import DFT, VecTri, LinOper
 from ffthompy.general.solver import linear_solver
 
 
@@ -72,7 +72,7 @@ A = mat.get_A_Ga(Nbar=Nbar, primaldual=pb['solve']['primaldual'][0])
 
 # projections in Fourier space
 _, hG1N, _ = proj.scalar(pb['solve']['N'], pb['material']['Y'],
-                         centered=True, NyqNul=True)
+                         centered=True, NyqNul=True, tensor=False)
 # increasing the projection with zeros to comply with a projection
 # on double grid, see Definition 24 in IJNME2016
 hG1N = hG1N.enlarge(Nbar)

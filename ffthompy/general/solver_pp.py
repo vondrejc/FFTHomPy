@@ -1,5 +1,6 @@
 import numpy as np
-from ffthompy.matvec import VecTri
+from ffthompy.matvecs import VecTri
+from ffthompy.tensors import Tensor
 
 
 class CallBack():
@@ -11,8 +12,11 @@ class CallBack():
 
     def __call__(self, x):
         self.iter += 1
-        if not isinstance(x, VecTri):
-            X = VecTri(val=np.reshape(x, self.B.dN()))
+        if isinstance(x, np.ndarray):
+            if isinstance(self.B, VecTri):
+                X = VecTri(val=np.reshape(x, self.B.dN()))
+            elif isinstance(self.B, VecTri):
+                X = Tensor(val=np.reshape(x, self.B.dN()), shape=self.B.shape)
         else:
             X = x
         res = self.B - self.A(X)

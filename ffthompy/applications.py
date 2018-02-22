@@ -1,11 +1,11 @@
 import numpy as np
 import ffthompy.projections as proj
-from ffthompy.matvec import VecTri, DFT, LinOper
 from ffthompy.materials import Material
 from ffthompy.postprocess import postprocess, add_macro2minimizer
 from ffthompy.general.solver import linear_solver
 from ffthompy.general.solver_pp import CallBack, CallBack_GA
 from ffthompy.general.base import Timer
+from ffthompy.tensors import Tensor, DFT, Operator, matrix2tensor
 
 
 def scalar(problem):
@@ -22,7 +22,7 @@ def scalar(problem):
 
     # Fourier projections
     _, hG1N, hG2N = proj.scalar(pb.solve['N'], pb.Y, centered=True,
-                                NyqNul=True)
+                                NyqNul=True, tensor=True)
 
     if pb.solve['kind'] is 'GaNi':
         Nbar = pb.solve['N']
@@ -34,8 +34,8 @@ def scalar(problem):
     FN = DFT(name='FN', inverse=False, N=Nbar)
     FiN = DFT(name='FiN', inverse=True, N=Nbar)
 
-    G1N = LinOper(name='G1', mat=[[FiN, hG1N, FN]])
-    G2N = LinOper(name='G2', mat=[[FiN, hG2N, FN]])
+    G1N = Operator(name='G1', mat=[[FiN, hG1N, FN]])
+    G2N = Operator(name='G2', mat=[[FiN, hG2N, FN]])
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
@@ -47,24 +47,25 @@ def scalar(problem):
         mat = Material(pb.material)
 
         if pb.solve['kind'] is 'GaNi':
-            A = mat.get_A_GaNi(pb.solve['N'], primaldual)
+            A = matrix2tensor(mat.get_A_GaNi(pb.solve['N'], primaldual))
         elif pb.solve['kind'] is 'Ga':
-            A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
+            A = matrix2tensor(mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual))
 
         if primaldual is 'primal':
             GN = G1N
         else:
             GN = G2N
 
-        Afun = LinOper(name='FiGFA', mat=[[GN, A]])
+        Afun = Operator(name='FiGFA', mat=[[GN, A]])
 
         for iL in np.arange(pb.dim): # iteration over unitary loads
             E = np.zeros(pb.dim)
             E[iL] = 1
             print('macroscopic load E = ' + str(E))
-            EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
+            EN = Tensor(name='EN', N=Nbar, shape=(pb.dim,), Fourier=False)
+            EN.set_mean(E)
             # initial approximation for solvers
-            x0 = VecTri(name='x0', N=Nbar, Fourier=False)
+            x0 = Tensor(name='x0', N=Nbar, shape=(pb.dim,), Fourier=False)
 
             B = Afun(-EN) # RHS
 
@@ -76,7 +77,7 @@ def scalar(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print('solver : %s' % pb.solver['kind'])
+            print('solver : {}'.format(pb.solver['kind']))
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
@@ -119,8 +120,8 @@ def elasticity(problem):
     FN = DFT(name='FN', inverse=False, N=Nbar)
     FiN = DFT(name='FiN', inverse=True, N=Nbar)
 
-    G1N = LinOper(name='G1', mat=[[FiN, hG1hN + hG1sN, FN]])
-    G2N = LinOper(name='G2', mat=[[FiN, hG2hN + hG2sN, FN]])
+    G1N = Operator(name='G1', mat=[[FiN, hG1hN + hG1sN, FN]])
+    G2N = Operator(name='G2', mat=[[FiN, hG2hN + hG2sN, FN]])
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
@@ -132,25 +133,26 @@ def elasticity(problem):
         mat = Material(pb.material)
 
         if pb.solve['kind'] is 'GaNi':
-            A = mat.get_A_GaNi(pb.solve['N'], primaldual)
+            A = matrix2tensor(mat.get_A_GaNi(pb.solve['N'], primaldual))
         elif pb.solve['kind'] is 'Ga':
-            A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
+            A = matrix2tensor(mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual))
 
         if primaldual is 'primal':
             GN = G1N
         else:
             GN = G2N
 
-        Afun = LinOper(name='FiGFA', mat=[[GN, A]])
+        Afun = Operator(name='FiGFA', mat=[[GN, A]])
 
         D = int(pb.dim*(pb.dim+1)/2)
         for iL in range(D): # iteration over unitary loads
             E = np.zeros(D)
             E[iL] = 1
             print('macroscopic load E = ' + str(E))
-            EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
+            EN = Tensor(name='EN', N=Nbar, shape=(D,), Fourier=False)
+            EN.set_mean(E)
             # initial approximation for solvers
-            x0 = VecTri(N=Nbar, d=D, Fourier=False)
+            x0 = EN.zeros_like(name='x0')
 
             B = Afun(-EN) # RHS
 

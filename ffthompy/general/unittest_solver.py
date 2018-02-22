@@ -1,9 +1,9 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
-from ffthompy.tensors import Tensor
-from ffthompy.operators import DFT, Operator
-from ffthompy.projections import scalar, scalar_tensor
+from ffthompy.tensors import Tensor, DFT, Operator
+from ffthompy.tensors.projection import scalar_tensor
+from ffthompy.projections import scalar
 from ffthompy.general.solver import linear_solver
 
 

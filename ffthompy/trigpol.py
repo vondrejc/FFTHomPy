@@ -245,3 +245,6 @@ def decrease(xN, M):
 def get_Nodd(N):
     Nodd = N - ((N + 1) % 2)
     return Nodd
+
+def mean_index(N):
+    return tuple(np.array(np.fix(np.array(N)/2), dtype=np.int))

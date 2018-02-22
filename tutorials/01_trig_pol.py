@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 import numpy as np
 from ffthompy.trigpol import Grid
-from ffthompy.matvec import VecTri, DFT
+from ffthompy.matvecs import VecTri, DFT
 
 
 print("""

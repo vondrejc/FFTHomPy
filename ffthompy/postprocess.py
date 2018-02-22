@@ -1,6 +1,6 @@
 import numpy as np
 from ffthompy.general.base import Timer
-from ffthompy.matvec import VecTri
+from ffthompy.tensors import matrix2tensor
 
 
 def postprocess(pb, A, mat, solutions, results, primaldual):
@@ -15,7 +15,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             order_name = ''
             Nname = ''
             if A.name is not 'A_GaNi':
-                A = mat.get_A_GaNi(pb.solve['N'], primaldual)
+                A = matrix2tensor(mat.get_A_GaNi(pb.solve['N'], primaldual))
 
         elif pp['kind'] in ['Ga', 'ga']:
             if 'order' in pp:
@@ -23,13 +23,13 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
                 if pp['order'] is None:
                     Nname = ''
                     order_name = ''
-                    A = mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
-                                     order=pp['order'])
+                    A = matrix2tensor(mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
+                                                   order=pp['order']))
                 else:
                     order_name = '_o' + str(pp['order'])
                     Nname = '_P%d' % np.mean(pp['P'])
-                    A = mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
-                                     order=pp['order'], P=pp['P'])
+                    A = matrix2tensor(mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
+                                                   order=pp['order'], P=pp['P']))
             else:
                 order_name = ''
                 Nname = ''
@@ -81,6 +81,8 @@ def add_macro2minimizer(X, E):
     if np.allclose(X.mean(), E):
         return X
     elif np.allclose(X.mean(), np.zeros_like(E)):
-        return X + VecTri(name='EN', macroval=E, N=X.N, Fourier=False)
+        EN = X.zeros_like(name='EN')
+        EN.set_mean(E)
+        return X + EN
     else:
         raise ValueError("Field is neither zero-mean nor E-mean.")

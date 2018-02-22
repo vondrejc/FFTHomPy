@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import numpy as np
 from ffthompy.general.base import Timer
-from ffthompy.matvec import VecTri
+from ffthompy.matvecs import VecTri
 from ffthompy.tensors import Tensor
 import scipy.sparse.linalg as spslin
 

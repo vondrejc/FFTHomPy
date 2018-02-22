@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.special as sp
-from ffthompy.matvec import DFT, VecTri, Matrix
-from ffthompy.trigpol import Grid, decrease
-from ffthompy.tensors import mean_index
+from ffthompy.matvecs import DFT, VecTri, Matrix
+from ffthompy.trigpol import Grid, decrease, mean_index
+
 
 inclusion_keys = {'ball': ['ball', 'circle'],
                   'cube': ['cube', 'square'],

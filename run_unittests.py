@@ -60,8 +60,8 @@ class Test_main(unittest.TestCase):
             exec(compile(open(filen).read(), filen, 'exec'), {'__name__': 'test'})
 
 if __name__ == "__main__":
-    from ffthompy.unittest_matvec import Test_matvec
-    from ffthompy.unittest_operators import Test_operators
+    from ffthompy.matvecs.unittest_matvec import Test_matvec
+    from ffthompy.tensors.unittest_operators import Test_operators
     from ffthompy.mechanics.unittest_matcoef import Test_matcoef
     from ffthompy.general.unittest_solver import Test_solvers
 

@@ -25,7 +25,7 @@ materials = {'square': {'inclusions': ['square', 'otherwise'],
                            'Y': np.ones(dim),
                            'order': 0,
                            'P': N,
-                        },
+                           },
              'square2': {'inclusions': ['square', 'otherwise'],
                          'positions': [np.zeros(dim), ''],
                          'params': [1.2*np.ones(dim), ''], # size of sides
@@ -157,8 +157,8 @@ problems = [
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob5'),
               'data': 'all'},
-     },
-            ]
+     },]
+
 
 if __name__=='__main__':
     import subprocess

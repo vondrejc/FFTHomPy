@@ -1,12 +1,11 @@
 import numpy as np
 import scipy as sp
-from ffthompy.trigpol import Grid, get_Nodd
-from ffthompy.matvec import Matrix, mean_index
+from ffthompy.trigpol import Grid, get_Nodd, mean_index
+from ffthompy.matvecs import Matrix
 from ffthompy.tensors import Tensor
-import itertools
 
 
-def scalar(N, Y, centered=True, NyqNul=True, tensor=False):
+def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
     """
     Assembly of discrete kernels in Fourier space for scalar elliptic problems.
 
@@ -105,38 +104,7 @@ def scalar(N, Y, centered=True, NyqNul=True, tensor=False):
         G2l = G2l.enlarge(N)
     return G0l, G1l, G2l
 
-def scalar_tensor(N, Y, centered=True, NyqNul=True):
-    dim = np.size(N)
-    N = np.array(N, dtype=np.int)
-    if NyqNul:
-        Nred = get_Nodd(N)
-    else:
-        Nred = N
-    assert(np.allclose(N, Nred))
-
-    xi = Grid.get_xil(N, Y)
-    hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
-    for ind in itertools.product(*[range(n) for n in N]):
-        for i in range(dim):
-            hGrad[i][ind] = xi[i][ind[i]]
-
-    kok= np.einsum('i...,j...->ij...', hGrad, hGrad).real
-    k2 = np.einsum('i...,i...', hGrad, hGrad).real
-    ind_center=mean_index(N)
-    k2[ind_center]=1.
-
-    G0lval=np.zeros_like(kok)
-    Ival=np.zeros_like(kok)
-    for ii in range(dim): # diagonal components
-        G0lval[ii, ii][ind_center] = 1
-        Ival[ii, ii] = 1
-    G1l=Tensor(name='G1', val=kok/k2, order=2, Y=Y, Fourier=True, multype=21)
-    G0l=Tensor(name='G1', val=G0lval, order=2, Y=Y, Fourier=True, multype=21)
-    I = Tensor(name='I', val=Ival, order=2, Y=Y, Fourier=True, multype=21)
-    G2l=I-G1l-G0l
-    return G0l, G1l, G2l
-
-def elasticity(N, Y, centered=True, NyqNul=True):
+def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
     """
     Projection matrix on a space of admissible strain fields
     INPUT =
@@ -266,11 +234,18 @@ def elasticity(N, Y, centered=True, NyqNul=True):
                 G2h[m][n] = np.fft.ifftshift(G2h[m][n])
                 G2s[m][n] = np.fft.ifftshift(G2s[m][n])
 
-    G0 = Matrix(name='hG1', val=mean, Fourier=True)
-    G1h = Matrix(name='hG1', val=G1h, Fourier=True)
-    G1s = Matrix(name='hG1', val=G1s, Fourier=True)
-    G2h = Matrix(name='hG1', val=G2h, Fourier=True)
-    G2s = Matrix(name='hG1', val=G2s, Fourier=True)
+    if tensor:
+        G0 = Tensor(name='hG0', val=mean, order=2, Fourier=True, multype=21)
+        G1h = Tensor(name='hG1h', val=G1h, order=2, Fourier=True, multype=21)
+        G1s = Tensor(name='hG1s', val=G1s, order=2, Fourier=True, multype=21)
+        G2h = Tensor(name='hG2h', val=G2h, order=2, Fourier=True, multype=21)
+        G2s = Tensor(name='hG2s', val=G2s, order=2, Fourier=True, multype=21)
+    else:
+        G0 = Matrix(name='hG0', val=mean, Fourier=True)
+        G1h = Matrix(name='hG1h', val=G1h, Fourier=True)
+        G1s = Matrix(name='hG1s', val=G1s, Fourier=True)
+        G2h = Matrix(name='hG2h', val=G2h, Fourier=True)
+        G2s = Matrix(name='hG2s', val=G2s, Fourier=True)
 
     if NyqNul:
         G0 = G0.enlarge(N)
@@ -279,47 +254,3 @@ def elasticity(N, Y, centered=True, NyqNul=True):
         G2h = G2h.enlarge(N)
         G2s = G2s.enlarge(N)
     return mean, G1h, G1s, G2h, G2s
-
-
-def elasticity_small_strain(N, Y, centered=True, NyqNul=True):
-    N = np.array(N, dtype=np.int)
-    dim = N.size
-    assert(dim==3)
-    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N]))
-    freq = Grid.get_xil(N, Y)
-    delta  = lambda i,j: np.float(i==j)
-
-    for i, j, k, l in itertools.product(range(dim), repeat=4):
-        for x, y, z in np.ndindex(*N):
-            q = np.array([freq[0][x], freq[1][y], freq[2][z]])
-            if not q.dot(q) == 0:
-                Ghat[i,j,k,l,x,y,z] = -q[i]*q[j]*q[k]*q[l]/(q.dot(q))**2 + \
-                    .5*(delta(i,k)*q[j]*q[l]+delta(i,l)*q[j]*q[k] +\
-                        delta(j,k)*q[i]*q[l]+delta(j,l)*q[i]*q[k] ) / (q.dot(q))
-
-    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
-                         multype=42)
-    return Ghat_tensor
-
-
-def elasticity_large_deformation(N, Y, centered=True, NyqNul=True):
-    N = np.array(N, dtype=np.int)
-    dim = N.size
-    assert(dim==3)
-    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N]))
-    freq = Grid.get_xil(N, Y)
-    delta  = lambda i,j: np.float(i==j)
-
-    for i, j, k, l in itertools.product(range(dim), repeat=4):
-        for x, y, z in np.ndindex(*N):
-            q = np.array([freq[0][x], freq[1][y], freq[2][z]])
-            if not q.dot(q) == 0:
-                Ghat[i,j,k,l,x,y,z] = delta(i,k)*q[j]*q[l] / (q.dot(q))
-
-    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, Fourier=True,
-                         multype=42)
-    return Ghat_tensor
-
-
-if __name__ == '__main__':
-    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))
