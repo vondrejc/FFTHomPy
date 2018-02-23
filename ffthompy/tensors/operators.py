@@ -365,23 +365,30 @@ def matrix2tensor(M):
 def vector2tensor(V):
     return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)
 
-def grad_div_tensor(N, grad=True, div=True):
+def grad_div_tensor(N, Y=None, grad=True, div=True):
+    if grad and div:
+        return grad_tensor(N, Y), div_tensor(N, Y)
+    elif grad:
+        return grad_tensor(N, Y)
+    elif div:
+        return div_tensor(N, Y)
+
+def grad_tensor(N, Y=None):
+    if Y is None:
+        Y = np.ones_like(N)
     # scalar valued versions of gradient and divergence
     N = np.array(N, dtype=np.int)
     dim = N.size
     hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
-    freq = [np.arange(-(N[ii]-1)/2.,+(N[ii]+1)/2.) for ii in range(dim)]
+    freq = Grid.get_xil(N, Y)
     for ind in itertools.product(*[range(n) for n in N]):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
     hGrad = -hGrad*2*np.pi*1j
-    hGrad = Tensor(name='hgrad', val=hGrad, order=1, Fourier=True, multype='grad')
-    hDiv = Tensor(name='hdiv', val=hGrad.val, order=1, Fourier=True, multype='div')
-    if grad and div:
-        return hGrad, hDiv
-    elif grad:
-        return hGrad
-    elif div:
-        return hDiv
-    else:
-        raise ValueError()
+    return Tensor(name='hgrad', val=hGrad, order=1, Fourier=True, multype='grad')
+
+def div_tensor(N, Y=None):
+    if Y is None:
+        Y = np.ones_like(N)
+    hGrad=grad_tensor(N, Y=Y)
+    return Tensor(name='hdiv', val=hGrad.val, order=1, Fourier=True, multype='div')

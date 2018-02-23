@@ -3,7 +3,7 @@ import numpy as np
 from numpy.linalg import norm
 from ffthompy import PrintControl
 from ffthompy.tensors import Tensor, DFT, Operator
-from ffthompy.tensors.projection import scalar_tensor
+from ffthompy.tensors.projection import scalar as scalar_tensor
 from ffthompy.projections import scalar
 from ffthompy.general.solver import linear_solver
 
@@ -66,7 +66,7 @@ class Test_solvers(unittest.TestCase):
         X,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver='CG')
 
         prt.disable()
-        for solver in ['scipy_cg', 'richardson', 'chebyshev']:
+        for solver in ['CG', 'scipy_cg', 'richardson', 'chebyshev']:
             x,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver=solver)
             self.assertAlmostEqual(0, norm(X.val-x.val), delta=1e-8, msg=solver)
         prt.enable()

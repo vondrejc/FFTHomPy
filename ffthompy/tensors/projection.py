@@ -3,7 +3,7 @@ from ffthompy.trigpol import Grid, get_Nodd, mean_index
 from .objects import Tensor
 import itertools
 
-def scalar_tensor(N, Y, centered=True, NyqNul=True):
+def scalar(N, Y, centered=True, NyqNul=True):
     dim = np.size(N)
     N = np.array(N, dtype=np.int)
     if NyqNul:
