@@ -12,7 +12,7 @@ class Test_matvec(unittest.TestCase):
         pass
 
     def test_matrix_versions(self):
-        print('Checking Matrices...')
+        print('\nChecking Matrices...')
         for dim in [2, 3]:
             for n in [4, 5]:
                 N = n*np.ones(dim, dtype=np.int)
@@ -28,7 +28,7 @@ class Test_matvec(unittest.TestCase):
         print('...ok')
 
     def test_projection(self):
-        print('Checking projections...')
+        print('\nChecking projections...')
         for dim in [2, 3]:
             for n in [5]:
                 N = n*np.ones(dim, dtype=np.int)

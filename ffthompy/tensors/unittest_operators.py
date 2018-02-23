@@ -1,10 +1,13 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
+from ffthompy import PrintControl
 from ffthompy.projections import scalar
 from ffthompy.tensors import (Tensor, DFT, grad, div, symgrad, potential, Operator, matrix2tensor,
                               grad_div_tensor)
 from ffthompy.tensors.projection import elasticity_small_strain, elasticity_large_deformation
+
+prt=PrintControl()
 
 class Test_operators(unittest.TestCase):
 
@@ -15,11 +18,13 @@ class Test_operators(unittest.TestCase):
         pass
 
     def test_operators(self):
-        print('Checking operators...')
+        print('\nChecking operators...')
         for dim in [2, 3]:
             N = 5*np.ones(dim, dtype=np.int)
             F = DFT(N=N, inverse=False)
+            prt.disable()
             print(F) # checking representation
+            prt.enable()
 
             # scalar problem
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False).randomize()
@@ -72,7 +77,7 @@ class Test_operators(unittest.TestCase):
         print('...ok')
 
     def test_compatibility(self):
-        print('Checking compatibility...')
+        print('\nChecking compatibility...')
         for dim in [3]:
             N = 5*np.ones(dim, dtype=np.int)
             F = DFT(inverse=False, N=N)
@@ -131,8 +136,10 @@ class Test_operators(unittest.TestCase):
             self.assertAlmostEqual(0, norm(Fu.mean()-E), delta=1e-13)
 
             # __repr__
+            prt.disable()
             print(P1)
             print(u)
+            prt.enable()
             self.assertAlmostEqual(0, (P1==P1.transpose()), delta=1e-13)
         print('...ok')
 

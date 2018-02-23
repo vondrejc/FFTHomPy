@@ -2,10 +2,13 @@
 
 import unittest
 import numpy as np
+from ffthompy import PrintControl
 from ffthompy.problem import Problem, import_file
 import pickle as Pickle
 import os
 import sys
+
+prt=PrintControl()
 
 class Test_main(unittest.TestCase):
 
@@ -23,8 +26,11 @@ class Test_main(unittest.TestCase):
         pass
 
     def test_examples(self): # testing example files
+        print('\nControling input files...')
         for input_file in self.input_files:
+            print('  control of file: {}'.format(input_file))
             self.examples(input_file)
+        print('...ok')
 
     def examples(self, input_file): # test a particular example file
         basen = os.path.basename(input_file)
@@ -32,7 +38,9 @@ class Test_main(unittest.TestCase):
 
         for conf_problem in conf.problems:
             prob = Problem(conf_problem, conf)
+            prt.disable()
             prob.calculate()
+            prt.enable()
             py_version = sys.version_info[0]
             file_res = 'test_results/python%d/%s_%s' \
                 % (py_version, basen.split('.')[0], prob.name)
@@ -53,11 +61,18 @@ class Test_main(unittest.TestCase):
                     val = np.linalg.norm(dif.ravel(), np.inf)
                     msg = 'Incorrect (%s) in problem (%s)' % (kw, prob.name)
                     self.assertAlmostEqual(0, val, msg=msg, delta=1e-13)
+        prt.disable()
         prob.postprocessing()
+        prt.enable()
 
     def test_tutorials(self): # test tutorials
+        print('\nControling tutorials...')
         for filen in self.tutorial_files:
+            print('  control of file: {}'.format(filen))
+            prt.disable()
             exec(compile(open(filen).read(), filen, 'exec'), {'__name__': 'test'})
+            prt.enable()
+        print('...ok')
 
 if __name__ == "__main__":
     from ffthompy.matvecs.unittest_matvec import Test_matvec

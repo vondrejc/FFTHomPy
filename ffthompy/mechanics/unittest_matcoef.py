@@ -7,10 +7,10 @@ from .matcoef import ElasticTensor as ET
 class Test_matcoef(unittest.TestCase):
 
     def setUp(self):
-        pass
+        print('\nChecking mechanics...')
 
     def tearDown(self):
-        pass
+        print('...ok')
 
     @staticmethod
     def get_rand_sym(dim, ndim):
@@ -24,6 +24,7 @@ class Test_matcoef(unittest.TestCase):
         return A
 
     def test_mandel(self):
+        print("  Mandel's notation")
         for dim in [2, 3]:
             for ndim in [2, 4]:
                 A = self.get_rand_sym(dim=dim, ndim=ndim)
@@ -40,6 +41,7 @@ class Test_matcoef(unittest.TestCase):
                                        delta=1e-14)
 
     def test_plane(self):
+        print('  plane strain and stress')
         A = self.get_rand_sym(dim=3, ndim=4)
         Am = ET.create_mandel(A)
         Amplane = ET.get_plane_in_engineering(Am).squeeze()

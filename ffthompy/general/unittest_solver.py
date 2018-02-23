@@ -1,10 +1,13 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
+from ffthompy import PrintControl
 from ffthompy.tensors import Tensor, DFT, Operator
 from ffthompy.tensors.projection import scalar_tensor
 from ffthompy.projections import scalar
 from ffthompy.general.solver import linear_solver
+
+prt=PrintControl()
 
 
 class Test_solvers(unittest.TestCase):
@@ -16,7 +19,7 @@ class Test_solvers(unittest.TestCase):
         pass
 
     def test_projections(self):
-        print('Checking projections...')
+        print('\nChecking projections...')
         dim=2
         n=5
         N = n*np.ones(dim, dtype=np.int)
@@ -29,7 +32,7 @@ class Test_solvers(unittest.TestCase):
         print('...ok')
 
     def test_solvers(self):
-        print('Checking solvers...')
+        print('\nChecking solvers...')
         dim=2
         n=5
         N = n*np.ones(dim, dtype=np.int)
@@ -62,9 +65,11 @@ class Test_solvers(unittest.TestCase):
         # reference solution
         X,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver='CG')
 
+        prt.disable()
         for solver in ['scipy_cg', 'richardson', 'chebyshev']:
             x,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver=solver)
             self.assertAlmostEqual(0, norm(X.val-x.val), delta=1e-8, msg=solver)
+        prt.enable()
 
         print('...ok')
 

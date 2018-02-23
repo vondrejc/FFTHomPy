@@ -25,6 +25,25 @@ def end():
     print('end')
     sys.exit()
 
+class PrintControl():
+    flag=True
+
+    def __init__(self, flag=True):
+        self.flag=True
+
+    def activate(self):
+        self.flag=True
+
+    def deactivate(self):
+        self.flag=False
+
+    def disable(self):
+        if self.flag:
+            sys.stdout = open(os.devnull, 'w')
+
+    def enable(self):
+        if self.flag:
+            sys.stdout = sys.__stdout__
 
 class Timer():
     def __init__(self, name='time', start=True):
