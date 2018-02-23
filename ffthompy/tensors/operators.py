@@ -247,7 +247,7 @@ def grad(X):
     dim=len(X.N)
     freq=Grid.get_freq(X.N, X.Y)
     strfreq='xyz'
-    coef=-2*np.pi*1j
+    coef=2*np.pi*1j
     val=np.empty((X.dim,)+X.shape+X.N, dtype=np.complex)
 
     for ii in range(X.dim):
@@ -283,7 +283,7 @@ def div(X):
     dim=len(X.N)
     freq=Grid.get_freq(X.N, X.Y)
     strfreq='xyz'
-    coef=-2*np.pi*1j
+    coef=2*np.pi*1j
 
     for ii in range(X.dim):
         mul_str='{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
@@ -307,7 +307,7 @@ def potential_scalar(x, freq, mean_index):
     dim=x.shape[0]
     assert(dim==len(x.shape)-1)
     strfreq='xyz'
-    coef=-2*np.pi*1j
+    coef=2*np.pi*1j
     val=np.empty(x.shape[1:], dtype=np.complex)
     for d in range(0, dim):
         factor=np.zeros_like(freq[d], dtype=np.complex)
@@ -384,7 +384,7 @@ def grad_tensor(N, Y=None):
     for ind in itertools.product(*[range(n) for n in N]):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
-    hGrad = -hGrad*2*np.pi*1j
+    hGrad = hGrad*2*np.pi*1j
     return Tensor(name='hgrad', val=hGrad, order=1, Fourier=True, multype='grad')
 
 def div_tensor(N, Y=None):
