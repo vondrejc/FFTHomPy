@@ -294,7 +294,7 @@ def get_scal(B, par):
         elif isinstance(B, Tensor):
             scal = lambda X,Y: X*Y
         else:
-            scal = lambda X,Y: np.sum(X*Y.conj())
+            scal = lambda X,Y: np.sum(X*Y.conj()).real
     return scal
 
 def get_norm(B, par):
