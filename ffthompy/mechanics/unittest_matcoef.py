@@ -1,16 +1,16 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
-from .matcoef import ElasticTensor as ET
+from ffthompy.mechanics.matcoef import ElasticTensor as ET
 
 
 class Test_matcoef(unittest.TestCase):
 
     def setUp(self):
-        print('\nChecking mechanics...')
+        pass
 
     def tearDown(self):
-        print('...ok')
+        pass
 
     @staticmethod
     def get_rand_sym(dim, ndim):
@@ -23,7 +23,13 @@ class Test_matcoef(unittest.TestCase):
             A = 0.5*(A+np.einsum('ijkl->jikl',A))
         return A
 
-    def test_mandel(self):
+    def test_mechanics(self):
+        print('\nChecking mechanics...')
+        self._mandel()
+        self._plane()
+        print('...ok')
+
+    def _mandel(self):
         print("  Mandel's notation")
         for dim in [2, 3]:
             for ndim in [2, 4]:
@@ -40,7 +46,7 @@ class Test_matcoef(unittest.TestCase):
                                        msg='mandel in dim={0} and ndim={1}'.format(dim, ndim),
                                        delta=1e-14)
 
-    def test_plane(self):
+    def _plane(self):
         print('  plane strain and stress')
         A = self.get_rand_sym(dim=3, ndim=4)
         Am = ET.create_mandel(A)
