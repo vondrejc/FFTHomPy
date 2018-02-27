@@ -133,6 +133,8 @@ class Tensor(TensorFuns):
             return einsum('ij...,j...->i...', X, Y)
         elif multype in [42, '42']:
             return einsum('ijkl...,kl...->ij...', X, Y)
+        elif multype in [00, 'elementwise', 'hadamard']:
+            return einsum('...,...->...', X, Y)
         elif multype in ['grad']:
             return einsum('i...,...->i...', X, Y)
         elif multype in ['div']:
