@@ -134,6 +134,15 @@ class CanoTensor(SparseTensorFuns):
         # element-wise multiplication
         return (self*Y).truncate(tol=tol, rank=rank)
 
+    def scal(self, Y):
+        X = self
+        assert(X.Fourier==Y.Fourier)
+        XY = X*Y
+        if X.Fourier:
+            return XY.mean()
+        else:
+            return XY.mean()/np.prod(X.N)
+
     def full(self):
         "return a full tensor"
         if self.order==2:
@@ -236,7 +245,26 @@ class CanoTensor(SparseTensorFuns):
             raise NotImplementedError()
         return val
 
-    def __repr__(self, full=False, detailed=False):
+    def mean(self):
+        R=self
+        val=0.
+        for ii in range(R.r):
+            valii=R.core[ii]
+            for jj in range(R.order):
+                valii*=np.sum(R.basis[jj][ii])
+            val+=valii
+        return val
+
+    def conj(self):
+        """Element-wise complex conjugate"""
+        basis = []
+        for ii in range(self.order):
+            basis.append(self.basis[ii].conj())
+        res = self.copy()
+        res.basis = basis
+        return res
+
+    def __repr__(self):
         keys=['name', 'N', 'Fourier', 'r']
         ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
         skip=4*' '
