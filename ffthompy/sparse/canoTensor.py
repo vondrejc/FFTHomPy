@@ -39,8 +39,8 @@ class CanoTensor(SparseTensorFuns):
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
 
     def __add__(self, Y):
-
         X=self
+        assert(X.Fourier==Y.Fourier)
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
@@ -58,10 +58,10 @@ class CanoTensor(SparseTensorFuns):
 
         newBasis=[newA.T, newB]
 
-        return CanoTensor(name=X.name+'+'+Y.name, core=s, basis=newBasis)
+        return CanoTensor(name=X.name+'+'+Y.name, core=s, basis=newBasis, Fourier=self.Fourier)
 
     def __neg__(self):
-        return CanoTensor(core=-self.core, basis=self.basis)
+        return CanoTensor(core=-self.core, basis=self.basis, Fourier=self.Fourier)
 
     def __sub__(self, Y):
         return self.__add__(-Y)
@@ -161,13 +161,13 @@ class CanoTensor(SparseTensorFuns):
         basis=list(self.basis) # this copying avoids perturbation to the original tensor object
         core=self.core
 
-        if rank>=self.r:
+        if rank>self.r:
             print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
             return self
 
         # to determine the rank of truncation
         if tol is None and rank is None:
-            rank=self.r-1
+            return self
         elif tol is not None:
             # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
             rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
@@ -177,7 +177,7 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, Fourier=self.Fourier)
 
     def enlarge(self, M):
         dtype=self.basis[0].dtype
@@ -202,17 +202,6 @@ class CanoTensor(SparseTensorFuns):
     def decrease(self, M):
         assert(self.Fourier is True)
 
-#         M = np.array(M, dtype=np.float)
-#         N = np.array(xN.shape, dtype=np.float)
-#         dim = N.size
-#         ibeg = np.fix((N-M+(M % 2))/2).astype(dtype=np.int)
-#         iend = np.fix((N+M+(M % 2))/2).astype(dtype=np.int)
-#         if dim == 2:
-#             xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
-#         elif dim == 3:
-#             xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
-#         return xM
-
         M = np.array(M, dtype=np.int)
         N = np.array(self.N)
         assert(np.all(np.less(M, N)))
@@ -228,22 +217,24 @@ class CanoTensor(SparseTensorFuns):
 
     def norm(self, ord='fro'):
         if ord=='fro':
-            R=self*self
+            R=self*self.conj()
             val=0.
             for ii in range(R.r):
-                valii=0.
-                for jj in range(R.ord):
-                    valii+=np.sum(R.basis[jj][ii])
-                val+=R.core[ii]*valii
-
-        elif ord==2:
+                valii=R.core[ii]
+                for jj in range(R.order):
+                    valii*=np.sum(R.basis[jj][ii]).real
+                val+=valii
+            val=val**0.5
+        elif ord==1:
             pass
-
+        elif ord=='inf':
+            pass
         elif ord=='core':
             return np.linalg.norm(self.core)
 
         else:
             raise NotImplementedError()
+        return val
 
     def __repr__(self, full=False, detailed=False):
         keys=['name', 'N', 'Fourier', 'r']
