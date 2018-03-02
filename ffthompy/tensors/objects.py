@@ -231,6 +231,12 @@ class Tensor(TensorFuns):
         res.val=np.einsum('ijkl...->ijlk...', self.val)
         return res
 
+    def identity(self):
+        self.val[:] = 0.
+        assert(self.order % 2 == 0)
+        for ii in itertools.product(*tuple([range(n) for n in self.shape[:self.order/2]])):
+            self.val[ii + ii] = 1.
+
     def vec(self):
         """
         Returns one-dimensional vector (column) version of trigonometric
@@ -333,6 +339,41 @@ class Tensor(TensorFuns):
             return X
         else:
             return X.fourier()
+
+    def plot(self, ind=0, N=None, filen=None, ptype='surface'):
+        dim=self.N.__len__()
+        if dim!=2:
+            raise ValueError("The plotting is suited only for dim=2!")
+        if N is None:
+            N=self.N
+
+        from mpl_toolkits.mplot3d import axes3d
+        import matplotlib.pyplot as plt
+        from ffthompy.trigpol import Grid
+        fig=plt.figure()
+        coord=Grid.get_coordinates(N, self.Y)
+        if np.all(np.greater(N, self.N)):
+            Z=ifftnc(enlarge(fftnc(self.val[ind], self.N), N), N)
+        elif np.all(np.less(N, self.N)):
+            Z=ifftnc(decrease(fftnc(self.val[ind], self.N), N), N)
+        elif np.allclose(N, self.N):
+            Z=self.val[ind]
+
+        if ptype in ['wireframe']:
+            ax=fig.add_subplot(111, projection='3d')
+            ax.plot_wireframe(coord[0], coord[1], Z)
+        elif ptype in ['surface']:
+            from matplotlib import cm
+            ax=fig.gca(projection='3d')
+            surf=ax.plot_surface(coord[0], coord[1], Z,
+                                   rstride=1, cstride=1, cmap=cm.coolwarm,
+                                   linewidth=0, antialiased=False)
+            fig.colorbar(surf, shrink=0.5, aspect=5)
+
+        if filen is None:
+            plt.show()
+        else:
+            plt.savefig(filen)
 
 
 class Scalar():
