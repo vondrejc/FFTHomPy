@@ -103,12 +103,16 @@ from 'tutorial_01.py'. In order to show its application, we create a material
 coefficients composed of random values, symmetrize them, and sum them with
 a multiplication of identity to obtain positive definite matrix, i.e.
 A =""")
-from ffthompy.matvecs import Matrix
+from ffthompy.tensors import Tensor, matrix2tensor
 D = int(dim*(dim+1)/2)
-A = Matrix(N=N, d=D, Fourier=False, valtype='random')
+A = Tensor(N=N, shape=(D,D), Fourier=False, multype=21)
+A.randomize()
 A = A + A.transpose() # symmetrization
 # adding a multiplication of identity matrix:
-A += 3*Matrix(name='material', N=N, d=D, Fourier=False, valtype='id')
+I = Tensor(N=N, shape=(D,D), Fourier=False, multype=21)
+I.identity()
+A += 3*I
+A.name='material'
 print(A)
 
 print("""
@@ -130,7 +134,7 @@ A =""")
 # definition of material
 from ffthompy.materials import Material
 mat = Material(pb['material'])
-A = mat.get_A_GaNi(pb['solve']['N'], 'primal')
+A = matrix2tensor(mat.get_A_GaNi(pb['solve']['N'], 'primal'))
 print(A)
 
 print("""---------------------
@@ -140,9 +144,9 @@ import ffthompy.projections as proj
 _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb['solve']['N'],
                                                 pb['material']['Y'],
                                                 centered=True, NyqNul=True,
-                                                tensor=False)
+                                                tensor=True)
 
-from ffthompy.matvecs import DFT, VecTri, LinOper
+from ffthompy.tensors import DFT, Operator
 FN = DFT(name='FN', inverse=False, N=N)
 FiN = DFT(name='FiN', inverse=True, N=N)
 
@@ -165,11 +169,11 @@ Then we put all operators together to get a linear operator 'G1'
 represented by 'LinOper' class and providing a projection on compatible fields.
 Here, we also shows that both operators are orthogonal projection:""")
 # projection on compatible fields
-G1N = LinOper(name='G1', mat=[[FiN, hG1hN + hG1sN, FN]])
+G1N = Operator(name='G1', mat=[[FiN, hG1hN + hG1sN, FN]])
 # projection on divergence-free fields
-G2N = LinOper(name='G1', mat=[[FiN, hG2hN + hG2sN, FN]])
-uN = VecTri(N=N, d=D, valtype='random')
-vN = VecTri(N=N, d=D, valtype='random')
+G2N = Operator(name='G1', mat=[[FiN, hG2hN + hG2sN, FN]])
+uN = Tensor(N=N, shape=(D,)).randomize()
+vN = Tensor(N=N, shape=(D,)).randomize()
 print('(G1N(G1N(uN))-G1N(uN)).norm() =', (G1N(G1N(uN))-G1N(uN)).norm())
 print('(G2N*G2N*uN-G2N*uN).norm() =', (G2N(G2N(uN))-G2N(uN)).norm())
 print('G1N(uN)*G2N(vN) =', G1N(uN)*G2N(vN))
@@ -183,9 +187,9 @@ We also show the possibility of linear operator ('LinOper') by showing one
 iteration of Moulinec-Suquet scheme using three versions.
 """)
 # linear operator for solving a linear system
-Afun = LinOper(name='FiGFA', mat=[[G1N, A]])
+Afun = Operator(name='FiGFA', mat=[[G1N, A]])
 # strain representation
-epN = VecTri(name='strain', N=N, d=D, valtype='random')
+epN = Tensor(name='strain', N=N, shape=(D,)).randomize()
 # sufficiently small parameter corresponding to reference medium 
 alp = 0.1
 
@@ -197,18 +201,11 @@ print("""hG1 = hG1hN + hG1sN
 epN_new2 = epN - alp * FiN(hG1(FN(A(epN))))""")
 hG1 = hG1hN + hG1sN
 epN_new2 = epN - alp * FiN(hG1(FN(A(epN))))
-print("#3")
-print("""Afun2 = FiN*hG1*FN*A
-epN_new3 = epN - alp*Afun2(epN)""")
-Afun2 = FiN*hG1*FN*A
-epN_new3 = epN - alp*Afun2(epN)
 
 print("""
 Then the resulting vectors are compared to show they are the same:
 (epN_new == epN_new2) = """)
 print(epN_new == epN_new2)
-print("(epN_new == epN_new3) = ")
-print(epN_new == epN_new3)
 
 print("""==============================
 Now, we show a solution of homogenization problem for material defined in
@@ -217,8 +214,9 @@ E =""")
 # macroscopic load in Mandel's notation
 E = np.zeros(D)
 E[0] = 1
-EN = VecTri(name='EN', macroval=E, N=N, Fourier=False)
-print(E)
+EN = Tensor(name='EN', N=N, shape=(D,), Fourier=False)
+EN.set_mean(E)
+print(EN)
 
 # definition of reference media according to Moulinec-Suquet
 Km = K.mean()
@@ -227,17 +225,15 @@ a = 1/(Km+4./3*Gm)
 b = 1./(2*Gm)
 
 # linear combination of projections corresponding to Moulinec-Suquet scheme
-G1N_MS = LinOper(name='G1',
-                 mat=[[FiN, a*hG1hN + b*hG1sN, FN]])
-
+G1N_MS = Operator(name='G1', mat=[[FiN, a*hG1hN + b*hG1sN, FN]])
 # linear system with scaled projection
-Afun_MS = LinOper(name='FiGFA', mat=[[G1N_MS, A]])
+Afun_MS = Operator(name='FiGFA', mat=[[G1N_MS, A]])
 
 # linear system with orthogonal projection
-Afun = LinOper(name='FiGFA', mat=[[G1N, A]])
+Afun = Operator(name='FiGFA', mat=[[G1N, A]])
 
 # initial approximation to solvers
-x0 = VecTri(N=N, d=D, Fourier=False)
+x0 = Tensor(N=N, shape=(D,), Fourier=False)
 
 B = Afun(-EN) # RHS
 B_MS = Afun_MS(-EN) # RHS
@@ -251,6 +247,8 @@ value occurs on right-hand-side as a load.""")
 from ffthompy.general.solver import linear_solver
 X, info = linear_solver(solver='CG', Afun=Afun, B=B,
                         x0=x0, par=pb['solver'], callback=None)
+
+print('Homogenised properties (component 11) = {0}'.format(A(X+EN)*(X+EN)))
 
 print("""
 version #2 :

@@ -6,7 +6,7 @@ The basic classes, which are implemented in module "homogenize.matvec",
 are listed here along with their important characteristics:
 Grid : contains method "Grid.get_grid_coordinates", which returns coordinates
     of grid points
-VecTri : this class represents a vector-valued trigonometric polynomial and is
+Tensor : this class represents a tensor-valued trigonometric polynomial and is
     thus the most important part of FFT-based homogenization
 DFT : this class represents matrices of Discrete Fourier Transform, which is
     implemented via central version of FFT algorithm
@@ -17,8 +17,7 @@ import sys
 sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 import numpy as np
 from ffthompy.trigpol import Grid
-from ffthompy.matvecs import VecTri, DFT
-
+from ffthompy.tensors import Tensor, DFT
 
 print("""
 The work with trigonometric polynomials is shown for""")
@@ -29,14 +28,12 @@ print('number of grid points N =', N)
 print('which is implemented as a numpy.ndarray.')
 
 print("""
-The instance 'xN' of class 'VecTri' is created with initialization
-"xN = VecTri(name='trigpol_rand', d=d, N=N, valtype='random')"
-where argument 'valtype' specifies the type of vector. The value 'random'
-creates vector composed of random values; if it is not specified, the zero
-vector is created.
+Particularly, the vector-valued trigonometric polynomial is created as an instance 'xN' of class
+'Tensor' and the random values are assigned.
 """)
 
-xN = VecTri(name='trigpol_rand', d=d, N=N, valtype='random')
+xN = Tensor(name='trigpol_rand', shape=(d,), N=N)
+xN.randomize()
 
 print("""
 Basic properties of a trigonometric polynomials can be printed with a norm
@@ -59,7 +56,7 @@ is provided by central version of FFT algorithm and is implemented in method
 'DFT.__call__' and/or 'DFT.__mul__'.
 """)
 
-FN = DFT(name='forward DFT', N=N)
+FN = DFT(name='forward DFT', N=N, inverese=False)
 FiN = DFT(name='inverse DFT', N=N, inverse=True)
 print("FN = ")
 print(FN)
@@ -120,8 +117,8 @@ Finally, we will plot the fundamental trigonometric polynomial, which
 satisfies dirac-delta property at grid points and which
 plays a major way in a theory of FFT-based homogenization.
 phi =""")
-phi = VecTri(name='phi_N,k', d=1, N=N)
-phi.val[0, 2, 2] = 1
+phi = Tensor(name='phi_N,k', N=N, shape=())
+phi.val[2, 2] = 1
 print(phi)
 print("phi.val =")
 print(phi.val)
@@ -168,7 +165,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_wireframe(coord[0], coord[1], phi_fine.val[0])
+    ax.plot_wireframe(coord[0], coord[1], phi_fine.val)
     plt.show()
 
 print('END')

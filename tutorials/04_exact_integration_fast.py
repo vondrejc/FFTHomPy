@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 import numpy as np
 from ffthompy.materials import Material
 import ffthompy.projections as proj
-from ffthompy.matvecs import DFT, VecTri, LinOper
+from ffthompy.tensors import DFT, Tensor, Operator, matrix2tensor
 from ffthompy.general.solver import linear_solver
 
 
@@ -68,11 +68,11 @@ pb = {'name': 'prob1',
 # definition of material coefficients based on grid-based composite
 mat = Material(pb['material'])
 Nbar = 2*pb['solve']['N'] - 1
-A = mat.get_A_Ga(Nbar=Nbar, primaldual=pb['solve']['primaldual'][0])
+A = matrix2tensor(mat.get_A_Ga(Nbar=Nbar, primaldual=pb['solve']['primaldual'][0]))
 
 # projections in Fourier space
 _, hG1N, _ = proj.scalar(pb['solve']['N'], pb['material']['Y'],
-                         centered=True, NyqNul=True, tensor=False)
+                         centered=True, NyqNul=True, tensor=True)
 # increasing the projection with zeros to comply with a projection
 # on double grid, see Definition 24 in IJNME2016
 hG1N = hG1N.enlarge(Nbar)
@@ -80,13 +80,14 @@ hG1N = hG1N.enlarge(Nbar)
 FN = DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
 FiN = DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
-G1N = LinOper(name='G1', mat=[[FiN, hG1N, FN]]) # projection in original space
-Afun = LinOper(name='FiGFA', mat=[[G1N, A]]) # lin. operator for a linear system
+G1N = Operator(name='G1', mat=[[FiN, hG1N, FN]]) # projection in original space
+Afun = Operator(name='FiGFA', mat=[[G1N, A]]) # lin. operator for a linear system
 
 E = np.zeros(dim); E[0] = 1 # macroscopic load
-EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False) # constant trig. pol.
+EN = Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
+EN.set_mean(E)
 
-x0 = VecTri(N=Nbar, d=dim, Fourier=False) # initial approximation to solvers
+x0 = Tensor(N=Nbar, shape=(dim,), Fourier=False) # initial approximation to solvers
 B = Afun(-EN) # right-hand side of linear system
 
 X, info = linear_solver(solver='CG', Afun=Afun, B=B,
