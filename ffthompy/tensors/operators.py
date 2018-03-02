@@ -43,11 +43,11 @@ class DFT(TensorFuns):
     def __call__(self, x):
         if isinstance(x, Tensor):
             if not self.inverse:
-                return Tensor(name='F({0})'.format(x.name),
+                return Tensor(name='F({0})'.format(x.name[:10]),
                               val=self.fftnc(x.val, self.N),
                               order=x.order, Fourier=not x.Fourier, multype=x.multype)
             else:
-                return Tensor(name='iF({0})'.format(x.name),
+                return Tensor(name='iF({0})'.format(x.name[:10]),
                               val=np.real(self.ifftnc(x.val, self.N)),
                               order=x.order, Fourier=not x.Fourier, multype=x.multype)
 
@@ -97,7 +97,7 @@ class DFT(TensorFuns):
         return ss
 
     def transpose(self):
-        return DFT(name=self.name+'^T', inverse=not(self.inverse), N=self.N)
+        return DFT(name=self.name+'.T', inverse=not(self.inverse), N=self.N)
 
     @staticmethod
     def fftnc(x, N):
@@ -124,7 +124,7 @@ class Operator():
             it provides the information about size and shape of operand
         dtype : data type of operand, usually numpy.float64
     """
-    def __init__(self, name='LinOper', mat_rev=None, mat=None, operand=None):
+    def __init__(self, name='Operator', mat_rev=None, mat=None, operand=None):
         self.name=name
         if mat_rev is not None:
             self.mat_rev=mat_rev
@@ -148,7 +148,7 @@ class Operator():
             for matrix in summand:
                 prod=matrix(prod)
             res=prod+res
-        res.name='{0}({1})'.format(self.name, x.name)
+        res.name='{0}({1})'.format(self.name[:6], x.name[:10])
         return res
 
     def __repr__(self):
@@ -158,7 +158,7 @@ class Operator():
         no_sum=len(self.mat_rev)
         for isum in np.arange(no_sum):
             if flag_sum:
-                    s+=' + '
+                s+=' + '
             no_oper=len(self.mat_rev[isum])
             flag_mul=False
             for m in np.arange(no_oper):
@@ -228,7 +228,7 @@ class Operator():
             for n in np.arange(len(self.mat_rev[m])):
                 summand.append(self.mat_rev[m][n].transpose())
             mat.append(summand)
-        name='({0})^T'.format(self.name)
+        name='({0}).T'.format(self.name[:10])
         return Operator(name=name, mat=mat)
 
 def grad(X):
@@ -236,7 +236,7 @@ def grad(X):
         shape=(X.dim,)
     else:
         shape=X.shape+(X.dim,)
-    name='grad({0})'.format(X.name)
+    name='grad({0})'.format(X.name[:10])
     gX=Tensor(name=name, shape=shape, N=X.N, Fourier=True)
     if X.Fourier:
         FX=X
@@ -262,7 +262,7 @@ def grad(X):
     if not X.Fourier:
         iF=DFT(N=X.N, inverse=True)
         gX=iF(gX)
-    gX.name='grad({0})'.format(X.name)
+    gX.name='grad({0})'.format(X.name[:10])
     return gX
 
 def div(X):
@@ -292,7 +292,7 @@ def div(X):
     if not X.Fourier:
         iF=DFT(N=X.N, inverse=True)
         dX=iF(dX)
-    dX.name='div({0})'.format(X.name)
+    dX.name='div({0})'.format(X.name[:10])
     return dX
 
 def laplace(X):
@@ -327,13 +327,13 @@ def potential(X, small_strain=False):
     freq=Grid.get_freq(X.N, X.Y)
     if X.order==1:
         assert(X.dim==X.shape[0])
-        iX=Tensor(name='potential({0})'.format(X.name), shape=(1,), N=X.N, Fourier=True)
+        iX=Tensor(name='potential({0})'.format(X.name[:10]), shape=(1,), N=X.N, Fourier=True)
         iX.val[0]=potential_scalar(FX.val, freq=freq, mean_index=FX.mean_index())
 
     elif X.order==2:
         assert(X.dim==X.shape[0])
         assert(X.dim==X.shape[1])
-        iX=Tensor(name='potential({0})'.format(X.name),
+        iX=Tensor(name='potential({0})'.format(X.name[:10]),
                     shape=(X.dim,), N=X.N, Fourier=True)
         if not small_strain:
             for ii in range(X.dim):
@@ -342,7 +342,7 @@ def potential(X, small_strain=False):
         else:
             assert((X-X.transpose()).norm()<1e-14) # symmetricity
             omeg=FX.zeros_like() # non-symmetric part of the gradient
-            gomeg=Tensor(name='potential({0})'.format(X.name),
+            gomeg=Tensor(name='potential({0})'.format(X.name[:10]),
                            shape=FX.shape+(X.dim,), N=X.N, Fourier=True)
             grad_ep=grad(FX) # gradient of strain
             gomeg.val=np.einsum('ikj...->ijk...', grad_ep.val)-np.einsum('jki...->ijk...', grad_ep.val)

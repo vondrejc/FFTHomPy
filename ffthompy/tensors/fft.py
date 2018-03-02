@@ -11,4 +11,4 @@ def ifftnc(Fx, N):
     """
     centered n-dimensional inverse FFT algorithm
     """
-    return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N))*np.prod(N)
+    return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N)).real*np.prod(N)

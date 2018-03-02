@@ -8,6 +8,7 @@ from ffthompy.trigpol import mean_index
 from ffthompy.mechanics.matcoef import ElasticTensor
 from ffthompy.trigpol import enlarge, decrease
 from ffthompy.tensors.fft import fftnc, ifftnc
+import itertools
 
 
 class TensorFuns():
@@ -43,7 +44,7 @@ class TensorFuns():
             else:
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
 
-        if np.prod(np.array(self.shape))<20 or detailed:
+        if np.prod(np.array(self.shape))<=36 or detailed:
             ss+='{0}norm component-wise =\n{1}\n'.format(skip, str(self.norm(componentwise=True)))
             ss+='{0}mean = \n{1}\n'.format(skip, str(self.mean()))
         if full:
@@ -95,39 +96,30 @@ class Tensor(TensorFuns):
         return self
 
     def __neg__(self):
-        res=self.copy(name='-'+self.name)
-        res.val=-res.val
-        return res
+        return self.copy(name='-'+self.name[:10], val=-self.val)
 
     def __add__(self, x):
         if isinstance(x, Tensor):
             assert(self.Fourier==x.Fourier)
             assert(self.val.shape==x.val.shape)
-            name=self.name + '+' + x.name
-            return Tensor(name=name, val=self.val+x.val, Fourier=self.Fourier,
-                          order=self.order, multype=self.multype)
+            name='({0}+{1})'.format(self.name[:10], x.name[:10])
+            return self.copy(name=name, val=self.val+x.val)
+
         elif isinstance(x, np.ndarray) or isinstance(x, float):
-            self.val+=x
-            return self
+            return self.copy(val=self.val+x)
         else:
             raise ValueError('Tensor.__add__')
 
     def __sub__(self, x):
         return self.__add__(-x)
 
-#     def _mul(self, x):
-#         return einsum(self.mul_str, self, x)
-
     def __rmul__(self, x):
         if isinstance(x, Scalar):
-            R=self.copy(name='c*'+'')
-            R.val=x.val*self.val
+            return self.copy(val=x.val*self.val)
         elif np.size(x)==1 or isinstance(x, 'float'):
-            R=self.copy(name='c*'+'')
-            R.val=x*self.val
+            return self.copy(val=x*self.val)
         else:
             raise ValueError()
-        return R
 
     def __call__(self, *args, **kwargs):
         return self.__mul__(*args, **kwargs)
@@ -218,23 +210,23 @@ class Tensor(TensorFuns):
         return self.shape
 
     def transpose(self):
-        res=self.empty_like(name=self.name+'.T')
+        res=self.empty_like(name=self.name[:10]+'.T')
         if self.order==2:
-            res.val=np.einsum('ij...->ji...', self.val)
+            val=np.einsum('ij...->ji...', self.val)
         elif self.order==4:
-            res.val=np.einsum('ijkl...->klij...', self.val)
+            val=np.einsum('ijkl...->klij...', self.val)
         else:
             raise NotImplementedError()
-        return res
+        return self.copy(name=self.name[:10]+'.T', val=val)
 
     def transpose_left(self):
-        res=self.empty_like(name=self.name+'.T')
+        res=self.empty_like(name=self.name[:10]+'.T')
         assert(self.order==4)
         res.val=np.einsum('ijkl...->jikl...', self.val)
         return res
 
     def transpose_right(self):
-        res=self.empty_like(name=self.name+'.T')
+        res=self.empty_like(name=self.name[:10]+'.T')
         assert(self.order==4)
         res.val=np.einsum('ijkl...->ijlk...', self.val)
         return res
@@ -246,23 +238,21 @@ class Tensor(TensorFuns):
         """
         return np.matrix(self.val.ravel()).transpose()
 
-    def copy(self, name=None):
-        if name is None:
-            name='copy of'+self.name
-        return Tensor(name=name, val=np.copy(self.val), order=self.order,
-                      Fourier=self.Fourier)
+    def copy(self, **kwargs):
+        data={'name': self.name, 'val': np.copy(self.val), 'order': self.order,
+              'Fourier': self.Fourier, 'multype': self.multype, 'Y': self.Y}
+        data.update(kwargs)
+        return Tensor(**data)
 
     def zeros_like(self, name=None):
         if name is None:
-            name='zeros like '+self.name
-        return Tensor(name=name, val=np.zeros_like(self.val), order=self.order,
-                      Fourier=self.Fourier)
+            name='zeros({})'.format(self.name[:10])
+        return self.copy(name=name, val=np.zeros_like(self.val))
 
     def empty_like(self, name=None):
         if name is None:
-            name='empty like '+self.name
-        return Tensor(name=name, val=np.empty_like(self.val), order=self.order,
-                      Fourier=self.Fourier, multype=self.multype)
+            name='empty({})'.format(self.name[:10])
+        return self.copy(name=name, val=np.empty_like(self.val))
 
     def calc_eigs(self, sort=True, symmetric=False, mandel=False):
         if symmetric:
@@ -304,24 +294,20 @@ class Tensor(TensorFuns):
         val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
         for di in np.ndindex(*self.shape):
             val[di]=enlarge(self.val[di], M)
-        return Tensor(name=self.name, val=val, order=self.order, Fourier=self.Fourier,
-                      multype=self.multype)
+        return self.copy(val=val)
 
     def decrease(self, M):
         assert(self.Fourier)
         val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
         for di in np.ndindex(*self.shape):
             val[di]=decrease(self.val[di], M)
-        return Tensor(name=self.name, val=val, order=self.order, Fourier=self.Fourier,
-                      multype=self.multype)
+        return self.copy(val=val)
 
     def fourier(self):
         if self.Fourier:
-            return Tensor(name=self.name, val=ifftnc(self.val, self.N), order=self.order, Y=self.Y,
-                          Fourier=not self.Fourier, multype=self.multype)
+            return self.copy(val=ifftnc(self.val, self.N), Fourier=not self.Fourier)
         else:
-            return Tensor(name=self.name, val=fftnc(self.val, self.N), order=self.order, Y=self.Y,
-                          Fourier=not self.Fourier, multype=self.multype)
+            return self.copy(val=fftnc(self.val, self.N), Fourier=not self.Fourier)
 
     def project(self, M):
         """
@@ -377,8 +363,7 @@ def einsum(str_operator, x, y):
     assert(np.all(x.N==y.N))
     val=np.einsum(str_operator, x.val, y.val)
     order=len(val.shape)-len(x.N)
-    return Tensor(name='{0}({1})'.format(x.name, y.name),
-                  val=val, order=order, Fourier=x.Fourier)
+    return y.copy(name='{0}({1})'.format(x.name, y.name), val=val, order=order)
 
 # @staticmethod
 def norm_fun(X, ntype):

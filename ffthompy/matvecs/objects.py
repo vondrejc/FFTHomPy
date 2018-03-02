@@ -369,7 +369,7 @@ class VecTri(FieldFun, Grid):
 
         from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
-        from ffthompy.matvec_fun import Grid
+        from ffthompy.trigpol import Grid
         fig=plt.figure()
         coord=Grid.get_coordinates(N, Y)
         if np.all(np.greater(N, self.N)):
