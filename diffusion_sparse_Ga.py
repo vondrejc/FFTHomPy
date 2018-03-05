@@ -62,12 +62,12 @@ print(np.linalg.norm(Aga.val[0,0]-Agas.full()))
 
 # OPERATORS ###############################################################
 _, Ghat, _ = proj.scalar(N, Y)
-dot21  = lambda A,v: np.einsum('ij...,j...  ->i...',A,v)
-fft    = lambda V: np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(V),N))/np.prod(N)
-ifft   = lambda V: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(V),N))*np.prod(N)
-G_fun  = lambda V: np.real(ifft(dot21(Ghat.val,fft(V)))).reshape(-1)
-A_fun  = lambda v: dot21(A.val,v.reshape(vec_shape))
-GA_fun = lambda v: G_fun(A_fun(v))
+# dot21  = lambda A,v: np.einsum('ij...,j...  ->i...',A,v)
+# fft    = lambda V: np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(V),N))/np.prod(N)
+# ifft   = lambda V: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(V),N))*np.prod(N)
+# G_fun  = lambda V: np.real(ifft(dot21(Ghat.val,fft(V)))).reshape(-1)
+# A_fun  = lambda v: dot21(A.val,v.reshape(vec_shape))
+# GA_fun = lambda v: G_fun(A_fun(v))
 
 Ghat2 = Ghat.enlarge(Nbar)
 
@@ -147,12 +147,6 @@ y=CanoTensor(name='r', r=3, N=N, randomise=True)
 Fy=y.fourier()
 FY = Tensor(name='r', val=Fx.full(), order=0, Fourier=True)
 
-# print(Fx.scal(Fy))
-# print(FX*FY)
-# print(np.inner(Fx.full().flatten(),Fy.full().flatten()))
-# print(Fx.full()*Fy.full().conj())
-# sys.exit()
-
 res1=DFAFGfun_s(Fx, rank=None, tol=None)
 res2=DFAFGfun(FX)
 print(np.linalg.norm(res1.full()-res2.val))
@@ -202,7 +196,6 @@ Fus, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP, norm=normfun, rank=ran
 tic.measure()
 Fus.name='Fus'
 Fus = Fus
-# Fus=Fus.truncate(rank=10)
 
 print Fus
 print('iterations={}'.format(ress['kit']))
