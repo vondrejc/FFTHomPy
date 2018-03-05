@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import numpy.fft as fft
 from scipy.linalg import block_diag
-from ffthompy.tensors import TensorFuns
+from ffthompy.tensors.objects import TensorFuns
 import itertools
 from copy import deepcopy as copy
 
