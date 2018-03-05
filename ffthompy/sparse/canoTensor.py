@@ -1,8 +1,8 @@
 # import sys
 import numpy as np
 # sys.path.append("/home/disliu/ffthompy-sparse")
-
 from ffthompy.sparse.tensors import SparseTensorFuns
+from ffthompy.trigpol import enlarge
 # import decompositions as dc
 import timeit
 
@@ -142,6 +142,11 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
+    @property
+    def size(self):
+        "return the number of element to store the tensor"
+        return (self.r+1)*np.sum(self.N)
+
     def sort(self):
         "The function sort the modes in accordance with the magnitude of core"
         inds = np.flip(np.argsort(np.abs(self.core), kind='mergesort'), 0)
@@ -173,6 +178,53 @@ class CanoTensor(SparseTensorFuns):
             basis[ii]=basis[ii][:rank, :]
 
         return CanoTensor(name=self.name+'_truncated', core=core, basis=basis)
+
+    def enlarge(self, M):
+        dtype=self.basis[0].dtype
+        assert(self.Fourier==True)
+
+        M = np.array(M, dtype=np.int)
+        N = np.array(self.N)
+        if np.allclose(M, N):
+            return self
+
+        dim = N.size
+        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+
+        basis=[]
+        for ii, m in enumerate(M):
+            basis.append(np.zeros([self.r,m], dtype=dtype))
+            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
+
+        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
+
+    def decrease(self, M):
+        assert(self.Fourier is True)
+
+#         M = np.array(M, dtype=np.float)
+#         N = np.array(xN.shape, dtype=np.float)
+#         dim = N.size
+#         ibeg = np.fix((N-M+(M % 2))/2).astype(dtype=np.int)
+#         iend = np.fix((N+M+(M % 2))/2).astype(dtype=np.int)
+#         if dim == 2:
+#             xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
+#         elif dim == 3:
+#             xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
+#         return xM
+
+        M = np.array(M, dtype=np.int)
+        N = np.array(self.N)
+        assert(np.all(np.less(M, N)))
+
+        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+
+        basis=[]
+        for ii in range(N.size):
+            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
+
+        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
 
     def norm(self, ord='fro'):
         if ord=='fro':
