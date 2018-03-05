@@ -1,27 +1,34 @@
 from __future__ import division
 import numpy as np
+from numpy.linalg import norm
 import scipy.sparse.linalg as sp
 from scipy.linalg import svd
 import itertools
 import sys
 from ffthompy import Timer
 from ffthompy.materials import Material
-from ffthompy.general.solver import richardson, CG
-from ffthompy.matvec import mean_index
+from ffthompy.general.solver import linear_solver, richardson, CG
+from ffthompy.trigpol import mean_index, Grid
+from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, matrix2tensor
+import ffthompy.tensors.projection as proj
 from ffthompy.sparse import decompositions
 from ffthompy.sparse.canoTensor import CanoTensor
 from ffthompy.sparse.materials import SparseMaterial
+from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
+from ffthompy.sparse.solver import richardson as richardson_s
 
 
 # PARAMETERS ##############################################################
 dim  = 2            # number of dimensions (works for 2D and 3D)
-N    = dim*(5,)   # number of voxels (assumed equal for all directions)
+N    = dim*(55,)   # number of voxels (assumed equal for all directions)
+Nbar = 2*np.array(N)-1
+Y    = np.ones(dim)
 Amax = 10.          # material contrast
 
 maxiter=1e2
 
 tol=None
-rank=5
+rank=15
 
 calc_eigs = 1
 debug=False
@@ -32,10 +39,6 @@ ndof  = dim*prodN # number of degrees-of-freedom
 vec_shape=(dim,)+N # shape of the vector for storing DOFs
 
 # PROBLEM DEFINITION ######################################################
-# A = np.einsum('ij,...->ij...',np.eye(dim),1.+10.*np.random.random(N)) # material coefficients
-P=int(3*N[0]/5)
-phase  = np.ones(N); phase[:P,:P] = Amax
-A = np.einsum('ij,...->ij...', np.eye(dim), phase)
 E = np.zeros(vec_shape); E[0] = 1. # set macroscopic loading
 
 # sparse A
@@ -50,252 +53,152 @@ mat_conf={'inclusions': ['square', 'otherwise'],
 mat=Material(mat_conf)
 mats = SparseMaterial(mat_conf)
 
-A2 = mat.get_A_GaNi(N, primaldual='primal')
-As = mats.get_A_GaNi(N, primaldual='primal', k=2)
-print(np.linalg.norm(A-A2.val))
-print(np.linalg.norm(A[0,0]-As.full()))
-
-Nbar = 2*np.array(N)-1
-Aga = mat.get_A_Ga(Nbar, primaldual='primal')
+Agani = matrix2tensor(mat.get_A_GaNi(N, primaldual='primal'))
+Aganis = mats.get_A_GaNi(N, primaldual='primal', k=2)
+Aga = matrix2tensor(mat.get_A_Ga(Nbar, primaldual='primal'))
 Agas = mats.get_A_Ga(Nbar, primaldual='primal', order=0, k=2)
-
+print(np.linalg.norm(Agani.val[0,0]-Aganis.full()))
 print(np.linalg.norm(Aga.val[0,0]-Agas.full()))
-print('end')
-sys.exit()
-
-# PROJECTION IN FOURIER SPACE #############################################
-Ghat = np.zeros((dim,dim)+ N) # zero initialize
-freq = [np.arange(-(N[ii]-1)/2.,+(N[ii]+1)/2.) for ii in range(dim)]
-for i,j in itertools.product(range(dim),repeat=2):
-    for ind in itertools.product(*[range(n) for n in N]):
-        q = np.empty(dim)
-        for ii in range(dim):
-            q[ii] = freq[ii][ind[ii]]  # frequency vector
-        if not q.dot(q) == 0:          # zero freq. -> mean
-            Ghat[i,j][ind] = -(q[i]*q[j])/(q.dot(q))
 
 # OPERATORS ###############################################################
+_, Ghat, _ = proj.scalar(N, Y)
 dot21  = lambda A,v: np.einsum('ij...,j...  ->i...',A,v)
 fft    = lambda V: np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(V),N))/np.prod(N)
 ifft   = lambda V: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(V),N))*np.prod(N)
-G_fun  = lambda V: np.real(ifft(dot21(Ghat,fft(V)))).reshape(-1)
-A_fun  = lambda v: dot21(A,v.reshape(vec_shape))
+G_fun  = lambda V: np.real(ifft(dot21(Ghat.val,fft(V)))).reshape(-1)
+A_fun  = lambda v: dot21(A.val,v.reshape(vec_shape))
 GA_fun = lambda v: G_fun(A_fun(v))
 
-# CONJUGATE GRADIENT SOLVER ###############################################
-print('\n== CG solver for gradient field in real space =======================')
-b = -GA_fun(E) # right-hand side
-tic=Timer(name='scipy.cg (gradient)')
-e, _=sp.cg(A=sp.LinearOperator(shape=(ndof, ndof), matvec=GA_fun, dtype='float'), b=b,
-           tol=1e-10, maxiter=maxiter)
-tic.measure()
+Ghat2 = Ghat.enlarge(Nbar)
 
-aux = e+E.reshape(-1)
-print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e))))
-print('homogenised properties A11 = {}'.format(np.inner(A_fun(aux).reshape(-1), aux)/prodN))
+F = DFT(name='FN', inverse=False, N=N) # discrete Fourier transform (DFT)
+iF = DFT(name='FiN', inverse=True, N=N) # inverse DFT
+F2 = DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
+iF2 = DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
-### POTENTIAL SOLVER in real space #####################################################
-print('\nGenerating operators for formulation with potential...')
-# GRADIENT IN FOURIER SPACE #############################################
-hGrad = np.zeros((dim,)+ N) # zero initialize
-freq = [np.arange(-(N[ii]-1)/2.,+(N[ii]+1)/2.) for ii in range(dim)]
-for ind in itertools.product(*[range(n) for n in N]):
-    for i in range(dim):
-        hGrad[i][ind] = freq[i][ind[i]]
-hGrad = -hGrad*2*np.pi*1j
+print('\n== CG solver for gradient field ==============')
+G1N = Operator(name='G1', mat=[[iF2, Ghat2, F2]]) # projection in original space
+PAfun = Operator(name='FiGFA', mat=[[G1N, Aga]]) # lin. operator for a linear system
+E = np.zeros(dim); E[0] = 1 # macroscopic load
+EN = Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
+EN.set_mean(E)
 
-k2 = np.einsum('i...,i...', hGrad, np.conj(hGrad)).real
+x0 = Tensor(N=Nbar, shape=(dim,), Fourier=False) # initial approximation to solvers
+B = PAfun(-EN) # right-hand side of linear system
+X, info = linear_solver(solver='CG', Afun=PAfun, B=B,
+                        x0=x0, par={}, callback=None)
+
+print('homogenised properties (component 11) =', Aga(X + EN)*(X + EN))
+
+print('\n== Generating operators for formulation with potential ===========')
+hGrad = grad_tensor(N, Y)
+k2 = np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
 k2[mean_index(N)]=1.
+P = Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
+iP= Tensor(name='P', val=k2**0.5, order=0, Fourier=True, multype=00)
 
+print('\n== CG solver for potential ==============')
+from ffthompy.tensors import grad, div
+def DFAFGfun(X):
+    assert(X.Fourier)
+    FAX= F2(Aga*iF2(grad(X).enlarge(Nbar)))
+    FAX=FAX.decrease(N)
+    return -div(FAX)
 
+B = -div(F2(Aga(-EN)).decrease(N))
+x0 = Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
+# U, info = linear_solver(solver='CG', Afun=DFAFGfun, B=B,
+#                         x0=x0, par={}, callback=None)
 
-# OPERATORS ###############################################################
-FGrad = lambda Fu: np.einsum('i...,...->i...', hGrad, Fu)
-FDiv = lambda Fe: np.einsum('i...,i...->...', hGrad, Fe)
-Grad = lambda u: ifft(FGrad(fft(u))).real
-Div = lambda e: ifft(FDiv(fft(e))).real
-DivAGrad_fun = lambda u: Div(dot21(A, Grad(u.reshape(N)))).ravel()
-GFAFG_fun=lambda Fu:-FDiv(fft(dot21(A, ifft(FGrad(Fu)))))
-GFAFG_funvec=lambda Fu: GFAFG_fun(Fu.reshape(N)).ravel()
-Pfun=lambda X: X/k2
-PGFAFG_fun=lambda X: Pfun(GFAFG_fun(X))
-B=FDiv(fft(dot21(A, E))) # right-hand side
+PDFAFGPfun = lambda Fx: P*DFAFGfun(P*Fx)
+PB = P*B
+iPU, info = linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
+                          x0=x0, par={tol:1e-10}, callback=None)
+U = P*iPU
 
-
-# CONJUGATE GRADIENT SOLVER ###############################################
-# print('\n== scipy CG solver for potential in Fourier space =======================')
-# linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GFAFG_funvec, dtype=np.float)
-# tic=Timer(name='scipy.cg (potential)')
-# Fu, _=sp.cg(A=linoper, b=B.ravel(), maxiter=1e3, tol=1e-6)
-# tic.measure()
-# e2=ifft(FGrad(Fu.reshape(N))).real
-# aux=e2+E
-# print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu.reshape(N)))))
-# print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e2))))
-# print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
-
-print('\n== CG solver with precond.for potential in Fourier space =======================')
-k2r=k2**0.5
-Nfun = lambda X: X/k2r
-GnFAFGn_fun=lambda Fu:-Nfun(FDiv(fft(dot21(A, ifft(FGrad(Nfun(Fu)))))))
-GnFAFGn_funvec=lambda Fu: GnFAFGn_fun(Fu.reshape(N)).ravel()
-Bn=Nfun(FDiv(fft(dot21(A, E))))
-
-linoper=sp.LinearOperator(shape=(prodN, prodN), matvec=GnFAFGn_funvec, dtype=np.float)
-tic=Timer(name='scipy.cg (potential - precond)')
-Fu, _=sp.cg(A=linoper, b=Bn.ravel(), maxiter=maxiter, tol=1e-10)
-tic.measure()
-Fu = Fu.reshape(N)/k2r
-
-e3=ifft(FGrad(Fu)).real
-aux=e3+E
-print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu))))
-print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e3))))
-print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
-print('norm(e-e3)={}'.format(np.linalg.norm(e-e3.ravel())))
-
-print('\n== CG - own solver =====')
-scal = lambda X,Y: np.sum(X*Y.conj()).real
-
-tic=Timer(name='own CG (potential)')
-Fu, res=CG(Afun=GnFAFGn_fun, B=Bn, x0=np.zeros_like(B), par={'maxiter': maxiter,
-                                                             'scal': scal})
-tic.measure()
-
-Fu=Fu/k2r
-e=ifft(FGrad(Fu)).real
-aux=e+E
-print('norm(residuum)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu.reshape(N)))))
-print('norm(residuum(e))={}'.format(np.linalg.norm(b-GA_fun(e))))
-print('homogenised properties A11 = {}'.format(np.sum(dot21(A, aux)*aux)/prodN))
-print(res)
-
-## RICHARDSON iteration #######################################################
-def richardson_s(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
-    if isinstance(par['alpha'], float):
-        omega=1./par['alpha']
-    else:
-        raise NotImplementedError
-    res={'norm_res': [],
-           'kit': 0}
-    if x0 is None:
-        x=B*omega
-    else:
-        x=x0
-
-    if norm is None:
-        norm=lambda X: float(X.T*X)**0.5
-    norm_res=1e15
-    while (norm_res>par['tol'] and res['kit']<par['maxiter']):
-        res['kit']+=1
-        residuum=B-Afun(x)
-        x=(x+residuum*omega).truncate(rank=rank, tol=tol)
-        norm_res=norm(residuum)
-        res['norm_res'].append(norm_res)
-    res['norm_res'].append(norm(B-Afun(x)))
-    return x, res
-
-### PRECONDITIONING in Fourier space #####################################################
-print('\n== Richardson with preconditioning for potential field in Fourier space=====')
-normfun=lambda X: np.linalg.norm(X)
-
-parP={'alpha': (1.+Amax)/2.,
-      'maxiter': maxiter,
-      'tol': 1e-6,
-      'norm': normfun}
-B=FDiv(fft(dot21(A, E))) # right-hand side
-
-tic=Timer(name='Richardson (full)')
-Fu3, res3=richardson(Afun=GnFAFGn_fun, B=Bn, x0=np.zeros_like(Bn), par=parP)
-tic.measure()
-Fu3 = Fu3.reshape(N)
-print('norm(resP)={}'.format(np.linalg.norm(Bn-GnFAFGn_fun(Fu3))))
-Fu3 = Fu3/k2r
-
-print('iterations={}'.format(res3['kit']))
-print('norm(dif)={}'.format(np.linalg.norm(Fu-Fu3)))
-print('norm(resP)={}'.format(res3['norm_res']))
-print('norm(res)={}'.format(np.linalg.norm(B-GFAFG_fun(Fu3))))
+X2 = iF2(grad(U).enlarge(Nbar))
+print('homogenised properties (component 11) =', Aga(X2 + EN)*(X2 + EN))
 
 print('\n== Generating operators for SPARSE solver...')
-
-# Grad
-hGrad_s=[]
-for ii in range(dim):
-    basis=[]
-    for jj in range(dim):
-        if ii==jj:
-            basis.append(np.atleast_2d(freq[jj]*2*np.pi*1j))
-        else:
-            basis.append(np.atleast_2d(np.ones(N[jj])))
-    hGrad_s.append(CanoTensor(name='hGrad({})'.format(ii), core=np.array([1]), basis=basis,
-                              Fourier=True))
-
-# R.H.S.
-Es=CanoTensor(name='E', core=np.array([1.]),
-               basis=[np.atleast_2d(np.ones(N[ii])) for ii in range(dim)], Fourier=False)
-
-Bs=-(hGrad_s[0]*(As*Es).fourier())
-print(np.linalg.norm(B-Bs.full()))
-
+hGrad_s = sgrad_tensor(N, Y)
+print(np.linalg.norm(hGrad_s[0].full()-hGrad.val[0]))
 # linear operator
-def GFAFG_fun_s(Fx, rank=rank, tol=tol):
-    FGFx=[(hGrad_s[ii]*Fx).fourier() for ii in range(dim)]
-    AFGFx=[As.multiply(FGFx[ii], rank=None, tol=None) for ii in range(dim)]
+def DFAFGfun_s(X, rank=rank, tol=tol):
+    assert(X.Fourier)
+    FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
+    AFGFx=[Agas.multiply(FGX[ii], rank=None, tol=None) for ii in range(dim)]
+    # or in following: Fourier, reduce, truncate
     AFGFx=[AFGFx[ii].truncate(rank=rank, tol=tol) for ii in range(dim)]
     FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
-    GFAFGFx=hGrad_s[0]*FAFGFx[0]
+    FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
+    GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
     for ii in range(1, dim):
         GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
     GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
     GFAFGFx.name='fun(x)'
-    return-GFAFGFx
+    return -GFAFGFx
 
 # testing
 print('testing linear operator of system...')
-x=CanoTensor(name='a', r=4, N=N, randomise=True)
+x=CanoTensor(name='r', r=4, N=N, randomise=True)
 Fx=x.fourier()
-res1=GFAFG_fun_s(Fx, rank=None, tol=None)
-res2=GFAFG_fun(fft(x.full()))
-print(np.linalg.norm(res1.full()-res2))
+FX = Tensor(name='r', val=Fx.full(), order=0, Fourier=True)
+y=CanoTensor(name='r', r=3, N=N, randomise=True)
+Fy=y.fourier()
+FY = Tensor(name='r', val=Fx.full(), order=0, Fourier=True)
 
+# print(Fx.scal(Fy))
+# print(FX*FY)
+# print(np.inner(Fx.full().flatten(),Fy.full().flatten()))
+# print(Fx.full()*Fy.full().conj())
 # sys.exit()
-# solver
-# norm = lambda X: X.norm(ord='core')
-norm=lambda X: np.linalg.norm(X.full())
 
+res1=DFAFGfun_s(Fx, rank=None, tol=None)
+res2=DFAFGfun(FX)
+print(np.linalg.norm(res1.full()-res2.val))
+
+# R.H.S.
+Es=CanoTensor(name='E', core=np.array([1.]), Fourier=False,
+              basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
+
+Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
+print(np.linalg.norm(B.val-Bs.full()))
+
+# solver
 print('\n== SPARSE Richardson solver with preconditioner =======================')
 # preconditioner
-
-Prank = 8
-U, S, Vh=sp.svds(1./k2, k=Prank, which='LM')
+Prank = np.min([8, N[0]-1])
+u, s, vh=sp.svds(1./k2, k=Prank, which='LM')
 # U,S,Vh = svd(1./k2)
-print('singular values of P={}'.format(S))
-Ps=CanoTensor(name='P', core=S[:Prank], basis=[U[:, :Prank].T, Vh[:Prank]], Fourier=True)
+print('singular values of P={}'.format(s))
+Ps=CanoTensor(name='P', core=s[:Prank], basis=[u[:, :Prank].T, vh[:Prank]], Fourier=True)
 Ps.sort()
 print('norm(P-Ps)={}'.format(np.linalg.norm(1./k2-Ps.full())))
-# sys.exit()
 
-def PGFAFG_fun_s(Fx, rank=rank, tol=tol):
-    R=GFAFG_fun_s(Fx, rank=rank, tol=tol)
+def PDFAFGfun_s(Fx, rank=rank, tol=tol):
+    R=DFAFGfun_s(Fx, rank=rank, tol=tol)
     R=Ps*R
     R=R.truncate(rank=rank, tol=tol)
     return R
 
 # testing
 print('testing precond. linear system...')
-x=CanoTensor(name='a', r=4, N=N, randomise=True)
-Fx=x.fourier()
-res1=PGFAFG_fun_s(Fx, rank=None, tol=None)
-res2=PGFAFG_fun(fft(x.full()))
-print(np.linalg.norm(res1.full()-res2))
-# sys.exit()
+res1=PDFAFGfun_s(Fx, rank=None, tol=None)
+res2=P*(P*DFAFGfun(FX))
+print(norm(res1.full()-res2.val))
 
-PBs=Ps*Bs
 print('\nsolver results...')
-parP['tol']=1e-8
+normfun=lambda X: X.norm()
+normfun=lambda X: np.linalg.norm(X.full())
+
+parP={'alpha': (1.+Amax)/2.,
+      'maxiter': maxiter,
+      'tol': 1e-10,
+      'norm': normfun}
+
 tic=Timer(name='Richardson (sparse)')
-Fus, ress=richardson_s(Afun=PGFAFG_fun_s, B=PBs, par=parP, norm=norm, rank=rank, tol=tol)
+PBs=Ps*Bs
+Fus, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP, norm=normfun, rank=rank, tol=tol)
 tic.measure()
 Fus.name='Fus'
 Fus = Fus
@@ -303,11 +206,32 @@ Fus = Fus
 
 print Fus
 print('iterations={}'.format(ress['kit']))
-print('norm(dif)={}'.format(np.linalg.norm(Fu3-Fus.full())))
+print('norm(dif)={}'.format(np.linalg.norm(U.val-Fus.full())))
 print('norm(resP)={}'.format(ress['norm_res']))
-print('norm(resP)={}'.format(np.linalg.norm((PBs-PGFAFG_fun_s(Fus)).full())))
-print('norm(res)={}'.format(np.linalg.norm((Bs-GFAFG_fun_s(Fus, rank=None, tol=None)).full())))
+print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fus)).full())))
+print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fus, rank=None, tol=None)).full())))
+print('memory efficiency = {0}/{1} = {2}'.format(Fus.size, U.val.size, Fus.size/U.val.size))
 
-print('memory efficiency = {0}/{1} = {2}'.format(Fus.size, Fu3.size, Fus.size/Fu3.size))
+Xs = iF2(grad(U).enlarge(Nbar))
+FGX=[((hGrad_s[ii]*Fus).enlarge(Nbar)).fourier() for ii in range(dim)]
+FGX[0] += Es # adding mean
+
+# control
+for ii in range(dim):
+    print(norm(FGX[ii].full()-(X2+EN).val[ii])/np.prod(Nbar))
+
+print(np.mean(FGX[0].full()))
+
+AH11=0.
+for ii in range(dim):
+    AH11+=(Agas*FGX[ii]).scal(FGX[ii])
+
+print('homogenised properties (component 11) = {}'.format(AH11))
+
+AH11 = 0.
+for ii, jj in itertools.product(range(dim), repeat=2):
+    AH11+=np.sum(Aga.val[ii,jj]*(X.val[ii] + EN.val[ii])*(X.val[jj] + EN.val[jj]))/np.prod(Nbar)
+print(AH11)
 
 print('END')
+
