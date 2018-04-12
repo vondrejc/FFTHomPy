@@ -5,7 +5,7 @@ class ElasticTensor():
     """
     This class represents linear fourth-order tensor of elastic parameters
     for both stiffness and compliance. It also evaluates the tensor as a matrix
-    using engineering Mandel's or Voight's notation. The plane stress or strain
+    using engineering Mandel's or Voigt's notation. The plane stress or strain
     is also available.
     """
 
@@ -53,7 +53,7 @@ class ElasticTensor():
             self.val = 1./(3*bulk)*volumetric + 1./(2*mu)*deviatoric
 
         self.mandel = self.create_mandel(self.val)
-        self.voight = self.create_voight(self.val)
+        self.voigt = self.create_voigt(self.val)
 
         if plane is not None:
             self.val = self.val[0:2, 0:2, 0:2, 0:2]
@@ -61,12 +61,12 @@ class ElasticTensor():
         if (stiffness and plane == 'strain') or \
                 (not stiffness and plane == 'stress'):
             self.mandel = self.get_plane_in_engineering(self.mandel)
-            self.voight = self.get_plane_in_engineering(self.voight)
+            self.voigt = self.get_plane_in_engineering(self.voigt)
         elif (not stiffness and plane == 'strain') or \
                 (stiffness and plane == 'stress'):
             inv = np.linalg.inv
             self.mandel = inv(self.get_plane_in_engineering(inv(self.mandel)))
-            self.voight = inv(self.get_plane_in_engineering(inv(self.voight)))
+            self.voigt = inv(self.get_plane_in_engineering(inv(self.voigt)))
         else:
             pass
 
@@ -276,10 +276,10 @@ class ElasticTensor():
         return mat
 
     @staticmethod
-    def create_voight(mat, valtype='strain'):
+    def create_voigt(mat, valtype='strain'):
         """
         It transfer symmetric four-order tensor to second order tensor
-        using Voight's notation.
+        using Voigt's notation.
 
         Parameters
         ----------
@@ -291,7 +291,7 @@ class ElasticTensor():
         Returns
         -------
         vec : numpy.array of shape = (6, 6)
-            second-order tensor of elastic parameters with Voight's notation
+            second-order tensor of elastic parameters with Voigt's notation
         """
         dim = mat.shape[0]
         sym = int(dim*(dim+1)/2)
