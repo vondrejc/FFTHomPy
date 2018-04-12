@@ -236,7 +236,7 @@ class Tensor(TensorFuns):
     def identity(self):
         self.val[:] = 0.
         assert(self.order % 2 == 0)
-        for ii in itertools.product(*tuple([range(n) for n in self.shape[:self.order/2]])):
+        for ii in itertools.product(*tuple([range(n) for n in self.shape[:int(self.order/2)]])):
             self.val[ii + ii] = 1.
 
     def vec(self):
