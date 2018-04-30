@@ -12,7 +12,11 @@ ndof  = ndim*prodN # number of degrees-of-freedom
 vec_shape=(ndim,)+N # shape of the vector for storing DOFs
 
 # PROBLEM DEFINITION ######################################################
-A = np.einsum('ij,...->ij...',np.eye(ndim),1.+10.*np.random.random(N)) # material coefficients
+phase = np.zeros(N)
+phase[:3, :3] = 1.
+# A = np.einsum('ij,...->ij...',np.eye(ndim),1.+10.*np.random.random(N)) # material coefficients
+A = np.einsum('ij,...->ij...',np.eye(ndim),1-phase) # material coefficients
+A += np.einsum('ij,...->ij...',10*np.eye(ndim),phase) # material coefficients
 E = np.zeros(vec_shape); E[0] = 1. # set macroscopic loading
 
 # PROJECTION IN FOURIER SPACE #############################################
