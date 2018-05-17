@@ -11,15 +11,15 @@ from ffthompy.sparse.homogenisation import homog_Ga_full, homog_Ga_full_potentia
 
 # PARAMETERS ##############################################################
 dim  = 2            # number of dimensions (works for 2D and 3D)
-N    = dim*(205,)   # number of voxels (assumed equal for all directions)
+N    = dim*(105,)   # number of voxels (assumed equal for all directions)
 Nbar = 2*np.array(N)-1
 Y    = np.ones(dim)
 
 pars=Struct(Amax=10.,          # material contrast
-            maxiter=1e2,
+            maxiter=10,
             tol=None,
-            rank=15,
-            solver={'tol':1e-5}
+            rank=10,
+            solver={'tol':1e-4}
             )
 
 calc_eigs = 1
@@ -35,7 +35,7 @@ E = np.zeros(vec_shape); E[0] = 1. # set macroscopic loading
 
 # sparse A
 mat_conf={'inclusions': ['square', 'otherwise'],
-          'positions': [-0.2*np.ones(dim), ''],
+          'positions': [0.*np.ones(dim), ''],
           'params': [0.6*np.ones(dim), ''], # size of sides
           'vals': [10*np.eye(dim), 1.*np.eye(dim)],
           'Y': np.ones(dim),
@@ -53,9 +53,9 @@ print(np.linalg.norm(Agani.val[0,0]-Aganis.full()))
 print(np.linalg.norm(Aga.val[0,0]-Agas.full()))
 
 # OPERATORS ###############################################################
-print('\n== CG solver for gradient field ==============')
-res0 = homog_Ga_full(Aga, pars)
-print('homogenised properties (component 11) = {}'.format(res0.AH))
+# print('\n== CG solver for gradient field ==============')
+# res0 = homog_Ga_full(Aga, pars)
+# print('homogenised properties (component 11) = {}'.format(res0.AH))
 
 print('\n== Generating operators for formulation with potential ===========')
 resP = homog_Ga_full_potential(Aga, pars)

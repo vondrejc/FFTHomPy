@@ -38,10 +38,10 @@ def homog_Ga_full(Aga, pars):
     return Struct(AH=AH, X=X)
 
 def homog_Ga_full_potential(Aga, pars):
-    Nbar = Aga.N
+    Nbar = Aga.N # double grid number
     N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
     dim = Nbar.__len__()
-    Y = np.ones(dim)
+    Y = np.ones(dim) # cell size
 
     _, Ghat, _ = proj.scalar(N, Y)
     Ghat2 = Ghat.enlarge(Nbar)
