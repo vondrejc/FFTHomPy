@@ -8,7 +8,8 @@ import numpy.fft as fft
 
 from numpy.linalg import svd, norm
 from numpy import dot, kron,newaxis, argsort, tensordot, rollaxis
- 
+
+import timeit
 
 def unfold(T, dim):
     """
@@ -16,71 +17,65 @@ def unfold(T, dim):
     and flattening all the other dimensions into the other one dimension of the matrix.
     
     dim starts from 0.
+    
+    :param T: a tensor .
+    :type T: numpy.ndarray
+    :param dim: the dimension based on which the unfolding is made
+    :type dim: int
+    :returns: 2D numpy.array -- a matricisation of T.
     """
     return np.rollaxis(T, dim, 0).reshape(T.shape[dim], -1)
-    
-#def nModeProduct(T, M, n):
-#    """
-#    n-Mode product of a tensor T(only 2d or 3d for now) and a matrix M,  multiplication and summation is made along the nth dim.
-#    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
-#    
-#    n takes value 1, 2, or 3, specify the 1st, 2nd or 3rd dim of the tensor T. 
-#    For the matrix M, this function always take the second dimension.
-#    """
-#    # multiply  along the nth dimension
-#    if  len(T.shape) ==2:  # this equals to matrix multiplication T*M or M*T
-#        if n==1:
-#            return  np.einsum('ik,li->lk', T, M)
-#        elif n==2:
-#            return  np.einsum('ki,li->kl', T, M) 
-#        else:
-#            pass 
-#        
-#    elif  len(T.shape)==3:
-#        if n==1:
-#            return  np.einsum('ijk,li->ljk', T, M)
-#        elif n==2:
-#            return  np.einsum('jik,li->jlk', T, M)
-#        elif n==3:
-#            return  np.einsum('jki,li->jkl', T, M)
-#        else:
-#            pass 
+ 
         
 def nModeProduct(T, M, n):
     """
-    n-Mode product of a tensor T  and a matrix M,  multiplication and summation is made along the nth dim.
+    n-Mode product of a tensor T  and a matrix M,  the summation is made along the nth dim.
     definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
     
-    n takes value 0, 1, or 2, specify the 1st, 2nd or 3rd dim of the tensor T. 
-    For the matrix M, this function always take the second dimension.
+    For example, n with value 0, 1, or 2, would specify the 1st, 2nd or 3rd dim of the tensor T. 
+    For the matrix M, this function always take the second dimension, as if to multiply T by M on the left side.
+    
+    :param T: a tensor .
+    :type T: numpy.ndarray
+    :param M: a matrix
+    :type M: numpy.array
+    :param n: serial number of a dimension of T along which the summation is made.
+    :type n: int    
+    :returns: numpy.ndarray -- a result tensor .    
     """
  
     P = tensordot(T,M, axes=([n],[1])) 
     return rollaxis(P,len(T.shape)-1, n) 
-
-def nModedivision(T, M, n):
-    """
-    Inverse function of n-Mode product of a tensor T(only 2d or 3d for now) and a matrix M. 
-    i.e. This function returns a tensor T2 such that the n-mode product of T2 and M is T.
-    """
-     
+      
   
 def HOSVD(A):
-    r"""
-    High order svd of 3-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3, "(*n)" means n-mode product. S: core. u1,u2,u3: orthogonal basis.
-    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
-
+    """
+    High order svd of d-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3 ... (*d) ud, 
+    "(*n)" means n-mode product. S: core. u1,u2,u3: orthogonal basis.
+    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" 
+    by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+    
+    :param A: a tensor .
+    :type A: numpy.ndarray
+  
+    :returns: numpy.ndarray -- the core tensor S, 
+              numpy.list    -- a list of array containing basis  
     """ 
-    A1=unfold(A, 0)
+    d = len(A.shape)
+    U =[None]*d    
     
-    u1,s1,vt1= svd( A1)
-    u2,s2,vt2= svd( unfold(A, 1))
-    u3,s3,vt3= svd( unfold(A, 2)) 
-     
-    S= dot(dot(u1.T,A1),kron(u2,u3))    
-    S = np.reshape(S, A.shape)
+    A0=unfold(A, 0)
+    U[0],s0,vt0= svd( A0)
     
-    return S,u1,u2,u3
+    for i in range(1,d):
+        U[i],s0,vt0= svd( unfold(A, i))   
+
+   
+    S= nModeProduct(A, U[0].T, 0)
+    for i in range(1, d):
+        S= nModeProduct(S,U[i].T, i)     
+    
+    return S,U
 
 class Tucker(SparseTensorFuns):
 
@@ -140,7 +135,7 @@ class Tucker(SparseTensorFuns):
         return Tucker(core=-self.core, basis=self.basis)
 
     def __mul__(self, anotherTensor, tol=None, rank=None):
-        "element-wise multiplication of two Tucker tensors" 
+        """element-wise multiplication of two Tucker tensors"""
         
         # truncate X and Y before multiplication, so that the rank after multiplication 
         # roughly equals to the orginal rank.
@@ -165,10 +160,10 @@ class Tucker(SparseTensorFuns):
 
         result= Tucker(name=X.name+'*'+Y.name, core=newCore, basis=newBasis)
         return  result.orthogonalize() 
-       
+   
  
     def orthogonalize(self):
-        "re-orthogonalize the basis"  
+        """re-orthogonalize the basis""" 
         newBasis=[]
         R=[]
         # orthogonalize the basis
@@ -185,7 +180,7 @@ class Tucker(SparseTensorFuns):
         return Tucker(name=self.name, core=core, basis=newBasis, orthogonal=True)   
           
     def sortBasis(self):
-        "Sort the core in term of importance and sort the basis accordinglly"  
+        """Sort the core in term of importance and sort the basis accordinglly"""  
         core=self.core
         basis=self.basis
         
@@ -216,23 +211,22 @@ class Tucker(SparseTensorFuns):
             basis[2]=basis[2][ind2,:]    
         
         return Tucker(name=self.name, core=core, basis=basis, orthogonal=self.orthogonal) 
-        
+             
     def full(self):
-        "return a full tensor"
-        if self.order==2: 
-            return np.einsum('ij,ik,jl->kl', self.core, self.basis[0],self.basis[1])
-        elif self.order==3:
-            # A = S (*1) u1 (*2) u2 (*3) u3, with (*n)  means n-mode product. 
-            # from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
-            temp= nModeProduct(self.core,self.basis[0].T,0)
-            temp= nModeProduct(temp,self.basis[1].T,1)
-            return nModeProduct(temp,self.basis[2].T,2)
-        else:
-            raise NotImplementedError()
+        """convert a tucker representation to a full tensor        
+        A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product. 
+        from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+        """
+        d = self.N.shape[0]
+        CBd= nModeProduct(self.core,self.basis[0].T,0)
+        for i in range(1, d):
+            CBd= nModeProduct(CBd,self.basis[i].T,i)
+        return CBd  
+ 
 
     def truncate(self, tol=None, rank=None ):
-        "return truncated tensor. tol, if presented, would override rank as truncation criteria."       
-    
+        """return truncated tensor. tol, if presented, would override rank as truncation criteria.        
+        """
         if  np.any(tol)  is None and np.any(rank) is None:
             print ("Warning: No truncation criteria input, truncation aborted!")
             return self             
@@ -301,13 +295,14 @@ class Tucker(SparseTensorFuns):
 
 if __name__=='__main__': 
     
+     
     
     N=np.array([40,50])
     a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
     b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
     print(a)
     print(b)
-
+    
     # addition
     c = a+b
     print(c)   
@@ -329,7 +324,7 @@ if __name__=='__main__':
 
     #DFT
     print('testing DFT...')
-    from ffthompy.operators import DFT
+    from ffthompy.tensors.operators import DFT
     Fa = a.fourier()
     print(Fa)
     Fa2 = DFT.fftnc(a.full(), a.N)
@@ -341,9 +336,9 @@ if __name__=='__main__':
     print('----testing 3d tucker ----')
     print
     
-    N1=25  # warning: in 3d multiplication too large N number could kill the machine.
-    N2=36
-    N3=47 
+    N1=3  # warning: in 3d multiplication too large N number could kill the machine.
+    N2=4
+    N3=5 
     
     # creat 3d tensor for test
 
@@ -358,28 +353,54 @@ if __name__=='__main__':
     T = np.reshape(T,(N1,N2,N3))
     
     # a full rank tensor
-    #T = np.random.random((N1,N2,N3))
+#    T = np.random.random((N1,N2,N3 ))
+    
+#    #decompose the tensor into core and orthogonal basis by HOSVD
+#    S,u1,u2,u3 = HOSVD(T)
+#    
+#    #creat tucker format tensor
+#    a = Tucker(name='a', core=S, basis=[u1.T, u2.T, u3.T], orthogonal=True )  
+#    print(a)    
+#    
+#    print('testing 3d tucker representation error...')
+#    print "a.full - T = ",  norm(a.full()-T)
     
     #decompose the tensor into core and orthogonal basis by HOSVD
-    S,u1,u2,u3 = HOSVD(T)
     
+#    t1=timeit.timeit("S,U = HOSVD(T)", setup='from __main__ import HOSVD, T', number=10)
+#    
+#    t2=timeit.timeit("S2,U2 = HOSVD2(T)", setup='from __main__ import HOSVD2, T', number=10)
+#     
+#    print
+#    print "1st HOSVD costs: %f"%t1
+#    print "2nd HOSVD costs: %f"%t2
+#    print sss
+    
+    S,U = HOSVD(T)
     #creat tucker format tensor
-    a = Tucker(name='a', core=S, basis=[u1.T, u2.T, u3.T], orthogonal=True )  
+    basis = U
+    for i in range(0,len(basis)):
+        basis[i] = basis[i].T
+    
+    a = Tucker(name='a1', core=S, basis=basis, orthogonal=True )  
     print(a)    
     
-    print('testing 3d tucker representation error...')
+    print('testing nd tucker representation error...')
     print "a.full - T = ",  norm(a.full()-T)
+    
     
 #    #decompose the tensor into core and orthogonal basis by HOSVD
 #    T2=np.sin(T)
     
     # this is a rank-2 tensor
     T2= np.sqrt(T)
-    S2,u12,u22,u32 = HOSVD(T2)
+    S2,U2 = HOSVD(T2)
     
-    
+    basis = U2
+    for i in range(0,len(basis)):
+        basis[i] = basis[i].T
     #creat tucker format tensor
-    b = Tucker(name='b', core=S2, basis=[u12.T, u22.T, u32.T], orthogonal=True)   
+    b = Tucker(name='b', core=S2, basis=basis, orthogonal=True)   
     print(b)
     
     b_trunc= b.truncate(rank=[6, 8, 10])  
