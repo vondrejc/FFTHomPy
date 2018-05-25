@@ -1,3 +1,5 @@
+
+
 import sys
 import numpy as np
 #sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
@@ -11,6 +13,9 @@ from numpy import dot, kron,newaxis, argsort, tensordot, rollaxis
 
 import timeit
 
+np.set_printoptions(precision=2) 
+ 
+ 
 def unfold(T, dim):
     """
     Unfolds a tensor T into a matrix, taking the dimension "dim" of T as the first dimension of the matrix, 
@@ -24,9 +29,28 @@ def unfold(T, dim):
     :type dim: int
     :returns: 2D numpy.array -- a matricisation of T.
     """
-    return np.rollaxis(T, dim, 0).reshape(T.shape[dim], -1)
- 
-        
+     
+    Tm= np.moveaxis(T, dim, 0)
+    #N_mov=Tm.shape
+    return Tm.reshape(T.shape[dim], -1) #,  N_mov  
+    
+#def refold(M, dim, N_mov):
+#    """
+#    Unfolds a tensor T into a matrix, taking the dimension "dim" of T as the first dimension of the matrix, 
+#    and flattening all the other dimensions into the other one dimension of the matrix.
+#    
+#    dim starts from 0.
+#    
+#    :param T: a tensor .
+#    :type T: numpy.ndarray
+#    :param dim: the dimension based on which the unfolding is made
+#    :type dim: int
+#    :returns: 2D numpy.array -- a matricisation of T.
+#    """
+#    
+#    T = np.reshape(M, N_mov)
+#    return np.moveaxis(T,0, dim)
+      
 def nModeProduct(T, M, n):
     """
     n-Mode product of a tensor T  and a matrix M,  the summation is made along the nth dim.
@@ -45,9 +69,8 @@ def nModeProduct(T, M, n):
     """
  
     P = tensordot(T,M, axes=([n],[1])) 
-    return rollaxis(P,len(T.shape)-1, n) 
-      
-  
+    return np.rollaxis(P,len(T.shape)-1, n) 
+    
 def HOSVD(A):
     """
     High order svd of d-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3 ... (*d) ud, 
@@ -64,18 +87,50 @@ def HOSVD(A):
     d = len(A.shape)
     U =[None]*d    
     
-    A0=unfold(A, 0)
-    U[0],s0,vt0= svd( A0)
+    A0 =unfold(A,0) 
+    A0 = np.dot(A0,A0.T)
+  
+    s0,U[0] = np.linalg.eigh( A0)
     
     for i in range(1,d):
-        U[i],s0,vt0= svd( unfold(A, i))   
+        Ai= unfold(A,i) 
+        Ai = np.dot(Ai,Ai.T)
+        s0,U[i]= np.linalg.eigh( Ai)
 
    
     S= nModeProduct(A, U[0].T, 0)
     for i in range(1, d):
         S= nModeProduct(S,U[i].T, i)     
+        
+    for i in range(0, d):
+        U[i]=U[i][::-1]  # eigh return eigenvalues in ascending order
     
-    return S,U
+    return S[::-1,::-1,::-1],U
+#def HOSVD2(A):
+#    """
+#    High order svd of d-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3 ... (*d) ud, 
+#    "(*n)" means n-mode product. S: core. u1,u2,u3: orthogonal basis.
+#    definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" 
+#    by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
+#    
+#    :param A: a tensor .
+#    :type A: numpy.ndarray
+#  
+#    :returns: numpy.ndarray -- the core tensor S, 
+#              numpy.list    -- a list of array containing basis  
+#    """ 
+#    N=A.shape
+#    d = len(N)
+#    U =[None]*d   
+#     
+#    S = A.copy()
+#    for i in range(0,d):
+#        S, Nm = unfold(S, i) 
+#        U[i],s,vt= svd( S, full_matrices=False)   
+#        S = s[:,newaxis]*vt
+#        S = refold(S,i,Nm) 
+#    
+#    return S,U 
 
 class Tucker(SparseTensorFuns):
 
@@ -134,20 +189,23 @@ class Tucker(SparseTensorFuns):
     def __neg__(self):
         return Tucker(core=-self.core, basis=self.basis)
 
+
     def __mul__(self, anotherTensor, tol=None, rank=None):
         """element-wise multiplication of two Tucker tensors"""
         
         # truncate X and Y before multiplication, so that the rank after multiplication 
         # roughly equals to the orginal rank.
         # how much to truncate could be made further adjustable in future versions.
-        tRankX = np.ceil(np.sqrt(self.r)).astype(int) 
-        tRankY = np.ceil(np.sqrt(anotherTensor.r)).astype(int) 
-         
-        X = self.truncate(rank=tRankX)
-        Y = anotherTensor.truncate(rank=tRankY) 
-        
-        new_r=X.r*Y.r # this would explode without an truncation of X and Y. 
-             
+#        tRankX = np.ceil(np.sqrt(self.r)).astype(int) 
+#        tRankY = np.ceil(np.sqrt(anotherTensor.r)).astype(int) 
+#         
+#        X = self.truncate(rank=tRankX)
+#        Y = anotherTensor.truncate(rank=tRankY) 
+        X=self
+        Y=anotherTensor
+        new_r=X.r*Y.r # this could explode   
+            
+       
         newCore=np.kron(X.core, Y.core)  
         
         newBasis = [None] * self.order
@@ -159,9 +217,9 @@ class Tucker(SparseTensorFuns):
              
 
         result= Tucker(name=X.name+'*'+Y.name, core=newCore, basis=newBasis)
-        return  result.orthogonalize() 
-   
- 
+        return  result.truncate(rank= X.N) 
+        #return  result.truncate(rank=list(np.max(np.vstack([X.r,Y.r]),axis=0 ))  )
+        
     def orthogonalize(self):
         """re-orthogonalize the basis""" 
         newBasis=[]
@@ -298,8 +356,8 @@ if __name__=='__main__':
      
     
     N=np.array([40,50])
-    a = Tucker(name='a', r=np.array([20,30]), N=N, randomise=True)
-    b = Tucker(name='b', r=np.array([40,50]), N=N, randomise=True)
+    a = Tucker(name='a', r=np.array([13,4]), N=N, randomise=True)
+    b = Tucker(name='b', r=np.array([5,16]), N=N, randomise=True)
     print(a)
     print(b)
     
@@ -319,6 +377,7 @@ if __name__=='__main__':
     # multiplication
     c = a*b
     c2 = a.full()*b.full()
+    print c
     print('testing multiplication...')
     print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
 
@@ -336,9 +395,9 @@ if __name__=='__main__':
     print('----testing 3d tucker ----')
     print
     
-    N1=3  # warning: in 3d multiplication too large N number could kill the machine.
-    N2=4
-    N3=5 
+    N1=10  # warning: in 3d multiplication too large N number could kill the machine.
+    N2=20
+    N3=30 
     
     # creat 3d tensor for test
 
@@ -348,15 +407,15 @@ if __name__=='__main__':
 #    #this is a rank-1 tensor
 #    T=np.sin(x[:,newaxis,newaxis]+y[newaxis,:, newaxis] + z[ newaxis, newaxis, :] ) 
     
-    # this is a rank-2 tensor
-    T = np.arange(N1*N2*N3)
-    T = np.reshape(T,(N1,N2,N3))
+#    # this is a rank-2 tensor
+#    T = np.arange(N1*N2*N3)
+#    T = np.reshape(T,(N1,N2,N3))
     
-    # a full rank tensor
-#    T = np.random.random((N1,N2,N3 ))
+    ##a full rank tensor
+    T = np.random.random((N1,N2,N3   ))
     
 #    #decompose the tensor into core and orthogonal basis by HOSVD
-#    S,u1,u2,u3 = HOSVD(T)
+    #S2,U2 = HOSVD2(T)
 #    
 #    #creat tucker format tensor
 #    a = Tucker(name='a', core=S, basis=[u1.T, u2.T, u3.T], orthogonal=True )  
@@ -365,15 +424,18 @@ if __name__=='__main__':
 #    print('testing 3d tucker representation error...')
 #    print "a.full - T = ",  norm(a.full()-T)
     
-    #decompose the tensor into core and orthogonal basis by HOSVD
-    
+#    #decompose the tensor into core and orthogonal basis by HOSVD
+#    
 #    t1=timeit.timeit("S,U = HOSVD(T)", setup='from __main__ import HOSVD, T', number=10)
 #    
 #    t2=timeit.timeit("S2,U2 = HOSVD2(T)", setup='from __main__ import HOSVD2, T', number=10)
 #     
+#    t3=timeit.timeit("S3,U3 = HOSVD3(T)", setup='from __main__ import HOSVD3, T', number=10)
+#
 #    print
 #    print "1st HOSVD costs: %f"%t1
 #    print "2nd HOSVD costs: %f"%t2
+#    print "3rd HOSVD costs: %f"%t3
 #    print sss
     
     S,U = HOSVD(T)
@@ -382,13 +444,24 @@ if __name__=='__main__':
     for i in range(0,len(basis)):
         basis[i] = basis[i].T
     
-    a = Tucker(name='a1', core=S, basis=basis, orthogonal=True )  
+    a = Tucker(name='a', core=S, basis=basis, orthogonal=True )  
     print(a)    
     
     print('testing nd tucker representation error...')
     print "a.full - T = ",  norm(a.full()-T)
-    
-    
+#    
+#    print sss
+#    S2,U2 = HOSVD2(T)
+#    basis = U2
+#    for i in range(0,len(basis)):
+#        basis[i] = basis[i].T
+#    
+#    a2 = Tucker(name='a2', core=S2, basis=basis, orthogonal=True )  
+#    print(a2)    
+#    
+#    print('testing nd tucker representation error...')
+#    print "a2.full - T = ",  norm(a2.full()-T)    
+#    print sss
 #    #decompose the tensor into core and orthogonal basis by HOSVD
 #    T2=np.sin(T)
     
@@ -411,7 +484,7 @@ if __name__=='__main__':
     print "norm(b_truncated.full - b.full)/norm(b.full) = ",  norm(b_trunc.full()-b.full())/norm(b.full()) 
     print       
     
-    b_trunc= b.truncate(tol=[1e-8, 1e-8, 1e-8])  
+    b_trunc= b.truncate(tol=[1e-6, 1e-6, 1e-6])  
     print(b_trunc)     
      
     print('testing 3d tucker  tol-based truncation ...')
