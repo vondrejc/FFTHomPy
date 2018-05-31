@@ -90,7 +90,7 @@ def HOSVD(A):
     A0 =unfold(A,0) 
     A0 = np.dot(A0,A0.T)
   
-    s0,U[0] = np.linalg.eigh( A0)
+    s0,U[0] = np.linalg.eigh( A0) # left-sided SVD
     
     for i in range(1,d):
         Ai= unfold(A,i) 
@@ -103,10 +103,11 @@ def HOSVD(A):
         S= nModeProduct(S,U[i].T, i)     
         
     for i in range(0, d):
-        U[i]=U[i][::-1]  # eigh return eigenvalues in ascending order
+        U[i]=U[i][:,::-1]  # eigh return eigenvalues in ascending order
     
     return S[::-1,::-1,::-1],U
-#def HOSVD2(A):
+    
+#def HOSVD(A):
 #    """
 #    High order svd of d-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3 ... (*d) ud, 
 #    "(*n)" means n-mode product. S: core. u1,u2,u3: orthogonal basis.
@@ -162,9 +163,7 @@ class Tucker(SparseTensorFuns):
         self.basis=[np.random.random([self.r[ii],self.N[ii]]) for ii in range(self.order)]
 
     def __add__(self, Y, tol=None, rank=None):
-        X=self
-        
-        #Y = self.basisCalibrate(Yo)
+        X=self 
         
         r_new = X.r + Y.r 
    
@@ -178,14 +177,47 @@ class Tucker(SparseTensorFuns):
         else:
             pass
                 
-        newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]  
-        
-        #core = self.core + Y.core
+        newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]   
         
         result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False)
       
         return result.orthogonalize() 
 
+    def add(self, Y, tol=None, rank=None):
+        
+        X=self 
+        
+        r_new = X.r + Y.r 
+        core=np.zeros(r_new )
+        
+        x_id = [None] * X.order
+        y_id = [None] * Y.order
+        
+        for d in range(0, self.order):
+            x.id[d]= range(0, X.r[d])
+            y.id[d]= range(X.r[d], X.r[d] + Y.r[d])
+        
+        ixgrid = np.ix_([0, 1], [2, 4])
+#        for d in range(0, X.order):
+#            core[:X.r[0] ,:X.r[1],: X.r[2] ]=X.core
+#            core[ X.r[0]:, X.r[1]:, X.r[2]:]=Y.core 
+#            
+#        if X.order==2:
+#            core= block_diag(X.core,Y.core)
+#        elif X.order==3:
+#            
+#            #  block_diag(X.core,Y.core) in 3d
+#            core[:X.r[0] ,:X.r[1],: X.r[2] ]=X.core
+#            core[ X.r[0]:, X.r[1]:, X.r[2]:]=Y.core 
+#        else:
+#            pass
+                
+        newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]  
+         
+        
+        result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False)
+      
+        return result.orthogonalize() 
     def __neg__(self):
         return Tucker(core=-self.core, basis=self.basis)
 
@@ -203,22 +235,23 @@ class Tucker(SparseTensorFuns):
 #        Y = anotherTensor.truncate(rank=tRankY) 
         X=self
         Y=anotherTensor
-        new_r=X.r*Y.r # this could explode   
-            
+        #new_r=X.r*Y.r # this could explode    
        
         newCore=np.kron(X.core, Y.core)  
         
         newBasis = [None] * self.order
         for d in range(0, self.order):
-            newBasis[d]= np.zeros((new_r[d], X.N[d]))
-            for i in range(0, X.r[d]):
-                for j in range(0, Y.r[d]):
-                    newBasis[d][i*Y.r[d]+j, :]=X.basis[d][i, :]*Y.basis[d][j, :]
+            #newBasis[d]= np.zeros((new_r[d], X.N[d]))
+            newBasis[d]= np.multiply(X.basis[d][:,newaxis, :], Y.basis[d][newaxis,:,:] )
+            newBasis[d]= np.reshape(newBasis[d], (-1, X.N[d]))            
+            #for i in range(0, X.r[d]):
+                #for j in range(0, Y.r[d]):
+                    #newBasis[d][i*Y.r[d]+j, :]=X.basis[d][i, :]*Y.basis[d][j, :]
              
 
         result= Tucker(name=X.name+'*'+Y.name, core=newCore, basis=newBasis)
         return  result.truncate(rank= X.N) 
-        #return  result.truncate(rank=list(np.max(np.vstack([X.r,Y.r]),axis=0 ))  )
+        #return  result.truncate(rank=list(np.max(np.vstack([X.r,Y.r]),axis=0 ))  ) 
         
     def orthogonalize(self):
         """re-orthogonalize the basis""" 
@@ -351,13 +384,12 @@ class Tucker(SparseTensorFuns):
         return ss
 
 
-if __name__=='__main__': 
-    
+if __name__=='__main__':     
      
     
-    N=np.array([40,50])
-    a = Tucker(name='a', r=np.array([13,4]), N=N, randomise=True)
-    b = Tucker(name='b', r=np.array([5,16]), N=N, randomise=True)
+    N=np.array([3,4])
+    a = Tucker(name='a', r=np.array([3,4]), N=N, randomise=True)
+    b = Tucker(name='b', r=np.array([5,6]), N=N, randomise=True)
     print(a)
     print(b)
     
@@ -437,7 +469,8 @@ if __name__=='__main__':
 #    print "2nd HOSVD costs: %f"%t2
 #    print "3rd HOSVD costs: %f"%t3
 #    print sss
-    
+
+   
     S,U = HOSVD(T)
     #creat tucker format tensor
     basis = U
@@ -510,5 +543,41 @@ if __name__=='__main__':
     print "((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ",  norm(c.full()-a.full()*b.full())/norm(a.full()*b.full())
     print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ",  np.max(c.full()-a.full()*b.full())/np.mean(a.full()*b.full())
     
+ 
+    
+#    t1=timeit.timeit("c=a*b", setup='from __main__ import a, b', number=10)
+#    
+#    t2=timeit.timeit("c=a.mul(b)", setup='from __main__ import a, b', number=10)
+#      
+#
+#    print
+#    print "t1: %f"%t1
+#    print "t2: %f"%t2
+#    
+#    c1=a*b
+#    c2=a.mul(b)
+#    
+#    print "error: %f"% norm(c1.full()-c2.full())
+   
+#    print('testing DFT...')
+#
+#    from ffthompy.tensors.operators import DFT
+#   
+#    
+#    Fa=a.fourier()
+#    Fa2=DFT.fftnc(a.full(), a.N)
+#
+#    print(np.linalg.norm(Fa.full()-Fa2))
+#
+#    print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
+#    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)
+#    afull=a.full()
+#    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.tensors.operators import DFT;from __main__ import a, afull', number=10)
+#    # t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
+#    print
+#    print "Tensor of 1D FFT costs: %f"%t1
+#    print "n-D FFT costs         : %f"%t2
+#
+#    print('END')   
    
     print('END')
