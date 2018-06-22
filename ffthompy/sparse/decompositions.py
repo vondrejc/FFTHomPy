@@ -329,11 +329,11 @@ def subTensor(T, k=None, index=None):
 def HOSVD(A, k=None, tol=None):
     """
     High order svd of d-dim tensor A. so that A = S (*1) u1 (*2) u2 (*3) u3 ... (*d) ud, 
-    "(*n)" means n-mode product. S: core. u1,u2,u3: orthogonal basis.
+    "(*n)" means n-mode product. S is the core, u1,u2,u3, ... are orthogonal basis.
     definition in paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" 
     by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
     
-    :param A: a tensor .
+    :param A: a full tensor .
     :type A: numpy.ndarray
 
     :param k: rank for the truncation. 
@@ -347,8 +347,7 @@ def HOSVD(A, k=None, tol=None):
     """ 
     
     d = len(A.shape)
-    U =[None]*d 
-    
+    U =[None]*d   
     
     
     for j in range(0,d):

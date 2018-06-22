@@ -1,19 +1,18 @@
-# import sys
 import numpy as np
-# sys.path.append("/home/disliu/ffthompy-sparse")
 from ffthompy.sparse.tensors import SparseTensorFuns
-from ffthompy.trigpol import enlarge
+from ffthompy.sparse.tucker import Tucker
+#from ffthompy.trigpol import enlarge
 # import decompositions as dc
 import timeit
 
-
-class CanoTensor(SparseTensorFuns):
+class CanoTensor(Tucker):
 
     def __init__(self, name='', core=None, basis=None, orthogonal=False, Fourier=False,
                  r=3, N=[5, 5], randomise=False):
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
-
+        self.orthogonal = orthogonal
+        
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
@@ -37,7 +36,7 @@ class CanoTensor(SparseTensorFuns):
     def randomise(self):
         self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
-
+ 
     def __add__(self, Y):
         X=self
         assert(X.Fourier==Y.Fourier)
@@ -60,25 +59,10 @@ class CanoTensor(SparseTensorFuns):
 
         return CanoTensor(name=X.name+'+'+Y.name, core=s, basis=newBasis, Fourier=self.Fourier)
 
-    def __neg__(self):
-        return CanoTensor(core=-self.core, basis=self.basis, Fourier=self.Fourier)
-
-    def __sub__(self, Y):
-        return self.__add__(-Y)
-
-    def __rmul__(self, X):
-        Y=self
-        if isinstance(X, np.float):
-            R=Y.copy()
-            R.core=X*Y.core
-        else:
-            raise NotImplementedError()
-        return R
-
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
 
-        if isinstance(Y, float):
+        if isinstance(Y, float) or isinstance(Y, int) :
             R=self.copy()
             R.core=self.core*Y
             return R
@@ -117,7 +101,7 @@ class CanoTensor(SparseTensorFuns):
             core=ra*coeff[np.newaxis, :]
             core=np.dot(core, rb.T)
 
-            u, s, vt=np.linalg.svd(core, full_matrices=0)
+            u, s, vt=np.linalg.svd(core, full_matrices=False)
 
             newA=np.dot(qa, u)
             newB=np.dot(vt, qb.T)
@@ -126,22 +110,6 @@ class CanoTensor(SparseTensorFuns):
 
             return CanoTensor(name=X.name+'*'+Y.name, core=s, basis=newBasis,
                               Fourier=self.Fourier)
-
-    def add(self, Y, tol=None, rank=None):
-        return (self+Y).truncate(tol=tol, rank=rank)
-
-    def multiply(self, Y, tol=None, rank=None):
-        # element-wise multiplication
-        return (self*Y).truncate(tol=tol, rank=rank)
-
-    def scal(self, Y):
-        X = self
-        assert(X.Fourier==Y.Fourier)
-        XY = X*Y
-        if X.Fourier:
-            return XY.mean()
-        else:
-            return XY.mean()/np.prod(X.N)
 
     def full(self):
         "return a full tensor"
@@ -188,41 +156,6 @@ class CanoTensor(SparseTensorFuns):
 
         return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, Fourier=self.Fourier)
 
-    def enlarge(self, M):
-        dtype=self.basis[0].dtype
-        assert(self.Fourier==True)
-
-        M = np.array(M, dtype=np.int)
-        N = np.array(self.N)
-        if np.allclose(M, N):
-            return self
-
-        dim = N.size
-        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
-
-        basis=[]
-        for ii, m in enumerate(M):
-            basis.append(np.zeros([self.r,m], dtype=dtype))
-            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
-
-        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
-
-    def decrease(self, M):
-        assert(self.Fourier is True)
-
-        M = np.array(M, dtype=np.int)
-        N = np.array(self.N)
-        assert(np.all(np.less(M, N)))
-
-        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-
-        basis=[]
-        for ii in range(N.size):
-            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
-
-        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
 
     def norm(self, ord='fro'):
         if ord=='fro':
@@ -255,31 +188,111 @@ class CanoTensor(SparseTensorFuns):
             val+=valii
         return val
 
-    def conj(self):
-        """Element-wise complex conjugate"""
-        basis = []
-        for ii in range(self.order):
-            basis.append(self.basis[ii].conj())
-        res = self.copy()
-        res.basis = basis
-        return res
 
-    def __repr__(self):
-        keys=['name', 'N', 'Fourier', 'r']
-        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
-        skip=4*' '
-        nstr=np.array([key.__len__() for key in keys]).max()
+### these methods shared with parent class Tucker   #####
 
-        for key in keys:
-            attr=getattr(self, key)
-            if callable(attr):
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
-            else:
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
+#    def __neg__(self):
+#        
+#        newOne= self.copy()
+#        newOne.core = -newOne.core
+#        return newOne
+#        #return CanoTensor(core=-self.core, basis=self.basis, Fourier=self.Fourier)
+        
+#    def __sub__(self, Y):
+#        return self.__add__(-Y)
 
-        return ss
+#    def __rmul__(self, X):
+#        Y=self
+#        if isinstance(X, np.float):
+#            R=Y.copy()
+#            R.core=X*Y.core
+#        else:
+#            raise NotImplementedError()
+#        return R
+        
+#    def conj(self):
+#        """Element-wise complex conjugate"""
+#        basis = []
+#        for ii in range(self.order):
+#            basis.append(self.basis[ii].conj())
+#        res = self.copy()
+#        res.basis = basis
+#        return res
 
+#    def __repr__(self):
+#        keys=['name', 'N', 'Fourier', 'r']
+#        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
+#        skip=4*' '
+#        nstr=np.array([key.__len__() for key in keys]).max()
+#
+#        for key in keys:
+#            attr=getattr(self, key)
+#            if callable(attr):
+#                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
+#            else:
+#                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
+#
+#        return ss
 
+#    def enlarge(self, M):
+#        dtype=self.basis[0].dtype
+#        assert(self.Fourier==True)
+#
+#        M = np.array(M, dtype=np.int)
+#        N = np.array(self.N)
+#        
+#        if np.allclose(M, N):
+#            return self
+#
+#        #dim = N.size
+#        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+#        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+#
+#        basis=[]
+#        for ii, m in enumerate(M):
+#            basis.append(np.zeros([self.r,m], dtype=dtype))
+#            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
+#        
+#        newOne = self.copy()
+#        newOne.basis = basis
+#        newOne.N = [None]*newOne.order
+#        for i in range(newOne.order):
+#            newOne.N[i] = newOne.basis[i].shape[1]        
+#        #return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)         
+#        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
+
+#    def decrease(self, M):
+#        assert(self.Fourier is True)
+#
+#        M = np.array(M, dtype=np.int)
+#        N = np.array(self.N)
+#        assert(np.all(np.less(M, N)))
+#
+#        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+#        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+#
+#        basis=[]
+#        for ii in range(N.size):
+#            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
+#
+#        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
+
+#    def add(self, Y, tol=None, rank=None):
+#        return (self+Y).truncate(tol=tol, rank=rank)
+
+#    def multiply(self, Y, tol=None, rank=None):
+#        # element-wise multiplication
+#        return (self*Y).truncate(tol=tol, rank=rank)
+
+#    def scal(self, Y):
+#        X = self
+#        assert(X.Fourier==Y.Fourier)
+#        XY = X*Y
+#        if X.Fourier:
+#            return XY.mean()
+#        else:
+#            return XY.mean()/np.prod(X.N)
+        
 if __name__=='__main__':
 #    N=[10,20]
 #    a = CanoTensor(name='a', r=3, N=N, randomise=True)
@@ -299,16 +312,17 @@ if __name__=='__main__':
 
     # DFT
     ########################################## test with "smoother" matices
-    N=100
-    M=100
+    N=10
+    M=20
 #    L= min(N,M)
 
     x=np.linspace(-np.pi, np.pi, M)
-    y=np.linspace(-np.pi, np.pi, N)
+    y=np.linspace(-np.pi, 0.77*np.pi, N)
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
     S2=np.cos(2*x[np.newaxis, :]-y[:, np.newaxis])*(2*x[np.newaxis, :]-y[:, np.newaxis])
-
+    #S1 = np.dot(np.reshape(x,(M,1)), np.reshape(y,(1,N))) + np.dot(np.sin(np.reshape(x,(M,1))), np.reshape(y,(1,N))**2)
+    
     # factorize the matrix
     u1, s1, vt1=np.linalg.svd(S1, full_matrices=0)
     u2, s2, vt2=np.linalg.svd(S2, full_matrices=0)
@@ -356,8 +370,9 @@ if __name__=='__main__':
     # DFT
     print('testing DFT...')
 
-    from ffthompy.operators import DFT
-
+    from ffthompy.tensors.operators import DFT
+   
+    
     Fa=a.fourier()
     Fa2=DFT.fftnc(a.full(), a.N)
 
@@ -366,7 +381,7 @@ if __name__=='__main__':
     print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
     t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)
     afull=a.full()
-    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.operators import DFT;from __main__ import a, afull', number=10)
+    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.tensors.operators import DFT;from __main__ import a, afull', number=10)
     # t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
     print
     print "Tensor of 1D FFT costs: %f"%t1
