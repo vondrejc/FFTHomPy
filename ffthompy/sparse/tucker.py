@@ -222,7 +222,7 @@ class Tucker(SparseTensorFuns):
 
         # to determine the rank of truncation
         if np.any(tol) is not None:
-            if rank.any()==None: rank=np.zeros((self.order),dtype=int)
+            rank=np.zeros((self.order),dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
             if  self.order==2:
                 sorted_dim0 = norm(core, axis=1)
@@ -454,9 +454,7 @@ if __name__=='__main__':
     a2=af2.fourier()
     
     a3=a.project([5,7])
-    
-    print ss
-    
+   
     
     print
     print('----testing tucker basic operations ----')
