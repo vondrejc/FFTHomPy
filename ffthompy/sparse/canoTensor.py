@@ -188,6 +188,32 @@ class CanoTensor(Tucker):
             val+=valii
         return val
 
+    def enlarge(self, M):
+        dtype=self.basis[0].dtype
+        assert(self.Fourier==True)
+
+        M = np.array(M, dtype=np.int)
+        N = np.array(self.N)
+        
+        if np.allclose(M, N):
+            return self
+
+        #dim = N.size
+        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+
+        basis=[]
+        for ii, m in enumerate(M):
+            basis.append(np.zeros([self.r,m], dtype=dtype))
+            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
+        
+        newOne = self.copy()
+        newOne.basis = basis
+        newOne.N = [None]*newOne.order
+        for i in range(newOne.order):
+            newOne.N[i] = newOne.basis[i].shape[1]        
+        #return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)         
+        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
 
 ### these methods shared with parent class Tucker   #####
 
@@ -234,32 +260,6 @@ class CanoTensor(Tucker):
 #
 #        return ss
 
-#    def enlarge(self, M):
-#        dtype=self.basis[0].dtype
-#        assert(self.Fourier==True)
-#
-#        M = np.array(M, dtype=np.int)
-#        N = np.array(self.N)
-#        
-#        if np.allclose(M, N):
-#            return self
-#
-#        #dim = N.size
-#        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-#        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
-#
-#        basis=[]
-#        for ii, m in enumerate(M):
-#            basis.append(np.zeros([self.r,m], dtype=dtype))
-#            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
-#        
-#        newOne = self.copy()
-#        newOne.basis = basis
-#        newOne.N = [None]*newOne.order
-#        for i in range(newOne.order):
-#            newOne.N[i] = newOne.basis[i].shape[1]        
-#        #return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)         
-#        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
 
 #    def decrease(self, M):
 #        assert(self.Fourier is True)
