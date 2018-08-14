@@ -3,7 +3,7 @@
 #import sys
 import numpy as np
 #sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
-
+from ffthompy.sparse.canoTensor import CanoTensor
 from ffthompy.sparse.tensors import SparseTensorFuns
 from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD,nModeProduct
@@ -19,71 +19,88 @@ from numpy import dot, kron,newaxis, argsort, tensordot, rollaxis
 np.set_printoptions(precision=1)
 np.set_printoptions(linewidth=999999)
 
-class Tucker(SparseTensorFuns):
-
+class Tucker(CanoTensor):
+    
     def __init__(self, name='', core=None, basis=None, Fourier=False, orthogonal=False,
                  r=[3,3], N=[5,5], randomise=False):
+
+            
         self.name=name
         self.Fourier=Fourier
         self.orthogonal = orthogonal
+        
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
-            self.core=core
-            self.r=np.empty(self.order).astype(int)
-            self.N=np.empty(self.order).astype(int)
+
+            self.N=np.empty(self.order).astype(int)    
             for ii in range(self.order):
-                self.r[ii],self.N[ii]=basis[ii].shape
+                self.N[ii]=basis[ii].shape[1]
+            
+            if self.order ==2: # if 2D, use CanoTensor instead
+                self.__class__ = CanoTensor    
+                self.r=min(basis[0].shape[0], basis[1].shape[0])  
+                if len(core.shape)==2:
+                    self.core=np.diag(core)
+                else:
+                    self.core = core
+            else:
+                self.r=np.empty(self.order).astype(int)
+                for ii in range(self.order):
+                    self.r[ii] =basis[ii].shape[0]
+                    
+                if len(core.shape)==1:
+                    self.core=np.diag(core)
+                else:
+                    self.core = core
         else:
             self.order=r.__len__()
-            self.r=np.array(r)
             self.N=np.array(N)
-            if randomise:
-                self.randomise()
-            else:
+            if self.order ==2: # if 2D, use CanoTensor instead
+                self.__class__ = CanoTensor 
+                self.r= min(r)
+                self.core=np.zeros((self.r,))
+                self.basis=[np.zeros([self.r,self.N[ii]]) for ii in range(self.order)]
+            else:                    
+                self.r=np.array(r)
                 self.core=np.zeros(r)
                 self.basis=[np.zeros([self.r[ii],self.N[ii]]) for ii in range(self.order)]
-
+            
+            if randomise:
+                self.randomise()  
+            
     def randomise(self):
-        self.core=np.random.random(self.r)
-        self.basis=[np.random.random([self.r[ii],self.N[ii]]) for ii in range(self.order)]
+        if self.order ==2: 
+            self.core=np.random.random((self.r,))
+            self.basis=[np.random.random([self.r,self.N[ii]]) for ii in range(self.order)]            
+        else:
+            self.core=np.random.random(self.r)
+            self.basis=[np.random.random([self.r[ii],self.N[ii]]) for ii in range(self.order)]
 
-    def __add__(self, Y, tol=None, rank=None):
+    def __add__(self, Y ):
+        """element-wise addition of two Tucker tensors"""
+        assert((self.N==Y.N).any())
         X=self
 
         r_new = X.r + Y.r
 
-        if X.order==2:
-            core= block_diag(X.core,Y.core)
-        elif X.order==3:
+        if X.order==3:
             core=np.zeros((r_new[0],r_new[1],r_new[2] ))
-            #  block_diag(X.core,Y.core) in 3d
             core[:X.r[0] ,:X.r[1],: X.r[2] ]=X.core
             core[ X.r[0]:, X.r[1]:, X.r[2]:]=Y.core
         else:
-            pass
+            raise NotImplementedError("currently only support two and three dimensional tensor")
+
 
         newBasis=[np.vstack([X.basis[ii],Y.basis[ii]]) for ii in range(X.order)]
 
         result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis,orthogonal=False, Fourier=self.Fourier)
 
-        return result.orthogonalize()
-    
-    def add(self, Y, tol=None, rank=None):
-        return (self+Y).truncate(tol=tol, rank=rank)  
-
-    def __neg__(self):        
-        newOne= self.copy()
-        newOne.core = -newOne.core
-        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        #return Tucker(core=-self.core, basis=self.basis, Fourier=self.Fourier) 
-
-    def __sub__(self, Y):
-        return self.__add__(-Y)
+        return result.orthogonalize()  
 
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
-
+         
         if isinstance(Y, float) or isinstance(Y, int) :
             R=self.copy()
             R.core=self.core*Y
@@ -93,7 +110,8 @@ class Tucker(SparseTensorFuns):
             R.core=self.core*Y[0]
             return R
         else: 
-            #new_r=X.r*Y.r # this could explode    
+            assert((self.N==Y.N).any())            
+             
             newCore=np.kron(self.core, Y.core) 
             newBasis = [None] * self.order
             for d in range(0, self.order):
@@ -105,43 +123,26 @@ class Tucker(SparseTensorFuns):
                         #newBasis[d][i*Y.r[d]+j, :]=X.basis[d][i, :]*Y.basis[d][j, :]    
     
             result= Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis, Fourier=self.Fourier)
-            return  result.truncate(rank= self.N)
-            #return  result.truncate(rank=list(np.max(np.vstack([X.r,Y.r]),axis=0 ))  )
             
-    def multiply(self, Y, tol=None, rank=None):
-        # element-wise multiplication
-        return (self*Y).truncate(tol=tol, rank=rank)
-    
-    def __rmul__(self, X):
-        
-        if isinstance(X, np.float) or isinstance(X, np.int) :
-            R=self.copy()
-            R.core=X*self.core
-        else:
-            raise NotImplementedError()
-        return R
-    
-    def scal(self, Y):
-        X = self
-        assert(X.Fourier==Y.Fourier)
-        XY = X*Y
-        if X.Fourier:
-            return XY.mean()
-        else:
-            return XY.mean()/np.prod(X.N)    
-        
+            new_rank = np.minimum(self.r+Y.r, result.N)
+            
+            return  result.truncate(rank= new_rank)
+            #return  result.truncate(rank= self.N)
+         
     def orthogonalize(self):
         """re-orthogonalize the basis"""
         newBasis=[]
-        R=[]
+        R=[] 
+ 
         # orthogonalize the basis
         for i in range(0, self.order):
-            q, r1 =np.linalg.qr(self.basis[i].T)
+            q, r1 =np.linalg.qr(self.basis[i].T, 'complete')
             newBasis.append(q.T)
-            R.append(r1)
+            R.append(np.real(r1))
 
         # transform the core in term of the new bases
         core=self.core
+        
         for i in range(0, self.order):
             core = nModeProduct(core, R[i], i)
 
@@ -150,20 +151,9 @@ class Tucker(SparseTensorFuns):
     def sort(self):
         """Sort the core in term of importance and sort the basis accordinglly"""
         core=self.core
-        basis=self.basis
+        basis=self.basis 
 
-        if self.order==2:
-            # sort the 2-norm of the rows
-            ind0 = argsort(norm(core, axis=1))[::-1]
-            core =core[ind0,:]
-            # sort the 2-norm of the columns
-            ind1= argsort(norm(core, axis=0))[::-1]
-            core =core[:,ind1]
-
-            basis[0]=basis[0][ind0,:]
-            basis[1]=basis[1][ind1,:]
-
-        elif self.order==3:
+        if self.order==3:
             # sort the 2-norm of the horizontal slices
             ind0 = argsort(norm(core, axis=(1,2)))[::-1]
             core =core[ind0,:,:]
@@ -177,6 +167,8 @@ class Tucker(SparseTensorFuns):
             basis[0]=basis[0][ind0,:]
             basis[1]=basis[1][ind1,:]
             basis[2]=basis[2][ind2,:]
+        else:
+            raise NotImplementedError("currently only support two and three dimensional tensor")
 
         return Tucker(name=self.name, core=core, basis=basis, orthogonal=self.orthogonal,Fourier=self.Fourier)
 
@@ -191,9 +183,10 @@ class Tucker(SparseTensorFuns):
         from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
         """
         d = self.N.shape[0]
-        CBd= nModeProduct(self.core,self.basis[0].T,0)        
-        for i in range(1, d):
-            CBd= nModeProduct(CBd,self.basis[i].T,i)
+        CBd= nModeProduct(self.core,self.basis[0].T,0)    
+        if d>1:
+            for i in range(1, d):
+                CBd= nModeProduct(CBd,self.basis[i].T,i)
         return CBd
 
     def truncate(self, tol=None, rank=None ):
@@ -224,14 +217,7 @@ class Tucker(SparseTensorFuns):
         if np.any(tol) is not None:
             rank=np.zeros((self.order),dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
-            if  self.order==2:
-                sorted_dim0 = norm(core, axis=1)
-                sorted_dim1 = norm(core, axis=0)
-
-                rank[0]=np.searchsorted(np.cumsum(sorted_dim0)/np.sum(sorted_dim0), 1.0-tol[0])+1
-                rank[1]=np.searchsorted(np.cumsum(sorted_dim1)/np.sum(sorted_dim1), 1.0-tol[1])+1
-
-            elif self.order==3:
+            if self.order==3:
                 sorted_dim0 = norm(core, axis=(1,2))
                 sorted_dim1 = norm(core, axis=(0,2))
                 sorted_dim2 = norm(core, axis=(0,1))
@@ -240,9 +226,7 @@ class Tucker(SparseTensorFuns):
                 rank[1]=np.searchsorted(np.cumsum(sorted_dim1)/np.sum(sorted_dim1), 1.0-tol[1])+1
                 rank[2]=np.searchsorted(np.cumsum(sorted_dim2)/np.sum(sorted_dim2), 1.0-tol[2])+1
 
-        if self.order==2:
-            core=core[:rank[0],:rank[1]]
-        elif self.order==3:
+        if self.order==3:
             core=core[:rank[0],:rank[1], :rank[2]]
         else:
             raise NotImplementedError("currently only support two and three dimensional tensor")
@@ -280,27 +264,6 @@ class Tucker(SparseTensorFuns):
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
 
     
-    def decrease(self, M):
-        assert(self.Fourier is True)
-
-        M = np.array(M, dtype=np.int)
-        N = np.array(self.N)
-        assert(np.all(np.less(M, N)))
-
-        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-
-        basis=[]
-        for ii in range(N.size):
-            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
-
-        newOne = self.copy()
-        newOne.basis = basis
-        newOne.N = np.zeros((newOne.order,),dtype=int)
-        for i in range(newOne.order):
-            newOne.N[i] = newOne.basis[i].shape[1]        
-        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        #return Tucker(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
     
     def norm(self, ord='core'): 
             
@@ -354,71 +317,133 @@ class Tucker(SparseTensorFuns):
                 val_piece*=np.sum(R.basis[k][ind[k,i]]).real
             
             val+=val_piece  
-        return val
+        return val 
 
-    def conj(self):
-        """Element-wise complex conjugate"""
-        basis = []
-        for ii in range(self.order):
-            basis.append(self.basis[ii].conj())
-        res = self.copy()
-        res.basis = basis
-        return res    
-  
-    def __repr__(self, full=False, detailed=False):
-        keys = ['name', 'Fourier', 'orthogonal', 'N', 'r']
-        ss = "Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
-        skip = 4*' '
-        nstr = np.array([key.__len__() for key in keys]).max()
-
-        for key in keys:
-            attr = getattr(self, key)
-            if callable(attr):
-                ss += '{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
-            else:
-                ss += '{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
-
-        return ss
-    def repeat(self, M):
-        """
-        Enhance the tensor size from to N to M, by repeating all elements by M/N times.
-        
-        :param M: the new size .
-        :type A: integer or list of integers  
-        
-        :returns: Tucker -- a new tucker object with size M
-        """ 
-        if isinstance(M, int):
-            M=M*np.ones((self.order,),dtype=int)
-            
-        if ((M/self.N)%1).any() != 0 :
-            raise NotImplementedError("M is not a multiple of the old size N")
-            
-        res = self.copy()
-        for i in range(self.order):
-            res.basis[i] = np.repeat(res.basis[i], M[i]/self.N[i], axis=1)
-            res.basis[i] /= np.sqrt(M[i]/self.N[i])  # restore original norm
-        
-        res.core *= np.prod( np.sqrt(M/self.N))   
-        res.N = M
-        res.orthogonal  = self.orthogonal
-        
-        return res  
     
-    def project(self, M):
-        if self.Fourier:
-            if all(M>=self.N):
-                return self.enlarge(M)
-            elif all(M<=self.N):
-                return self.decrease(M)            
-        else:
-            F=self.fourier()
-            if all(M>=self.N):
-                F= F.enlarge(M)
-            elif all(M<=self.N):
-                F= F.decrease(M)   
-                
-            return F.fourier()  # inverse Fourier
+
+    
+
+        
+##############################################################
+#### these methods shared with parent class CanoTensor   #####
+##############################################################
+            
+#    def __neg__(self):
+#        
+#        newOne= self.copy()
+#        newOne.core = -newOne.core
+#        return newOne
+#        #return CanoTensor(core=-self.core, basis=self.basis, Fourier=self.Fourier)
+        
+#    def __sub__(self, Y):
+#        return self.__add__(-Y)
+        
+#    def __rmul__(self, X):
+#        Y=self
+#        if isinstance(X, np.float):
+#            R=Y.copy()
+#            R.core=X*Y.core
+#        else:
+#            raise NotImplementedError()
+#        return R
+        
+#    def conj(self):
+#        """Element-wise complex conjugate"""
+#        basis = []
+#        for ii in range(self.order):
+#            basis.append(self.basis[ii].conj())
+#        res = self.copy()
+#        res.basis = basis
+#        return res 
+
+
+#    def decrease(self, M):
+#        assert(self.Fourier is True)
+#
+#        M = np.array(M, dtype=np.int)
+#        N = np.array(self.N)
+#        assert(np.all(np.less(M, N)))
+#
+#        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+#        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+#
+#        basis=[]
+#        for ii in range(N.size):
+#            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
+#
+#        return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
+
+#    def add(self, Y, tol=None, rank=None):
+#        return (self+Y).truncate(tol=tol, rank=rank)
+
+#    def multiply(self, Y, tol=None, rank=None):
+#        # element-wise multiplication
+#        return (self*Y).truncate(tol=tol, rank=rank)
+
+#    def scal(self, Y):
+#        X = self
+#        assert(X.Fourier==Y.Fourier)
+#        XY = X*Y
+#        if X.Fourier:
+#            return XY.mean()
+#        else:
+#            return XY.mean()/np.prod(X.N)
+            
+#    def repeat(self, M):
+#        """
+#        Enhance the tensor size from to N to M, by repeating all elements by M/N times.
+#        
+#        :param M: the new size .
+#        :type A: integer or list of integers  
+#        
+#        :returns: Tucker -- a new tucker object with size M
+#        """ 
+#        if isinstance(M, int):
+#            M=M*np.ones((self.order,),dtype=int)
+#            
+#        if ((M/self.N)%1).any() != 0 :
+#            raise NotImplementedError("M is not a multiple of the old size N")
+#            
+#        res = self.copy()
+#        for i in range(self.order):
+#            res.basis[i] = np.repeat(res.basis[i], M[i]/self.N[i], axis=1)
+#            res.basis[i] /= np.sqrt(M[i]/self.N[i])  # restore original norm
+#        
+#        res.core *= np.prod( np.sqrt(M/self.N))   
+#        res.N = M
+#        res.orthogonal  = self.orthogonal
+#        
+#        return res  
+
+#    def project(self, M):
+#        if self.Fourier:
+#            if all(M>=self.N):
+#                return self.enlarge(M)
+#            elif all(M<=self.N):
+#                return self.decrease(M)            
+#        else:
+#            F=self.fourier()
+#            if all(M>=self.N):
+#                F= F.enlarge(M)
+#            elif all(M<=self.N):
+#                F= F.decrease(M)   
+#                
+#            return F.fourier()  # inverse Fourier
+        
+#    def __repr__(self):
+#        keys=['name', 'N', 'Fourier', 'r']
+#        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
+#        skip=4*' '
+#        nstr=np.array([key.__len__() for key in keys]).max()
+#
+#        for key in keys:
+#            attr=getattr(self, key)
+#            if callable(attr):
+#                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
+#            else:
+#                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
+#
+#        return ss
 
 if __name__=='__main__':
     
@@ -431,13 +456,13 @@ if __name__=='__main__':
 #    T1[n/3:2*n/3, n/3:2*n/3]=1
     
     ##this is a rank-2 tensor
-    N1=3
+    N1=4
     N2=5
     T1 = np.arange(N1*N2 )
     T1 = np.reshape(T1,(N1,N2 ))
     
     #T1 = np.random.random((5,7 ))
-    S,U = HOSVD(T1)  # in 2-D case, can also use svd 
+    S,U = HOSVD(T1)  #  
     #creat tucker format tensor
     for i in range(0,len(U)):
         U[i] =U[i].T
@@ -446,9 +471,29 @@ if __name__=='__main__':
     
     print(a)
     
-    b=a.repeat(np.array([9,15]))
+    T2 = np.random.random((N1,N2 ))
+    S,U = HOSVD(T2)  #  
+    #creat tucker format tensor
+    for i in range(0,len(U)):
+        U[i] =U[i].T
+        
+    b = Tucker(name='b', core=S, basis=U, orthogonal=True )
+    
+    print(b)    
+    
+    c=a*b
+    
+    c2 = T1*T2
+ 
+    print('testing multiplication...')
+    print(np.linalg.norm(c.full()-c2)   )
+    print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
+
+    
+    b=a.repeat(np.array([8,10]))
     print (b)
     
+  
     af=a.fourier()
     af2=af.enlarge([5,7])
     a2=af2.fourier()
@@ -468,7 +513,8 @@ if __name__=='__main__':
     # addition
     c = a+b
     print(c)
-
+    
+  
     c2 = a.full()+b.full()
     print('testing addition...')
     print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2))
@@ -480,11 +526,13 @@ if __name__=='__main__':
 
     # multiplication
     c = a*b
+    
+
     c2 = a.full()*b.full()
     print c
     print('testing multiplication...')
     print(np.linalg.norm(c.full()-c2) / np.linalg.norm( c2) )
-
+    
     #DFT
     print('testing DFT...')
 
@@ -586,7 +634,7 @@ if __name__=='__main__':
     b = Tucker(name='b', core=S2, basis=basis, orthogonal=True)
     print(b)
 
-    b_trunc= b.truncate(rank=[6, 8, 5])
+    b_trunc= b.truncate(rank=[8, 18, 15])
     print(b_trunc)
 
     print('testing 3d tucker core sorting and  rank-based truncation ...')
@@ -610,7 +658,8 @@ if __name__=='__main__':
     print "(a+b).full - (a.full+b.full) = ",  norm(c.full()-a.full()-b.full())
     print
 
-
+ 
+    
     # multiplication
     c = a*b
     print(c)
@@ -636,15 +685,15 @@ if __name__=='__main__':
 #
 #    print "error: %f"% norm(c1.full()-c2.full())
 
-#    print('testing DFT...')
-#
-#    from ffthompy.tensors.operators import DFT
-#
-#
-#    Fa=a.fourier()
-#    Fa2=DFT.fftnc(a.full(), a.N)
-#
-#    print(np.linalg.norm(Fa.full()-Fa2))
+    print('testing DFT...')
+
+    from ffthompy.tensors.operators import DFT
+
+
+    Fa=a.fourier()
+    Fa2=DFT.fftnc(a.full(), a.N)
+
+    print(np.linalg.norm(Fa.full()-Fa2))
 #
 #    print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
 #    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)

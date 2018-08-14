@@ -346,17 +346,21 @@ def HOSVD(A, k=None, tol=None):
               numpy.list    -- a list of array containing basis  
     """ 
     
-    d = len(A.shape)
-    U =[None]*d   
+    d = len(A.shape)     
     
-    
-    for j in range(0,d):
-        U[j],s,vt= svd( unfold(A, j),full_matrices=False)
-    
-    S= A.copy()
-    for i in range(0, d):
-        S= nModeProduct(S,U[i].T, i)     
-    
+    if d==2:
+        u,s,vt= svd( A,full_matrices=False)
+        U=[u, vt.T]    
+        S = np.diag(s) 
+    else:
+        U =[None]*d 
+        for j in range(0,d):
+            U[j],s,vt= svd( unfold(A, j),full_matrices=False)
+        
+        S= A.copy()
+        for i in range(0, d):
+            S= nModeProduct(S,U[i].T, i)     
+        
     if k is not None: 
         if isinstance(k, int):  # if only one integer is assigned to k
             k=k*np.ones((len(A.shape),),dtype=int) 
@@ -369,5 +373,23 @@ def HOSVD(A, k=None, tol=None):
 
 
 if __name__=='__main__':
-
+    
+    #A = np.random.rand(7,7)
+    A = np.arange(49).reshape((7,7))
+    print A
+    
+    S,U=HOSVD(A)
+    print S
+    print U
+    print norm(A-np.dot(U[0], np.dot(S, U[1].T)))
+    
+    S2,U2=HOSVD(A,5)
+    print S2
+    print U2
+    print norm(A-np.dot(U2[0], np.dot(S2, U2[1].T)))    
+#    S,U=HOSVD2(A)
+#    print S
+#    print U    
+#    print norm(A-np.dot(U[0], np.dot(S, U[1].T)))
+    
     print('END')
