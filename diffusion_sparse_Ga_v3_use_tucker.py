@@ -8,7 +8,8 @@ from ffthompy import Timer, Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
 from ffthompy.sparse.materials_tucker import SparseMaterial
-from ffthompy.sparse.homogenisation_tucker import homog_Ga_full, homog_Ga_full_potential, homog_sparse
+from ffthompy.sparse.homogenisation import homog_Ga_full_potential
+from ffthompy.sparse.homogenisation_tucker import homog_sparse
 
 # PARAMETERS ##############################################################
 dim  = 3            # number of dimensions (works for 2D and 3D)
