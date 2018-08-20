@@ -110,31 +110,31 @@ def homog_sparse(Agas, pars):
 #                  basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
     Es=Tucker(name='E', core=np.array([1.]), Fourier=False,
                   basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
-    
+
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
     # print(np.linalg.norm(B.val-Bs.full()))
 
     # preconditioner
-     
+
     N_ori=N
     reduce_factor=3.0 # this can be adjusted
-    
-    if np.prod(N_ori)>1e8:  # this threshold can be adjusted
-        N = np.ceil(N/reduce_factor).astype(int)  #         
-        N[N%2==0] +=1  # make them odd numbers
-        need_project = True
+
+    if np.prod(N_ori)>1e8: # this threshold can be adjusted
+        N=np.ceil(N/reduce_factor).astype(int) #
+        N[N%2==0]+=1 # make them odd numbers
+        need_project=True
     else:
-        need_project = False
-        
+        need_project=False
+
     hGrad=grad_tensor(N, Y)
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     Prank=np.min([8, N[0]-1])
-    S, U = HOSVD (1./k2, k=Prank)
+    S, U=HOSVD (1./k2, k=Prank)
     for i in range(len(U)):
         U[i]=U[i].T
-  
-    Ps=Tucker(name='P', core=S, basis=U, Fourier=True) 
+
+    Ps=Tucker(name='P', core=S, basis=U, Fourier=True)
     if need_project:
         Ps=Ps.project(N_ori) # approximation
         N=N_ori
