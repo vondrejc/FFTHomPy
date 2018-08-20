@@ -16,8 +16,7 @@ def homog_sparse(Agas, pars):
     Nbar = Agas.N
     N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
     dim = Nbar.__len__()
-    Y = np.ones(dim)
-    hGrad_s = sgrad_tensor(N, Y)
+    hGrad_s = sgrad_tensor(N, pars.Y)
     # linear operator
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol):
         assert(X.Fourier)
@@ -38,7 +37,7 @@ def homog_sparse(Agas, pars):
 #    Es=CanoTensor(name='E', core=np.array([1.]), Fourier=False,
 #                  basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
     Es=Tucker(name='E', core=np.array([1.]), Fourier=False,
-                  basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
+              basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
 
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
     # print(np.linalg.norm(B.val-Bs.full()))
@@ -55,7 +54,7 @@ def homog_sparse(Agas, pars):
     else:
         need_project=False
 
-    hGrad=grad_tensor(N, Y)
+    hGrad=grad_tensor(N, pars.Y)
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     Prank=np.min([8, N[0]-1])

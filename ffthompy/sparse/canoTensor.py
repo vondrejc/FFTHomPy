@@ -9,11 +9,11 @@ class CanoTensor(SparseTensorFuns):
 
     def __init__(self, name='', core=None, basis=None, orthogonal=False, Fourier=False,
                  r=3, N=[5, 5], randomise=False):
-        
+
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
-        self.orthogonal = orthogonal
-        
+        self.orthogonal=orthogonal
+
         if core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
@@ -33,7 +33,7 @@ class CanoTensor(SparseTensorFuns):
             else:
                 self.core=np.zeros(r)
                 self.basis=[np.zeros([self.r[ii], self.N[ii]]) for ii in range(self.order)]
-        
+
     def randomise(self):
         self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
@@ -55,15 +55,14 @@ class CanoTensor(SparseTensorFuns):
         newBasis=[newA.T, newB]
 
         return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
- 
+
     def __add__(self, Y):
         X=self
         assert(X.Fourier==Y.Fourier)
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
- 
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalize()
 
+        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalize()
 
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
@@ -85,7 +84,7 @@ class CanoTensor(SparseTensorFuns):
                 dtype=np.float
 
             new_r=X.r*Y.r
-            
+
             A=X.basis[0]
             B=X.basis[1]
             A2=Y.basis[0]
@@ -100,7 +99,6 @@ class CanoTensor(SparseTensorFuns):
                     newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
                     newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
                     coeff[i*Y.r+j]=X.core[i]*Y.core[j]
-
 
             return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=[newA, newB],
                               Fourier=self.Fourier).orthogonalize()
@@ -150,7 +148,6 @@ class CanoTensor(SparseTensorFuns):
 
         return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, Fourier=self.Fourier)
 
-
     def norm(self, ord='fro'):
         if ord=='fro':
             R=self*self.conj()
@@ -186,86 +183,86 @@ class CanoTensor(SparseTensorFuns):
         dtype=self.basis[0].dtype
         assert(self.Fourier==True)
 
-        M = np.array(M, dtype=np.int)
-        N = np.array(self.N)
-        
+        M=np.array(M, dtype=np.int)
+        N=np.array(self.N)
+
         if np.allclose(M, N):
             return self
 
-        #dim = N.size
-        ibeg = np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-        iend = np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+        # dim = N.size
+        ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+        iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
 
         basis=[]
         for ii, m in enumerate(M):
-            basis.append(np.zeros([self.r,m], dtype=dtype))
-            basis[ii][:,ibeg[ii]:iend[ii]] = self.basis[ii]
-        
-        newOne = self.copy()
-        newOne.basis = basis
-        newOne.N = [None]*newOne.order
+            basis.append(np.zeros([self.r, m], dtype=dtype))
+            basis[ii][:, ibeg[ii]:iend[ii]]=self.basis[ii]
+
+        newOne=self.copy()
+        newOne.basis=basis
+        newOne.N=[None]*newOne.order
         for i in range(newOne.order):
-            newOne.N[i] = newOne.basis[i].shape[1]        
-        #return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)         
+            newOne.N[i]=newOne.basis[i].shape[1]
+        # return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
 
-    def __neg__(self):        
-        newOne= self.copy()
-        newOne.core = -newOne.core
+    def __neg__(self):
+        newOne=self.copy()
+        newOne.core=-newOne.core
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        #return Tucker(core=-self.core, basis=self.basis, Fourier=self.Fourier) 
+        # return Tucker(core=-self.core, basis=self.basis, Fourier=self.Fourier)
 
     def __sub__(self, Y):
         return self.__add__(-Y)
-    
+
     def __rmul__(self, X):
-        
+
         if isinstance(X, np.float) or isinstance(X, np.int) :
             R=self.copy()
             R.core=X*self.core
         else:
             raise NotImplementedError()
         return R
-    
+
     def conj(self):
         """Element-wise complex conjugate"""
-        basis = []
+        basis=[]
         for ii in range(self.order):
             basis.append(self.basis[ii].conj())
-        res = self.copy()
-        res.basis = basis
-        return res   
+        res=self.copy()
+        res.basis=basis
+        return res
 
     def decrease(self, M):
         assert(self.Fourier is True)
 
-        M = np.array(M, dtype=np.int)
-        N = np.array(self.N)
+        M=np.array(M, dtype=np.int)
+        N=np.array(self.N)
         assert(np.all(np.less(M, N)))
 
-        ibeg = np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-        iend = np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+        ibeg=np.fix(np.array(N-M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
+        iend=np.fix(np.array(N+M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
 
         basis=[]
         for ii in range(N.size):
-            basis.append(self.basis[ii][:,ibeg[ii]:iend[ii]])
+            basis.append(self.basis[ii][:, ibeg[ii]:iend[ii]])
 
-        newOne = self.copy()
-        newOne.basis = basis
-        newOne.N = np.zeros((newOne.order,),dtype=int)
+        newOne=self.copy()
+        newOne.basis=basis
+        newOne.N=np.zeros((newOne.order,), dtype=int)
         for i in range(newOne.order):
-            newOne.N[i] = newOne.basis[i].shape[1]        
+            newOne.N[i]=newOne.basis[i].shape[1]
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        #return Tucker(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
+        # return Tucker(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
 
     def add(self, Y, tol=None, rank=None):
-        return (self+Y).truncate(tol=tol, rank=rank) 
+        return (self+Y).truncate(tol=tol, rank=rank)
 
     def multiply(self, Y, tol=None, rank=None):
         # element-wise multiplication
-        return (self*Y).truncate(tol=tol, rank=rank) 
+        return (self*Y).truncate(tol=tol, rank=rank)
 
-    
+
     def scal(self, Y):
         X = self
         assert(X.Fourier==Y.Fourier)
@@ -273,65 +270,65 @@ class CanoTensor(SparseTensorFuns):
         if X.Fourier:
             return XY.mean()
         else:
-            return XY.mean()/np.prod(X.N)   
-        
+            return XY.mean()/np.prod(X.N)
+
     def repeat(self, M):
         """
         Enhance the tensor size from to N to M, by repeating all elements by M/N times.
-        
+
         :param M: the new size .
-        :type A: integer or list of integers  
-        
+        :type A: integer or list of integers
+
         :returns: Tucker -- a new tucker object with size M
-        """ 
+        """
         if isinstance(M, int):
-            M=M*np.ones((self.order,),dtype=int)
-            
-        if ((M.astype(float)/self.N)%1).any() != 0 :
+            M=M*np.ones((self.order,), dtype=int)
+
+        if ((M.astype(float)/self.N)%1).any()!=0 :
             raise NotImplementedError("M is not a multiple of the old size N")
-            
-        res = self.copy()
+
+        res=self.copy()
         for i in range(self.order):
-            res.basis[i] = np.repeat(res.basis[i], M[i]/self.N[i], axis=1)
-            res.basis[i] /= np.sqrt(M[i]/self.N[i])  # restore original norm
-        
-        res.core *= np.prod( np.sqrt(M/self.N))   
-        res.N = M
-        res.orthogonal  = self.orthogonal
-        
-        return res  
+            res.basis[i]=np.repeat(res.basis[i], M[i]/self.N[i], axis=1)
+            res.basis[i]/=np.sqrt(M[i]/self.N[i]) # restore original norm
+
+        res.core*=np.prod(np.sqrt(M/self.N))
+        res.N=M
+        res.orthogonal=self.orthogonal
+
+        return res
 
     def project(self, M):
         if self.Fourier:
             if all(M>=self.N):
                 return self.enlarge(M)
             elif all(M<=self.N):
-                return self.decrease(M)            
+                return self.decrease(M)
         else:
             F=self.fourier()
             if all(M>=self.N):
-                F= F.enlarge(M)
+                F=F.enlarge(M)
             elif all(M<=self.N):
-                F= F.decrease(M)   
-                
-            return F.fourier()  # inverse Fourier
-        
+                F=F.decrease(M)
+
+            return F.fourier() # inverse Fourier
+
     def __repr__(self, full=False, detailed=False):
-        keys = ['name', 'Fourier', 'orthogonal', 'N', 'r']
-        ss = "Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
-        skip = 4*' '
-        nstr = np.array([key.__len__() for key in keys]).max()
+        keys=['name', 'Fourier', 'orthogonal', 'N', 'r']
+        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
+        skip=4*' '
+        nstr=np.array([key.__len__() for key in keys]).max()
 
         for key in keys:
-            attr = getattr(self, key)
+            attr=getattr(self, key)
             if callable(attr):
-                ss += '{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
+                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
             else:
-                ss += '{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
+                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
 
-        return ss  
+        return ss
 
-        
+
 if __name__=='__main__':
 #    N=[10,20]
 #    a = CanoTensor(name='a', r=3, N=N, randomise=True)
@@ -361,7 +358,7 @@ if __name__=='__main__':
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
     S2=np.cos(2*x[np.newaxis, :]-y[:, np.newaxis])*(2*x[np.newaxis, :]-y[:, np.newaxis])
     #S1 = np.dot(np.reshape(x,(M,1)), np.reshape(y,(1,N))) + np.dot(np.sin(np.reshape(x,(M,1))), np.reshape(y,(1,N))**2)
-    
+
     # factorize the matrix
     u1, s1, vt1=np.linalg.svd(S1, full_matrices=0)
     u2, s2, vt2=np.linalg.svd(S2, full_matrices=0)
@@ -410,8 +407,7 @@ if __name__=='__main__':
     print('testing DFT...')
 
     from ffthompy.tensors.operators import DFT
-   
-    
+
     Fa=a.fourier()
     Fa2=DFT.fftnc(a.full(), a.N)
 
