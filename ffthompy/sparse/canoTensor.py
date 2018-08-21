@@ -38,9 +38,9 @@ class CanoTensor(SparseTensorFuns):
         self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
 
-    def orthogonalize(self):
-        """re-orthogonalize the basis"""
-        # re-orthogonalize the basis by QR and SVD
+    def orthogonalise(self):
+        """re-orthogonalise the basis"""
+        # re-orthogonalise the basis by QR and SVD
         qa, ra=np.linalg.qr(self.basis[0].T)
         qb, rb=np.linalg.qr(self.basis[1].T)
 
@@ -62,7 +62,7 @@ class CanoTensor(SparseTensorFuns):
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalize()
+        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalise()
 
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
@@ -101,7 +101,7 @@ class CanoTensor(SparseTensorFuns):
                     coeff[i*Y.r+j]=X.core[i]*Y.core[j]
 
             return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=[newA, newB],
-                              Fourier=self.Fourier).orthogonalize()
+                              Fourier=self.Fourier).orthogonalise()
 
     def full(self):
         "return a full tensor"

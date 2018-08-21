@@ -89,7 +89,7 @@ class Tucker(CanoTensor):
 
         result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis, orthogonal=False, Fourier=self.Fourier)
 
-        return result.orthogonalize()
+        return result.orthogonalise()
 
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
@@ -122,22 +122,17 @@ class Tucker(CanoTensor):
             return  result.truncate(rank=new_rank)
             # return  result.truncate(rank= self.N)
 
-    def orthogonalize(self):
-        """re-orthogonalize the basis"""
+    def orthogonalise(self):
+        """re-orthogonalise the basis"""
         newBasis=[]
-        R=[]
-
-        # orthogonalize the basis
-        for i in range(0, self.order):
-            q, r1=np.linalg.qr(self.basis[i].T, 'complete')
-            newBasis.append(q.T)
-            R.append(np.real(r1))
 
         # transform the core in term of the new bases
         core=self.core
-
+        # orthogonalise the basis
         for i in range(0, self.order):
-            core=nModeProduct(core, R[i], i)
+            Q, R=np.linalg.qr(self.basis[i].T, 'reduced')
+            newBasis.append(Q.T)
+            core=nModeProduct(core, R.real, i)
 
         return Tucker(name=self.name, core=core, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
@@ -199,7 +194,7 @@ class Tucker(CanoTensor):
         # truncation
 
         if not self.orthogonal:
-            self=self.orthogonalize()
+            self=self.orthogonalise()
 
         self=self.sort()
 
@@ -285,7 +280,7 @@ class Tucker(CanoTensor):
             pass
         elif ord=='core':
             if not self.orthogonal:
-                self=self.orthogonalize()
+                self=self.orthogonalise()
             return np.linalg.norm(self.core)
         else:
             raise NotImplementedError()
@@ -382,8 +377,8 @@ if __name__=='__main__':
     print('testing addition...')
     print(np.linalg.norm(c.full()-c2)/np.linalg.norm(c2))
 
-    c_ortho=c.orthogonalize()
-    print('testing addition and then orthogonalize ...')
+    c_ortho=c.orthogonalise()
+    print('testing addition and then orthogonalise ...')
     print(np.linalg.norm(c.full()-c_ortho.full())/np.linalg.norm(c_ortho.full()))
     print
 
