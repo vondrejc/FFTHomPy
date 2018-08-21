@@ -148,5 +148,7 @@ def homog_sparse(Agas, pars):
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     FGX[0] += Es # adding mean
 
-    AH=(Agas*FGX[0]).scal(Es) # homogenised coefficients A_11
+    AH=0. # homogenised coefficients A_11
+    for ii in range(dim):
+        AH+=(Agas*FGX[ii]).scal(FGX[ii])
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
