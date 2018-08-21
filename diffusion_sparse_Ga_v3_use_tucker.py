@@ -12,20 +12,23 @@ from ffthompy.sparse.homogenisation import homog_Ga_full_potential
 from ffthompy.sparse.homogenisation_tucker import homog_sparse
 
 # PARAMETERS ##############################################################
-dim=2
-N=25
+dim=3
+N=15
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim),
             Amax=10., # material contrast
-            maxiter=10,
+            maxiter=15,
             tol=None,
-            rank=10,
+            rank=5,
             solver={'tol':1e-4}
             )
 
 pars_sparse=pars.copy()
-pars_sparse.update(Struct(N=dim*(3*N,),))
+if dim == 2:
+    pars_sparse.update(Struct(N=dim*(15*N,),))
+elif dim == 3:
+    pars_sparse.update(Struct(N=dim*(3*N,),))
 
 # auxiliary operator
 Nbar = lambda N: 2*np.array(N)-1
