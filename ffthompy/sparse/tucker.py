@@ -328,7 +328,7 @@ class Tucker(CanoTensor):
             raise NotImplementedError()
 
         return val
-
+ 
     def mean(self):
         R=self
         val=0.
