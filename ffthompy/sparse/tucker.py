@@ -167,7 +167,11 @@ class Tucker(CanoTensor):
         """convert a tucker representation to a full tensor
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
         from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
-        """
+        """       
+        # if core is a single scalor value, make it in a n-D array shape
+        if np.prod(self.core.shape)==1: 
+            self.core=np.reshape(self.core,tuple(self.r))
+            
         d=self.N.shape[0]
         CBd=nModeProduct(self.core, self.basis[0].T, 0)
         if d>1:
@@ -446,9 +450,9 @@ if __name__=='__main__':
     print('----testing 3d tucker ----')
     print
 
-    N1=40 # warning: in 3d multiplication too large N number could kill the machine.
-    N2=50
-    N3=123
+    N1=10 # warning: in 3d multiplication too large N number could kill the machine.
+    N2=20
+    N3=30
 
     # creat 3d tensor for test
 

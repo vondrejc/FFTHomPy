@@ -7,10 +7,8 @@ from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index, Grid
 from ffthompy.sparse.solver import richardson as richardson_s
 from ffthompy.sparse.projection_TT import grad_tensor as sgrad_tensor
-#from ffthompy.sparse.canoTensor import CanoTensor
-from ffthompy.sparse.tucker import Tucker
 from ffthompy.sparse.tensorTrain import TensorTrain
-from ffthompy.sparse.decompositions import HOSVD
+
 
 
 def homog_sparse(Agas, pars):
@@ -42,8 +40,7 @@ def homog_sparse(Agas, pars):
     
     Es = TensorTrain(np.ones(Nbar))
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
-    # print(np.linalg.norm(B.val-Bs.full()))
-
+ 
     # preconditioner
 
     N_ori=N
