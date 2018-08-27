@@ -11,14 +11,16 @@ from ffthompy.sparse.materials_tucker import SparseMaterial
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential
 from ffthompy.sparse.homogenisation_tucker import homog_sparse
 
+debug=0
+full=0
 # PARAMETERS ##############################################################
-dim=3
+dim=2
 N=15
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim),
             Amax=10., # material contrast
-            maxiter=15,
+            maxiter=5,
             tol=None,
             rank=5,
             solver={'tol':1e-4}
@@ -27,7 +29,9 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
 pars_sparse=pars.copy()
 if dim == 2:
     pars_sparse.update(Struct(N=dim*(15*N,),))
-elif dim == 3:
+elif dim == 3 and N==45:
+    pars_sparse.update(Struct(N=dim*(N,),))
+elif dim == 3 and N==15:
     pars_sparse.update(Struct(N=dim*(3*N,),))
 
 # auxiliary operator
@@ -52,13 +56,30 @@ mats=SparseMaterial(mat_conf)
 Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
 Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', order=0, k=2)
 
-if np.array_equal(pars.N, pars_sparse.N):
+if debug:
+    mat_conf.update(dict(P=pars_sparse.N))
+    mat3=Material(mat_conf)
+    mats3=SparseMaterial(mat_conf)
+
+    Aga3=matrix2tensor(mat3.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal'))
+    Agas3=mats3.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', order=0, k=2)
+
+    print(Aga)
+    print(Agas)
+    print(Aga3)
+    print(np.linalg.norm(Agas.full()-Aga3[0,0]))
+    print(np.linalg.norm(Agas.full()-Agas3.full()))
+
+    print('end')
+    sys.exit()
+
+if np.array_equal(pars.N, pars_sparse.N): # assert
     print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
 
-# OPERATORS ###############################################################
-print('\n== Full solution with potential by CG ===========')
-resP=homog_Ga_full_potential(Aga, pars)
-print('homogenised properties (component 11) = {}'.format(resP.AH))
+if full:
+    print('\n== Full solution with potential by CG ===========')
+    resP=homog_Ga_full_potential(Aga, pars)
+    print('homogenised properties (component 11) = {}'.format(resP.AH))
 
 print('\n== SPARSE Richardson solver with preconditioner =======================')
 resS=homog_sparse(Agas, pars_sparse)

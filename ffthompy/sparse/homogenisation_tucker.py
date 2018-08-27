@@ -34,8 +34,6 @@ def homog_sparse(Agas, pars):
         return-GFAFGFx
 
     # R.H.S.
-#    Es=CanoTensor(name='E', core=np.array([1.]), Fourier=False,
-#                  basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
     Es=Tucker(name='E', core=np.array([1.]), Fourier=False,
               basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
 
@@ -43,7 +41,6 @@ def homog_sparse(Agas, pars):
     # print(np.linalg.norm(B.val-Bs.full()))
 
     # preconditioner
-
     N_ori=N
     reduce_factor=3.0 # this can be adjusted
 
@@ -58,7 +55,7 @@ def homog_sparse(Agas, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     Prank=np.min([8, N[0]-1])
-    S, U=HOSVD (1./k2, k=Prank)
+    S, U=HOSVD(1./k2, k=Prank)
     for i in range(len(U)):
         U[i]=U[i].T
 
@@ -84,7 +81,7 @@ def homog_sparse(Agas, pars):
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                           norm=normfun, rank=pars.rank, tol=pars.tol)
+                          norm=normfun, rank=pars.rank, tol=pars.tol)
     tic.measure()
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
