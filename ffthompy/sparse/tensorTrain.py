@@ -11,39 +11,39 @@ np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=999999)
 
 class TensorTrain(vector):
-    def __init__(self, a=None, eps=1e-14, rmax=100000, Fourier=False,name='unnamed', vectorObj=None):
-        
+    def __init__(self, a=None, eps=1e-14, rmax=100000, Fourier=False, name='unnamed', vectorObj=None):
+
         if a is not None:
-            vector.__init__(self, a, eps, rmax)     
-            self.N=self.n    # ttpy use n, we use N.
-            
+            vector.__init__(self, a, eps, rmax)
+            self.N=self.n # ttpy use n, we use N.
+
         elif vectorObj is not None: # cast a TTPY object to tensorTrain object
             for attr_name in vectorObj.__dict__:
                 setattr(self, attr_name, getattr(vectorObj, attr_name))
-            self.N=self.n    # ttpy use n, we use N.
-            
-        self.name = name
-        self.Fourier = Fourier
-        
-#    def fft(self, shift=False):    
+            self.N=self.n # ttpy use n, we use N.
+
+        self.name=name
+        self.Fourier=Fourier
+
+#    def fft(self, shift=False):
 #        """ Compute discrete fast Fourier Transform of the tensor.
 #        :param shift: Shift the zero-frequency component to the center of the spectrum.
-#        :type shift: Boolean 
-#        :returns:  TT-vector of Fourier coefficients. 
-#        """   
-#        cl = self.to_list(self)   
-#        clf=[None]*self.d 
+#        :type shift: Boolean
+#        :returns:  TT-vector of Fourier coefficients.
+#        """
+#        cl = self.to_list(self)
+#        clf=[None]*self.d
 #
 #        for i in range(self.d ):
 #            if shift:
 #                pass
-#            else:                    
+#            else:
 #                clf[i]=np.fft.fft(cl[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
-#        
+#
 #        res=vector.from_list(clf)
 #        res.Fourier = True
 #        return res
-    
+
     @staticmethod
     def from_list(a, name='', Fourier=False, order='F'):
         """Generate TT-vectorr object from given TT cores.
@@ -52,13 +52,13 @@ class TensorTrain(vector):
         :type a: list
         :returns: vector -- TT-vector constructed from the given cores.
 
-        """ 
-        res_vec = vector.from_list(a)
-        
-        res = TensorTrain(vectorObj=res_vec, name=name, Fourier=Fourier)
- 
-        return res    
-    
+        """
+        res_vec=vector.from_list(a)
+
+        res=TensorTrain(vectorObj=res_vec, name=name, Fourier=Fourier)
+
+        return res
+
     def fourier(self):
         "(inverse) discrete Fourier transform"
         if self.Fourier:
@@ -68,51 +68,50 @@ class TensorTrain(vector):
             fftfun=lambda x, N: np.fft.fftshift(np.fft.fft(np.fft.ifftshift(x, axes=1), axis=1), axes=1)/N
             name='F({})'.format(self.name)
 
-        cl = self.to_list(self)   
-        clf=[None]*self.d 
-        for i in range(self.d ):
-            clf[i]=fftfun(cl[i], self.n[i] )         
-        
-        res=self.from_list(clf,name=name,Fourier=not self.Fourier) 
-        
-        return res    
-    
+        cl=self.to_list(self)
+        clf=[None]*self.d
+        for i in range(self.d):
+            clf[i]=fftfun(cl[i], self.n[i])
+
+        res=self.from_list(clf, name=name, Fourier=not self.Fourier)
+
+        return res
+
     def truncate(self, tol=None, rank=None):
-        if  np.any(tol)  is None and np.any(rank) is None:
+        if np.any(tol) is None and np.any(rank) is None:
             return self
-        elif  np.any(tol) is None and np.all(rank>=max(self.r))==True :
+        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
             return self
         else:
             if tol is None:  tol=1e-14
-            
-            res_vec = self.round(eps=tol,rmax=rank) # round produces a TTPY vetcor object
-            res = TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)            
+
+            res_vec=self.round(eps=tol, rmax=rank) # round produces a TTPY vetcor object
+            res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
             return res
-    
+
     def enlarge(self, M):
-       
-        assert(self.Fourier==True)
+        assert(self.Fourier is True)
 
         M=np.array(M, dtype=np.int)
         N=np.array(self.n)
 
         if np.allclose(M, N):
             return self
-   
+
         ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
         iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
-        
-        cl = self.to_list(self)   
-        dtype=cl[0].dtype
-        
-        cl_new=[None]*self.d 
-        for i in range(self.d ):
-           cl_new[i]=  np.zeros([self.r[i], M[i],self.r[i+1]], dtype=dtype)     
-           cl_new[i][:, ibeg[i]:iend[i], :]=cl[i]
 
-        res=self.from_list(cl_new) 
-        res.name = self.name + "_enlarged"
-        res.Fourier = self.Fourier
+        cl=self.to_list(self)
+        dtype=cl[0].dtype
+
+        cl_new=[None]*self.d
+        for i in range(self.d):
+            cl_new[i]=np.zeros([self.r[i], M[i], self.r[i+1]], dtype=dtype)
+            cl_new[i][:, ibeg[i]:iend[i], :]=cl[i]
+
+        res=self.from_list(cl_new)
+        res.name=self.name+"_enlarged"
+        res.Fourier=self.Fourier
         return res
 
     def decrease(self, M):
@@ -122,78 +121,78 @@ class TensorTrain(vector):
         N=np.array(self.n)
         assert(np.any(np.less(M, N)))
 
-        ibeg=np.fix(np.array(N-M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.fix(np.array(N+M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
+        ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+        iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
 
-        cl = self.to_list(self)   
-        
-        cl_new=[None]*self.d 
-        for i in range(self.d ):
-           cl_new[i]=cl[i][:, ibeg[i]:iend[i], :]
+        cl=self.to_list(self)
 
-        res=self.from_list(cl_new) 
-        res.name = self.name + "_decreased"
-        res.Fourier = self.Fourier
+        cl_new=[None]*self.d
+        for i in range(self.d):
+            cl_new[i]=cl[i][:, ibeg[i]:iend[i], :]
+
+        res=self.from_list(cl_new)
+        res.name=self.name+"_decreased"
+        res.Fourier=self.Fourier
         return res
-    
+
     def mean(self):
         """
         compute the sum of all elements of the tensor
         """
-        cl = self.to_list(self)   
-        cl_sum=[None]*self.d 
-        
+        cl=self.to_list(self)
+        cl_sum=[None]*self.d
+
         for i in range(self.d):
-            shape=np.ones((self.d+1),dtype=np.int32)
-            shape[i:i+2]=self.r[i:i+2]           
+            shape=np.ones((self.d+1), dtype=np.int32)
+            shape[i:i+2]=self.r[i:i+2]
             cl_sum[i]=np.sum(cl[i], axis=1).reshape(tuple(shape))
-       
-        cl_sum_prod= reduce(mul, cl_sum, 1) # product of all arrays inside cl_sum
-        
+
+        cl_sum_prod=reduce(mul, cl_sum, 1) # product of all arrays inside cl_sum
+
         return np.sum(cl_sum_prod)
 
     def scal(self, Y):
-        X = self
+        X=self
         assert(X.Fourier==Y.Fourier)
-        XY = X*Y
+        XY=X*Y
         if X.Fourier:
             return XY.mean()
         else:
             return XY.mean()/np.prod(X.n)
-        
+
     def __mul__(self, other):
-        res_vec =vector.__mul__(self,other)
-        res = TensorTrain(vectorObj=res_vec, 
-                          name=self.name+'*'+ (str(other) if isinstance(other, (int, long, float, complex)) else other.name), 
+        res_vec=vector.__mul__(self, other)
+        res=TensorTrain(vectorObj=res_vec,
+                          name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
                           Fourier=self.Fourier)
-        return res   
-    
+        return res
+
     def __add__(self, other):
-        res_vec =vector.__add__(self,other)
-        res = TensorTrain(vectorObj=res_vec, 
-                          name=self.name+'+'+ (str(other) if isinstance(other, (int, long, float, complex)) else other.name), 
-                          Fourier=self.Fourier)        
-        return res    
-    
+        res_vec=vector.__add__(self, other)
+        res=TensorTrain(vectorObj=res_vec,
+                          name=self.name+'+'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                          Fourier=self.Fourier)
+        return res
+
     def __sub__(self, other):
-        
-        res = self +(-other)
-        res.name = self.name+'-'+( str(other) if isinstance(other, (int, long, float, complex)) else other.name)
-       
-        return res   
-    
+
+        res=self+(-other)
+        res.name=self.name+'-'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name)
+
+        return res
+
     def multiply(self, Y, tol=None, rank=None):
         # element-wise multiplication
         return (self*Y).truncate(tol=tol, rank=rank)
-    
+
     @property
     def size(self):
         "return the number of element to store the tensor"
-        return self.core.shape[0] + self.ps.shape[0]
-    
+        return self.core.shape[0]+self.ps.shape[0]
+
     # Print statement
-    def __repr__(self): 
-        
+    def __repr__(self):
+
         keys=['name', 'Fourier', 'n', 'r']
         ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.d)
         skip=4*' '
@@ -205,99 +204,98 @@ class TensorTrain(vector):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
             else:
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
-         
-        
-        return ss + vector.__repr__(self)        
-    
+
+        return ss+vector.__repr__(self)
+
 if __name__=='__main__':
-    
+
     print
     print('----testing "Fourier" function ----')
     print
-    
+
     v1=np.random.rand(120,)
-    #v1=np.arange(24)
+    # v1=np.arange(24)
     n=v1.shape[0]
-    
-    v = np.reshape(v1,(2,3,4 ,5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(v) 
-    
+
+    v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
+    t=TensorTrain(v)
+
 #    vfft=np.fft.fftn(v)
-#    
-##    TT=t.to_list(t)
-##    TTfft=[None]*t.d
-##    
-##    for i in range(t.d):
-##        TTfft[i]=np.fft.fft(TT[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
-##    
-##    vTTfft=TensorTrain.from_list(TTfft)
-##    #print (vTTfft.full())
-##    print(np.linalg.norm(vfft-vTTfft.full()))  
-#    
+#
+# #    TT=t.to_list(t)
+# #    TTfft=[None]*t.d
+# #
+# #    for i in range(t.d):
+# #        TTfft[i]=np.fft.fft(TT[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
+# #
+# #    vTTfft=TensorTrain.from_list(TTfft)
+# #    #print (vTTfft.full())
+# #    print(np.linalg.norm(vfft-vTTfft.full()))
+#
 #    tf=t.fft(shift=False)
-#    print(np.linalg.norm(vfft-tf.full()))  
-    
-    tf2 = t.fourier()
-    vfft_shift = DFT.fftnc(v, v.shape)
-    
-    print(np.linalg.norm(vfft_shift -tf2.full())) 
-    
-    tf2i = tf2.fourier()
-    print(np.linalg.norm(v -tf2i.full())) 
-    
+#    print(np.linalg.norm(vfft-tf.full()))
+
+    tf2=t.fourier()
+    vfft_shift=DFT.fftnc(v, v.shape)
+
+    print(np.linalg.norm(vfft_shift-tf2.full()))
+
+    tf2i=tf2.fourier()
+    print(np.linalg.norm(v-tf2i.full()))
+
     ### test mean()#####
-    print 
-    print np.linalg.norm(t.mean()- np.sum(t.full()))
-    
+    print
+    print np.linalg.norm(t.mean()-np.sum(t.full()))
+
     print t
-#  
-    ### test casting a vector obj to tensortrain obj
-    ty= vector(v)
-    ty2=TensorTrain(vectorObj=ty) 
-    
+#
+    # ## test casting a vector obj to tensortrain obj
+    ty=vector(v)
+    ty2=TensorTrain(vectorObj=ty)
+
 #    ##   test  enlarge  ###
 #    n=3
-##    T1= np.zeros((n,n, n))
-##    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
-#    
+# #    T1= np.zeros((n,n, n))
+# #    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+#
 #    T1= np.zeros((n,n ))
 #    T1[n/3:2*n/3, n/3:2*n/3 ]=1
-#    
+#
 #    print(T1)
 #    print
-#    
-#    t=TensorTrain(T1) 
+#
+#    t=TensorTrain(T1)
 #    tf=t.fourier()
 #    tfl=tf.enlarge([7,7])
 #    tfli= tfl.fourier()
-#    
+#
 #    print(tfli.full().real)
 #    print
-#    
+#
 #    cl_tf=tf.to_list(tf)
 #    cl_tfl=tfl.to_list(tfl)
 #    cl_tfli=tfli.to_list(tfli)
-#    
+#
 #    tfld=tfl.decrease([5,5])
 #    print(tfld.fourier().full())
 
-## test hardamard product 
-    
-    v1 = np.random.rand(2,3,4) 
-    t1=TensorTrain(v1)     
-    v2 = np.random.rand(2,3,4) 
-    t2=TensorTrain(v2) 
-    
+# # test hardamard product
+
+    v1=np.random.rand(2, 3, 4)
+    t1=TensorTrain(v1)
+    v2=np.random.rand(2, 3, 4)
+    t2=TensorTrain(v2)
+
     t3=t1*t2
     print t3
-    print(np.linalg.norm( t3.full()-v1*v2))
-    
+    print(np.linalg.norm(t3.full()-v1*v2))
+
     t4=t1+t2
     print t4
-    
+
     t5=t1-t2
     print t5
-    
+
     print t5.size
-    
+
     print('END')

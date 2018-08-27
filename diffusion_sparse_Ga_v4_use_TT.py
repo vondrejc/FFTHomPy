@@ -31,7 +31,7 @@ pars_sparse=pars.copy()
 if dim == 2:
     pars_sparse.update(Struct(N=dim*(1*N,),))
 elif dim == 3:
-   pars_sparse.update(Struct(N=dim*(1*N,),))
+    pars_sparse.update(Struct(N=dim*(1*N,),))
 
 # auxiliary operator
 Nbar = lambda N: 2*np.array(N)-1
