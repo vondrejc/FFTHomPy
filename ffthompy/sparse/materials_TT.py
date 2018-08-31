@@ -14,9 +14,9 @@ class SparseMaterial(Material):
 
     def get_A_GaNi(self, N, primaldual='primal', k=None, tol=None):
         A_GaNi=self.mat.get_A_GaNi(N, primaldual='primal')
-        
-        return TensorTrain(A_GaNi.val[0, 0],rmax=k, name='A_GaNi')
-         
+
+        return TensorTrain(A_GaNi.val[0, 0], rmax=k, name='A_GaNi')
+
 
     def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None, tol=None, k=None):
         if P is None and 'P' in self.conf:
@@ -48,13 +48,13 @@ class SparseMaterial(Material):
 
 def tile(FAs, N):
     assert(FAs.Fourier is True)
-     
-    cl = FAs.to_list(FAs)   
-    cl_new=[None]*FAs.d 
-    for i in range(FAs.d ):
-        cl_new[i]= np.tile(cl[i], (1, N[i],1))    
-    
-    return FAs.from_list(cl_new,name=FAs.name+'_tiled', Fourier=FAs.Fourier) 
+
+    cl=FAs.to_list(FAs)
+    cl_new=[None]*FAs.d
+    for i in range(FAs.d):
+        cl_new[i]=np.tile(cl[i], (1, N[i], 1))
+
+    return FAs.from_list(cl_new, name=FAs.name+'_tiled', Fourier=FAs.Fourier)
 
 def get_weights_con(h, Nbar, Y):
     """
@@ -80,8 +80,8 @@ def get_weights_con(h, Nbar, Y):
         Nshape[ii]=Nbar[ii]
         Nrep=np.copy(Nbar)
         Nrep[ii]=1
-        Wphi.append(np.reshape(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii]), (1,-1,1))) # since it is rank 1
-      
+        Wphi.append(np.reshape(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii]), (1,-1, 1))) # since it is rank 1
+
     return TensorTrain.from_list(Wphi, Fourier=True)
 
 
@@ -110,7 +110,7 @@ def get_weights_lin(h, Nbar, Y):
         Nshape[ii]=Nbar[ii]
         Nrep=np.copy(Nbar)
         Nrep[ii]=1
-        Wphi.append(np.reshape(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii])**2,  (1,-1,1)))
+        Wphi.append(np.reshape(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii])**2, (1,-1, 1)))
     # W = CanoTensor(name='Wraw', core=np.array([1.]), basis=Wphi, Fourier=True)
-    #W=Tucker(name='Wraw', core=np.array([1.]), basis=Wphi, Fourier=True)
+    # W=Tucker(name='Wraw', core=np.array([1.]), basis=Wphi, Fourier=True)
     return TensorTrain.from_list(Wphi, Fourier=True)
