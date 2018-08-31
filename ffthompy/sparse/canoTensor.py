@@ -111,11 +111,6 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    @property
-    def size(self):
-        "return the number of element to store the tensor"
-        return (self.r+1)*np.sum(self.N)
-
     def sort(self):
         "The function sort the modes in accordance with the magnitude of core"
         inds = np.flip(np.argsort(np.abs(self.core), kind='mergesort'), 0)
@@ -327,7 +322,16 @@ class CanoTensor(SparseTensorFuns):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
 
         return ss
-
+    
+    @property
+    def size(self):
+        "return the number of elements of the original full tensor"
+        return np.prod(self.N)
+ 
+    @property
+    def memory(self):
+        "return the number of floating point numbers that consist of the canonical tensor"
+        return self.r +self.r*sum(self.N)
 
 if __name__=='__main__':
 #    N=[10,20]
@@ -421,5 +425,22 @@ if __name__=='__main__':
     print
     print "Tensor of 1D FFT costs: %f"%t1
     print "n-D FFT costs         : %f"%t2
+    
+    ### test enlarge#####
+    n=3
+#    T1= np.zeros((n,n, n))
+#    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+    
+    T1= np.zeros((n,n ))
+    T1[n/3:2*n/3, n/3:2*n/3 ]=1
+    
+    u1, s1, vt1=np.linalg.svd(T1, full_matrices=0)
+    
+    t=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
+    tf=t.fourier()
+    tfl=tf.enlarge([3,5])
+    tfli= tfl.fourier()
+    
+    print(tfli.full().real)
 
     print('END')

@@ -158,11 +158,6 @@ class Tucker(CanoTensor):
 
         return Tucker(name=self.name, core=core, basis=basis, orthogonal=self.orthogonal, Fourier=self.Fourier)
 
-    @property
-    def size(self):
-        "return the number of element to store the tensor"
-        return np.prod(self.r)+np.sum(self.N*self.r)
-
     def full(self):
         """convert a tucker representation to a full tensor
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
@@ -352,7 +347,12 @@ class Tucker(CanoTensor):
 
             val+=val_piece
         return val
-
+    
+    @property
+    def memory(self):
+        "return the number of floating point numbers that consist of the tucker tensor"
+        return np.prod(self.r) + sum(self.r*self.N)
+    
 if __name__=='__main__':
 
     print

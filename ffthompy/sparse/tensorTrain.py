@@ -45,7 +45,7 @@ class TensorTrain(vector):
 #        return res
 
     @staticmethod
-    def from_list(a, name='', Fourier=False, order='F'):
+    def from_list(a, name='unnamed', Fourier=False, order='F'):
         """Generate TT-vectorr object from given TT cores.
 
         :param a: List of TT cores.
@@ -187,9 +187,12 @@ class TensorTrain(vector):
 
     @property
     def size(self):
-        "return the number of element to store the tensor"
+        "return the number of elements of the original full tensor"
+        return np.prod(self.n)
+    @property
+    def memory(self):
+        "return the number of floating point numbers that consist of the TT tensor"
         return self.core.shape[0]+self.ps.shape[0]
-
     # Print statement
     def __repr__(self):
 
@@ -218,7 +221,8 @@ if __name__=='__main__':
     n=v1.shape[0]
 
     v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(v)
+    t=TensorTrain(v,rmax=3)
+    
 
 #    vfft=np.fft.fftn(v)
 #
