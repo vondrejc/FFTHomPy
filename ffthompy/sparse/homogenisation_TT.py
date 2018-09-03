@@ -38,7 +38,7 @@ def homog_sparse(Agas, pars):
 #    Es=Tucker(name='E', core=np.array([1.]), Fourier=False,
 #              basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
     
-    Es = TensorTrain(np.ones(Nbar))
+    Es = TensorTrain(np.ones(Nbar), rmax=1)
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
  
     # preconditioner
