@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 print("""
 Numerical homogenisation based on exact integration, which is described in
 J. Vondrejc, Improved guaranteed computable bounds on homogenized properties

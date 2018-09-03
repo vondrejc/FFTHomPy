@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 print("""
 This example shows how to interactively solve a problem of
 FFT-based homogenization with exact integration, which is described in

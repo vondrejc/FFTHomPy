@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 print("""
 This tutorial explains the usage of trigonometric polynomials and relating
 operators for the use in FFT-based homogenization.
