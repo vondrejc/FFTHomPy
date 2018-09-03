@@ -87,6 +87,7 @@ def homog_sparse(Agas, pars):
     dim = Nbar.__len__()
     Y = np.ones(dim)
     hGrad_s = sgrad_tensor(N, Y)
+    hGrad_s=sgrad_tensor(N, Y, tensor=CanoTensor)
     # linear operator
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol):
         assert(X.Fourier)

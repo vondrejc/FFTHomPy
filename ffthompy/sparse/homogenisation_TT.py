@@ -6,7 +6,7 @@ from ffthompy.general.solver import linear_solver, richardson, CG
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index, Grid
 from ffthompy.sparse.solver import richardson as richardson_s
-from ffthompy.sparse.projection_TT import grad_tensor as sgrad_tensor
+from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.tensorTrain import TensorTrain
 
 
@@ -15,7 +15,7 @@ def homog_sparse(Agas, pars):
     Nbar = Agas.N
     N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
     dim = Nbar.__len__()
-    hGrad_s = sgrad_tensor(N, pars.Y)
+    hGrad_s = sgrad_tensor(N, pars.Y, tensor=TensorTrain)
     # linear operator
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol):
         assert(X.Fourier)
