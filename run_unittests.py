@@ -79,6 +79,7 @@ if __name__ == "__main__":
     from ffthompy.tensors.unittest_operators import Test_operators
     from ffthompy.mechanics.unittest_matcoef import Test_matcoef
     from ffthompy.general.unittest_solver import Test_solvers
+    from ffthompy.unittest_materials import Test_materials
 
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_main))
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(Test_operators))
     suite.addTest(unittest.makeSuite(Test_matcoef))
     suite.addTest(unittest.makeSuite(Test_solvers))
+    suite.addTest(unittest.makeSuite(Test_materials))
 
     runner=unittest.TextTestRunner()
     runner.run(suite)
