@@ -1,11 +1,8 @@
-#import sys
 import numpy as np
 from operator import mul
 
 from ffthompy.tensors.operators import DFT
 from tt.core.vector import vector
-
-#import timeit
 
 np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=999999)
@@ -24,25 +21,6 @@ class TensorTrain(vector):
 
         self.name=name
         self.Fourier=Fourier
-
-#    def fft(self, shift=False):
-#        """ Compute discrete fast Fourier Transform of the tensor.
-#        :param shift: Shift the zero-frequency component to the center of the spectrum.
-#        :type shift: Boolean
-#        :returns:  TT-vector of Fourier coefficients.
-#        """
-#        cl = self.to_list(self)
-#        clf=[None]*self.d
-#
-#        for i in range(self.d ):
-#            if shift:
-#                pass
-#            else:
-#                clf[i]=np.fft.fft(cl[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
-#
-#        res=vector.from_list(clf)
-#        res.Fourier = True
-#        return res
 
     @staticmethod
     def from_list(a, name='unnamed', Fourier=False, order='F'):

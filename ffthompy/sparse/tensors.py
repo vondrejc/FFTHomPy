@@ -49,11 +49,6 @@ class SparseTensorFuns(TensorFuns):
         return Cls(name=name, core=np.copy(self.core), basis=copy(self.basis),
                    Fourier=self.Fourier)
 
-class CanonicalTensor():
-    pass
-
-class TuckerTensor():
-    pass
 
 if __name__=='__main__':
     # check multiplication
