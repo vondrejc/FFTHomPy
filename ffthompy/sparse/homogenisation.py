@@ -9,47 +9,48 @@ from ffthompy.sparse.solver import richardson as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.canoTensor import CanoTensor
 
+
 def homog_Ga_full(Aga, pars):
-    Nbar = Aga.N
-    N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
-    dim = Nbar.__len__()
-    Y = np.ones(dim)
+    Nbar=Aga.N
+    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    dim=Nbar.__len__()
+    Y=np.ones(dim)
 
-    _, Ghat, _ = proj.scalar(N, Y)
-    Ghat2 = Ghat.enlarge(Nbar)
+    _, Ghat, _=proj.scalar(N, Y)
+    Ghat2=Ghat.enlarge(Nbar)
 
-    F2 = DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
-    iF2 = DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
+    F2=DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
+    iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
-    G1N = Operator(name='G1', mat=[[iF2, Ghat2, F2]]) # projection in original space
-    PAfun = Operator(name='FiGFA', mat=[[G1N, Aga]]) # lin. operator for a linear system
-    E = np.zeros(dim); E[0] = 1 # macroscopic load
-    EN = Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
+    G1N=Operator(name='G1', mat=[[iF2, Ghat2, F2]]) # projection in original space
+    PAfun=Operator(name='FiGFA', mat=[[G1N, Aga]]) # lin. operator for a linear system
+    E=np.zeros(dim); E[0]=1 # macroscopic load
+    EN=Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
     EN.set_mean(E)
 
-    x0 = Tensor(N=Nbar, shape=(dim,), Fourier=False) # initial approximation to solvers
-    B = PAfun(-EN) # right-hand side of linear system
+    x0=Tensor(N=Nbar, shape=(dim,), Fourier=False) # initial approximation to solvers
+    B=PAfun(-EN) # right-hand side of linear system
     tic=Timer(name='CG (gradient field)')
-    X, info = linear_solver(solver='CG', Afun=PAfun, B=B,
+    X, info=linear_solver(solver='CG', Afun=PAfun, B=B,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
 
-    AH=Aga(X + EN)*(X + EN)
+    AH=Aga(X+EN)*(X+EN)
     return Struct(AH=AH, X=X)
 
 def homog_Ga_full_potential(Aga, pars):
-    Nbar = Aga.N # double grid number
-    N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
-    dim = Nbar.__len__()
-    Y = np.ones(dim) # cell size
+    Nbar=Aga.N # double grid number
+    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    dim=Nbar.__len__()
+    Y=np.ones(dim) # cell size
 
-    _, Ghat, _ = proj.scalar(N, Y)
-    Ghat2 = Ghat.enlarge(Nbar)
+    _, Ghat, _=proj.scalar(N, Y)
+    Ghat2=Ghat.enlarge(Nbar)
 
-    F2 = DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
-    iF2 = DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
+    F2=DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
+    iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
-    hGrad = grad_tensor(N, Y)
+    hGrad=grad_tensor(N, Y)
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
@@ -78,15 +79,57 @@ def homog_Ga_full_potential(Aga, pars):
 
     X=iF2(grad(Fu).enlarge(Nbar))
     AH=Aga(X+EN)*(X+EN)
-    iF=DFT(name='FiN', inverse=True, N=N)
     return Struct(AH=AH, e=X, Fu=Fu)
 
+def homog_GaNi_full_potential(Agani, Aga, pars):
+    N=Agani.N # double grid number
+    dim=N.__len__()
+    Y=np.ones(dim) # cell size
+
+    _, Ghat, _=proj.scalar(N, Y)
+
+    F=DFT(name='FN', inverse=False, N=N) # discrete Fourier transform (DFT)
+    iF=DFT(name='FiN', inverse=True, N=N) # inverse DFT
+
+    hGrad=grad_tensor(N, Y)
+    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
+    k2[mean_index(N)]=1.
+    P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
+    iP=Tensor(name='P', val=k2**0.5, order=0, Fourier=True, multype=00)
+
+    E=np.zeros(dim); E[0]=1 # macroscopic load
+    EN=Tensor(name='EN', N=N, shape=(dim,), Fourier=False) # constant trig. pol.
+    EN.set_mean(E)
+
+    def DFAFGfun(X):
+        assert(X.Fourier)
+        FAX=F(Agani*iF(grad(X)))
+        FAX=FAX
+        return-div(FAX)
+
+    B=-div(F(Agani(-EN)))
+    x0=Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
+
+    PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
+    PB=P*B
+    tic=Timer(name='CG (potential)')
+    iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
+                            x0=x0, par=pars.solver, callback=None)
+    tic.measure()
+    print('iterations of CG=',info['kit'])
+    Fu=P*iPU
+
+    Nbar=2*np.array(N)-1
+    iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
+    XEN=iF2(grad(Fu).enlarge(Nbar))+EN.enlarge(Nbar)
+    AH=Aga(XEN)*XEN
+    return Struct(AH=AH, Fu=Fu)
+
 def homog_sparse(Agas, pars):
-    Nbar = Agas.N
-    N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
-    dim = Nbar.__len__()
-    Y = np.ones(dim)
-    hGrad_s = sgrad_tensor(N, Y)
+    Nbar=Agas.N
+    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    dim=Nbar.__len__()
+    Y=np.ones(dim)
     hGrad_s=sgrad_tensor(N, Y, tensor=CanoTensor)
     # linear operator
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol):
@@ -147,7 +190,7 @@ def homog_sparse(Agas, pars):
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
-    FGX[0] += Es # adding mean
+    FGX[0]+=Es # adding mean
 
     AH=0. # homogenised coefficients A_11
     for ii in range(dim):
