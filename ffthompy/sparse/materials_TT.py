@@ -5,7 +5,7 @@ from ffthompy.sparse import decompositions
 from ffthompy.sparse.tucker import Tucker
 from ffthompy.sparse.tensorTrain import TensorTrain
 from ffthompy.trigpol import Grid
-
+from ffthompy.tensors.operators import matrix2tensor
 
 class SparseMaterial(Material):
     def __init__(self, material_conf):
@@ -17,17 +17,16 @@ class SparseMaterial(Material):
 
         return TensorTrain(A_GaNi.val[0, 0], rmax=k, name='A_GaNi')
 
-
-    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None, tol=None, k=None):
+    def get_A_Ga(self, Nbar, primaldual='primal', P=None, tol=None, k=None):
         if P is None and 'P' in self.conf:
             P=self.conf['P']
         As=self.get_A_GaNi(N=P, primaldual=primaldual, k=k, tol=tol)
         FAs=As.fourier()
 
         h=self.Y/P
-        if order in [0, 'constant']:
+        if self.conf['order'] in [0, 'constant']:
             Wraw=get_weights_con(h, Nbar, self.Y)
-        elif order in [1, 'bilinear']:
+        elif self.conf['order'] in [1, 'bilinear']:
             Wraw=get_weights_lin(h, Nbar, self.Y)
         else:
             raise ValueError()
