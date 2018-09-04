@@ -1,29 +1,43 @@
+#import sys
 import numpy as np
 from operator import mul
 
+from numpy import reshape, dot
+from numpy.linalg import qr
+from scipy.linalg import rq
+
 from ffthompy.tensors.operators import DFT
 from tt.core.vector import vector
+
+#import timeit
 
 np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=999999)
 
 class TensorTrain(vector):
-    def __init__(self, a=None, eps=1e-14, rmax=100000, Fourier=False, name='unnamed', vectorObj=None):
+    def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed', vectorObj=None):
 
-        if a is not None:
-            vector.__init__(self, a, eps, rmax)
+        if eps is None:  eps = 1e-14
+        if rmax is None: rmax=999999
+            
+        if val is not None:
+            vector.__init__(self, val, eps, rmax)
             self.N=self.n # ttpy use n, we use N.
-
+        elif core is not None:
+            self = self.from_list(core,name=name, Fourier=Fourier)
         elif vectorObj is not None: # cast a TTPY object to tensorTrain object
             for attr_name in vectorObj.__dict__:
                 setattr(self, attr_name, getattr(vectorObj, attr_name))
             self.N=self.n # ttpy use n, we use N.
-
+        else: # a  3D zero tensor
+            vector.__init__(self, np.zeros((3,4,5)), eps, rmax)
+            self.N=self.n # ttpy use n, we use N.       
+            
         self.name=name
         self.Fourier=Fourier
-
+        
     @staticmethod
-    def from_list(a, name='unnamed', Fourier=False, order='F'):
+    def from_list(a, name='unnamed', Fourier=False):
         """Generate TT-vectorr object from given TT cores.
 
         :param a: List of TT cores.
@@ -188,6 +202,44 @@ class TensorTrain(vector):
 
         return ss+vector.__repr__(self)
 
+    def orthogonalize(self, option='lr'):
+        
+        d=self.d
+        r=self.r
+        n=self.n
+        cr=self.to_list(self)
+        cr_new = [None]*d
+        
+        if option=='lr' or option=='LR':
+            # qr sweep from left to right
+            for i in range(d-1):            
+                cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
+                cr_new[i], ru = qr(cr[i], 'reduced')
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i],r[i+1]) )
+                cr[i+1]= dot(ru, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))
+    
+            cr[d-1]=reshape(cr[d-1],(r[d-1]*n[d-1],r[d]) )
+            cr_new[d-1], ru = qr(cr[d-1], 'reduced')   
+            cr_new[d-1]=reshape(cr_new[d-1]*ru,(r[d-1],n[d-1],r[d]) )
+            
+            return (self.from_list(cr_new))
+        
+        elif option=='rl' or option=='RL':
+            # rq sweep from right to left
+            cr[d-1]=reshape(cr[d-1],(r[d-1], n[d-1]*r[d]) )
+            ru, cr_new[d-1] = rq(cr[d-1], mode='economic')   
+            cr_new[d-1]=reshape(cr_new[d-1],(r[d-1],n[d-1],r[d]) )
+            
+            for i in range(d-2,-1,-1):   
+                cr[i]= dot(reshape(cr[i],(r[i]*n[i],r[i+1]) ), ru)            
+                ru, cr_new[i] = rq(reshape(cr[i],(r[i],n[i]*r[i+1] )), mode='economic')   
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i],r[i+1]) )        
+            
+            cr_new[i]*=ru
+            return (self.from_list(cr_new))
+        else:
+            raise ValueError("Unexpected parameter '" + option +"' at tt.vector.tt_qr")
+            
 if __name__=='__main__':
 
     print
@@ -273,11 +325,12 @@ if __name__=='__main__':
     print(np.linalg.norm(t3.full()-v1*v2))
 
     t4=t1+t2
-    print t4
+    print(np.linalg.norm(t4.full()-v1-v2))
+    #print t4
 
-    t5=t1-t2
-    print t5
+    t4o=t4.orthogonalize()
+    print(np.linalg.norm(t4o.full()-t4.full()))
 
-    print t5.size
+    #print t5.size
 
     print('END')

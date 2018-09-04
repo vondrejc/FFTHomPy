@@ -16,28 +16,43 @@ np.set_printoptions(linewidth=999999)
 
 class Tucker(CanoTensor):
 
-    def __init__(self, name='', core=None, basis=None, Fourier=False, orthogonal=False,
-                 r=[3, 3], N=[5, 5], randomise=False):
+    def __init__(self, name='unnamed', val=None, core=None, basis=None, Fourier=False, orthogonal=False,
+                 r=None, N=None, randomise=False):
 
         self.name=name
         self.Fourier=Fourier
         self.orthogonal=orthogonal
-
-        if core is not None and basis is not None:
+        
+        if val is not None:            
+            if len(val.shape)==2:  # if 2D, use CanoTensor instead
+                self.__class__=CanoTensor
+                CanoTensor.__init__(self, name=name, val=val, Fourier=Fourier, orthogonal= orthogonal )                
+            else:
+                self.core, self.basis = HOSVD (val, k=r)
+                for  each in self.basis:
+                    each =each.T
+                    
+                self.order=self.basis.__len__()
+                
+                self.N=np.empty(self.order).astype(int)
+                for ii in range(self.order):
+                    self.N[ii]=self.basis[ii].shape[1]    
+                    
+                self.r=np.empty(self.order).astype(int)
+                for ii in range(self.order):
+                    self.r[ii]=self.basis[ii].shape[0]       
+                    
+        elif core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
 
             self.N=np.empty(self.order).astype(int)
             for ii in range(self.order):
-                self.N[ii]=basis[ii].shape[1]
+                self.N[ii]=self.basis[ii].shape[1]
 
             if self.order==2: # if 2D, use CanoTensor instead
                 self.__class__=CanoTensor
-                self.r=min(basis[0].shape[0], basis[1].shape[0])
-                if len(core.shape)==2:
-                    self.core=np.diag(core)
-                else:
-                    self.core=core
+                CanoTensor.__init__(self, name=name, core=core, basis =basis, Fourier=Fourier, orthogonal= orthogonal )                
             else:
                 self.r=np.empty(self.order).astype(int)
                 for ii in range(self.order):
@@ -48,13 +63,11 @@ class Tucker(CanoTensor):
                 else:
                     self.core=core
         else:
-            self.order=r.__len__()
-            self.N=np.array(N)
+            self.order=[3,3].__len__()
+            self.N=np.array([5,5])
             if self.order==2: # if 2D, use CanoTensor instead
                 self.__class__=CanoTensor
-                self.r=min(r)
-                self.core=np.zeros((self.r,))
-                self.basis=[np.zeros([self.r, self.N[ii]]) for ii in range(self.order)]
+                CanoTensor.__init__(self, name=name, Fourier=Fourier, orthogonal= orthogonal, r=min(r) ) 
             else:
                 self.r=np.array(r)
                 self.core=np.zeros(r)

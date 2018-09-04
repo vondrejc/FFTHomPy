@@ -7,26 +7,46 @@ import timeit
 
 class CanoTensor(SparseTensorFuns):
 
-    def __init__(self, name='', core=None, basis=None, orthogonal=False, Fourier=False,
-                 r=3, N=[5, 5], randomise=False):
+    def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False, Fourier=False,
+                 r=None, N=None, randomise=False):
 
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
         self.orthogonal=orthogonal
-
-        if core is not None and basis is not None:
+        
+        if val is not None:
+            if len(val.shape)==2:
+                u, s, vt=np.linalg.svd(val, full_matrices=0)
+                
+                self.order= 2
+                self.basis=[u.T, vt]
+                self.core=s
+                self.r=self.core.shape[0]  
+    
+                self.N=np.empty(self.order, dtype=np.int)
+                for ii in range(self.order):
+                    self.N[ii]=self.basis[ii].shape[1]         
+            else:
+                raise ValueError("Canonical format not applicable to tensors higher than 2 dimensional.")
+        
+        elif core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
-            self.core=core
+            
+            if len(core.shape)==2:
+                self.core=np.diag(core)
+            else:
+                self.core=core
+                
             self.r=basis[0].shape[0] # since all basis share the same r
 
             self.N=np.empty(self.order, dtype=np.int)
             for ii in range(self.order):
                 self.N[ii]=basis[ii].shape[1]
         else:
-            self.order=N.__len__()
-            self.r=r
-            self.N=N
+            self.r=3
+            self.N=[5,5]
+            self.order=self.N.__len__()
             if randomise:
                 self.randomise()
                 self.sort()
@@ -126,7 +146,7 @@ class CanoTensor(SparseTensorFuns):
         core=self.core
 
         if rank>self.r:
-            print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
+            #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
             return self
 
         # to determine the rank of truncation
