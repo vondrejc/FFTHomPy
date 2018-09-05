@@ -1,9 +1,5 @@
 import numpy as np
 from ffthompy.materials import Material
-#from ffthompy.sparse import decompositions
-# from ffthompy.sparse.canoTensor import CanoTensor
-#from ffthompy.sparse.tucker import Tucker
-#from ffthompy.sparse.tensorTrain import TensorTrain
 from ffthompy.sparse.sparseTensorWrapper import SparseTensor
 from ffthompy.trigpol import Grid
 #from ffthompy.tensors.operators import matrix2tensor
