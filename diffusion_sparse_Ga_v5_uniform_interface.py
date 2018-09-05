@@ -5,9 +5,8 @@ import numpy as np
 from ffthompy import Timer, Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
-from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential
-from ffthompy.sparse.homogenisation_sparse import homog_sparse
-from ffthompy.sparse.materials_sparse import SparseMaterial
+from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_sparse
+from ffthompy.sparse.materials import SparseMaterial
  
 import os
 os.nice(19)
@@ -16,7 +15,7 @@ os.nice(19)
 dim=3
 N=15
 material=1
-pars=Struct(kind='tt', ## type of sparse tensor
+pars=Struct(kind='tucker', ## type of sparse tensor
             dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim),
