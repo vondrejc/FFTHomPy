@@ -1,12 +1,13 @@
 import numpy as np
 from ffthompy.trigpol import Grid
-from ffthompy.sparse.canoTensor import CanoTensor
-from ffthompy.sparse.tucker import Tucker
-from ffthompy.sparse.tensorTrain import TensorTrain
+#from ffthompy.sparse.canoTensor import CanoTensor
+#from ffthompy.sparse.tucker import Tucker
+#from ffthompy.sparse.tensorTrain import TensorTrain
+from ffthompy.sparse.sparseTensorWrapper import SparseTensor
 
+def grad_tensor(N, Y, kind='TensorTrain'):
+    assert( kind.lower() in ['cano','canotensor','tucker','tt','tensortrain'] )
 
-def grad_tensor(N, Y, tensor):
-    assert(tensor in [CanoTensor, Tucker, TensorTrain])
     dim=Y.size
     freq=Grid.get_xil(N, Y)
     hGrad_s=[]
@@ -19,12 +20,11 @@ def grad_tensor(N, Y, tensor):
             else:
                 basis.append(np.atleast_2d(np.ones(N[jj])))
 
-        if tensor in [CanoTensor, Tucker]:
-            hGrad_s.append(tensor(name='hGrad({})'.format(ii), core=np.array([1]), basis=basis,
+        if kind.lower() in ['cano', 'canotensor','tucker']:
+            hGrad_s.append(SparseTensor(kind=kind, name='hGrad({})'.format(ii), core=np.array([1]), basis=basis,
                                   Fourier=True))
-
-        elif tensor is TensorTrain:
-            cl = [bas.reshape((1,-1,1)) for bas in basis]
-            hGrad_s.append(TensorTrain.from_list(cl, name='hGrad({})'.format(ii), Fourier=True))
+        elif kind.lower() in ['tt','tensortrain']:
+            cl = [bas.reshape((1,-1,1)) for bas in basis]           
+            hGrad_s.append(SparseTensor(kind=kind, core=cl, name='hGrad({})'.format(ii), Fourier=True))
 
     return hGrad_s

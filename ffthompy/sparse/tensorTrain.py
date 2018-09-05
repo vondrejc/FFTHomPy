@@ -21,35 +21,35 @@ class TensorTrain(vector):
         if rmax is None: rmax=999999
             
         if val is not None:
-            vector.__init__(self, val, eps, rmax)
-            self.N=self.n # ttpy use n, we use N.
+            vectorObject=vector(val, eps, rmax)             
         elif core is not None:
-            self = self.from_list(core,name=name, Fourier=Fourier)
+            vectorObject=vector.from_list(core)           
         elif vectorObj is not None: # cast a TTPY object to tensorTrain object
-            for attr_name in vectorObj.__dict__:
-                setattr(self, attr_name, getattr(vectorObj, attr_name))
-            self.N=self.n # ttpy use n, we use N.
+            vectorObject =vectorObj
         else: # a  3D zero tensor
-            vector.__init__(self, np.zeros((3,4,5)), eps, rmax)
-            self.N=self.n # ttpy use n, we use N.       
-            
+            vectorObject=vector(np.zeros((3,4,5)), eps, rmax)
+
+        for attr_name in vectorObject.__dict__:
+            setattr(self, attr_name, getattr(vectorObject, attr_name))  
+               
+        self.N=self.n # ttpy use n, we use N.      
         self.name=name
         self.Fourier=Fourier
         
     @staticmethod
     def from_list(a, name='unnamed', Fourier=False):
-        """Generate TT-vectorr object from given TT cores.
+        """Generate TensorTrain object from given TT cores.
 
         :param a: List of TT cores.
         :type a: list
-        :returns: vector -- TT-vector constructed from the given cores.
+        :returns: TensorTrain object constructed from the given cores.
 
         """
-        res_vec=vector.from_list(a)
+        vectorObj=vector.from_list(a)
 
-        res=TensorTrain(vectorObj=res_vec, name=name, Fourier=Fourier)
+        ttObj=TensorTrain(vectorObj=vectorObj, name=name, Fourier=Fourier)
 
-        return res
+        return ttObj
 
     def fourier(self):
         "(inverse) discrete Fourier transform"
@@ -251,8 +251,15 @@ if __name__=='__main__':
     n=v1.shape[0]
 
     v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(v,rmax=3)
+    t=TensorTrain(val=v,rmax=3)
     
+    print t
+    
+    cl=t.to_list(t)
+    
+    t2= TensorTrain(core=cl)
+    
+    print t2
 
 #    vfft=np.fft.fftn(v)
 #
@@ -328,8 +335,8 @@ if __name__=='__main__':
     print(np.linalg.norm(t4.full()-v1-v2))
     #print t4
 
-    t4o=t4.orthogonalize()
-    print(np.linalg.norm(t4o.full()-t4.full()))
+#    t4o=t4.orthogonalize()
+#    print(np.linalg.norm(t4o.full()-t4.full()))
 
     #print t5.size
 

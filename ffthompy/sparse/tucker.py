@@ -29,8 +29,8 @@ class Tucker(CanoTensor):
                 CanoTensor.__init__(self, name=name, val=val, Fourier=Fourier, orthogonal= orthogonal )                
             else:
                 self.core, self.basis = HOSVD (val, k=r)
-                for  each in self.basis:
-                    each =each.T
+                for i in range(0, len(self.basis)):
+                    self.basis[i]=self.basis[i].T
                     
                 self.order=self.basis.__len__()
                 

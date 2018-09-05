@@ -40,12 +40,14 @@ def SparseTensor(kind ='tt', val=None, core=None, basis=None, eps=None, rank=Non
     else:
         rmax = r = rank
         
-    if kind is 'cano' or kind is 'Cano' or kind is 'CanoTensor' or kind is 'canoTensor' :
+    if kind.lower() in ['cano','canotensor'] :    
         return CanoTensor(name=name, val=val, core=core, basis=basis, Fourier=Fourier).truncate(rank=r, tol=eps)
-    elif kind is 'tucker' or kind is 'Tucker':
+    elif kind.lower() in ['tucker']:
         return Tucker(name=name, val=val, core=core, basis=basis, Fourier=Fourier).truncate(rank=rank, tol=eps)
-    elif kind is 'tt' or kind is 'TT' or kind is 'tensorTrain' or kind is 'TensorTrain':
+    elif kind.lower() in ['tt', 'tensortrain']:
         return TensorTrain(val=val, core=core, eps=eps, rmax=rmax, name=name, Fourier=Fourier, vectorObj=vectorObj) 
+    else:
+        raise ValueError("Unexpected argument value: '" + kind +"'")
 
 
 if __name__=='__main__':
@@ -83,13 +85,15 @@ if __name__=='__main__':
     print(tt2)
     
     tt_vec = vector(v1)
-    tt3=SparseTensor(kind ='tt', vectorObj=tt_vec)
+    tt3=SparseTensor(kind ='TT', vectorObj=tt_vec)
     print(tt3)
     
     tt4=SparseTensor()
     print (tt4)
     
-        
+    v1=np.random.rand(20,30)
+    cano=SparseTensor(kind ='CAno', val=v1)
+    print(cano)
      
      
     print('END')
