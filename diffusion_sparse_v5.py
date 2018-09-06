@@ -102,6 +102,7 @@ if np.array_equal(pars.N, pars_sparse.N):
     print(np.linalg.norm(Agani.val[0, 0]-Aganis.full()))
     print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
 
+pars_sparse.update(Struct(alpha=0.5*(Agani[0,0].min()+Agani[0,0].max())))
 
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')

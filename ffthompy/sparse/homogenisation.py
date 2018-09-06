@@ -203,7 +203,7 @@ def homog_sparse(Agas, pars):
 #     print('\nsolver results...')
     normfun=lambda X: X.norm()
 
-    parP={'alpha': (1.+pars.Amax)/2.,
+    parP={'alpha': pars.alpha,
           'maxiter': pars.maxiter,
           'tol': 1e-5,
           'norm': normfun}
