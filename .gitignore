@@ -19,3 +19,4 @@ _*
 !__*
 !unittest*
 *.py[cod]
+data/*

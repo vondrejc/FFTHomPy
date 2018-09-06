@@ -7,28 +7,34 @@ from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_sparse
 from ffthompy.sparse.materials import SparseMaterial
- 
+from ffthompy.trigpol import Grid
+from uq.decomposition import KL_Fourier
+
 import os
+import sys
 os.nice(19)
 
 # PARAMETERS ##############################################################
 dim=3
 N=15
-material=1
-pars=Struct(kind='tucker', ## type of sparse tensor
+material=0
+
+pars=Struct(kind='tt', # type of sparse tensor: 'cano', 'tucker', or 'tt'
             dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim),
             Amax=10., # material contrast
             maxiter=10,
-            tol=None,
-            rank=5,
+            recover_sparse=1,
             solver={'tol':1e-4}
             )
 
 pars_sparse=pars.copy()
+pars_sparse.update(Struct(tol=None))
+
 if dim==2:
-    pars_sparse.update(Struct(N=dim*(1*N,),))
+    pars_sparse.update(Struct(N=dim*(1*N,),
+                              ))
 elif dim==3:
     pars_sparse.update(Struct(N=dim*(1*N,),))
 
@@ -44,6 +50,7 @@ if material in [0]:
               'Y': np.ones(dim),
               'P': pars.N,
               'order': 0, }
+    pars_sparse.update(Struct(rank=2))
 
 elif material in [1]:
     mat_conf={'inclusions': ['pyramid', 'all'],
@@ -53,29 +60,54 @@ elif material in [1]:
               'Y': np.ones(dim),
               'P': pars.N,
               'order': 1, }
+    pars_sparse.update(Struct(rank=2))
+
+elif material in [2]: # stochastic material
+    pars_sparse.update(Struct(rank=15))
+
+    kl=KL_Fourier(covfun=2, cov_pars={'rho':0.15, 'sigma': 1.}, N=pars.N, puc_size=pars.Y,
+                  transform=lambda x: 1.+1e3*np.exp(x))
+    kl.calc_modes(relerr=0.1)
+    ip = np.random.random(kl.modes.n_kl)-0.5
+
+    def mat_fun(coor):
+        val = np.zeros_like(coor[0])
+        for ii in range(kl.modes.n_kl):
+            val += ip[ii]*kl.mode_fun(ii, coor)
+        return np.einsum('ij,...->ij...', np.eye(dim), kl.transform(val))
+
+    mat_conf={'fun':mat_fun,
+              'Y': np.ones(dim),
+              'P': pars.N,
+              'order': 1,}
+
 else:
-    raise
+    raise ValueError()
 
-
+# generating material coefficients
 mat=Material(mat_conf)
-mats=SparseMaterial(mat_conf, pars_sparse.kind )
- 
+mats=SparseMaterial(mat_conf, pars_sparse.kind)
 
 Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
-Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=2)
+Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.rank)
 
 Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
-Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=2)
- 
+Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.rank)
+
+if pars.recover_sparse:
+    Agani.val = np.einsum('ij,...->ij...', np.eye(dim), Aganis.full())
+    Aga.val = np.einsum('ij,...->ij...', np.eye(dim), Agas.full())
+
 if np.array_equal(pars.N, pars_sparse.N):
     print(np.linalg.norm(Agani.val[0, 0]-Aganis.full()))
     print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
+
 
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP=homog_GaNi_full_potential(Agani, Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
- 
+
 print('\n== Full solution with potential by CG (Ga) ===========')
 resP=homog_Ga_full_potential(Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
@@ -83,7 +115,7 @@ print('homogenised properties (component 11) = {}'.format(resP.AH))
 print('\n== SPARSE Richardson solver with preconditioner =======================')
 resS=homog_sparse(Agas, pars_sparse)
 print('homogenised properties (component 11) = {}'.format(resS.AH))
- 
+
 print(resS.Fu)
 print('iterations={}'.format(resS.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
