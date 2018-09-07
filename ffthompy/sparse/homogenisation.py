@@ -78,6 +78,7 @@ def homog_Ga_full_potential(Aga, pars):
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                               x0=x0, par=pars.solver, callback=None)
     tic.measure()
+    print('iterations of CG={}'.format(info['kit']))
 
     Fu=P*iPU
     X=iF2(grad(Fu).enlarge(Nbar))
@@ -122,7 +123,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
-    print('iterations of CG=', info['kit'])
+    print('iterations of CG={}'.format(info['kit']))
 
     Fu=P*iPU
     Nbar=2*np.array(N)-1
@@ -140,10 +141,10 @@ def homog_Ga_sparse(Agas, pars):
 
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
+        X=X.truncate(rank=rank, tol=tol)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-        AFGFx=[Agas.multiply(FGX[ii], rank=None, tol=None) for ii in range(dim)]
+        AFGFx=[Agas.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
         # or in following: Fourier, reduce, truncate
-        AFGFx=[AFGFx[ii].truncate(rank=rank, tol=tol) for ii in range(dim)]
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
@@ -197,6 +198,7 @@ def homog_Ga_sparse(Agas, pars):
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                            norm=normfun, rank=pars.rank, tol=pars.tol)
     tic.measure()
+    print('iterations of solver={}'.format(ress['kit']))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
@@ -218,9 +220,8 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
         FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
-        AFGFx=[Aganis.multiply(FGX[ii], rank=None, tol=None) for ii in range(dim)]
+        AFGFx=[Aganis.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
         # or in following: Fourier, reduce, truncate
-        AFGFx=[AFGFx[ii].truncate(rank=rank, tol=tol) for ii in range(dim)]
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
@@ -273,6 +274,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                           norm=normfun, rank=pars.rank, tol=pars.tol)
     tic.measure()
+    print('iterations of solver={}'.format(ress['kit']))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))

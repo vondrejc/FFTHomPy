@@ -16,16 +16,16 @@ os.nice(19)
 
 # PARAMETERS ##############################################################
 dim=3
-N=15
-material=0
+N=95
+material=2
 
 pars=Struct(kind='tt', # type of sparse tensor: 'cano', 'tucker', or 'tt'
             dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
-            Y=np.ones(dim),
-            Amax=10., # material contrast
-            maxiter=10,
-            recover_sparse=1,
+            Y=np.ones(dim), # size of periodic cell
+            rank=5, # rank of solution vector
+            maxiter=10, # no. of iterations for a solver
+            recover_sparse=1, # recalculate full material coefficients from sparse one
             solver={'tol':1e-4}
             )
 
@@ -50,7 +50,7 @@ if material in [0]:
               'Y': np.ones(dim),
               'P': pars.N,
               'order': 0, }
-    pars_sparse.update(Struct(rank=2))
+    pars_sparse.update(Struct(matrank=2))
 
 elif material in [1]:
     mat_conf={'inclusions': ['pyramid', 'all'],
@@ -60,10 +60,10 @@ elif material in [1]:
               'Y': np.ones(dim),
               'P': pars.N,
               'order': 1, }
-    pars_sparse.update(Struct(rank=2))
+    pars_sparse.update(Struct(matrank=2))
 
 elif material in [2]: # stochastic material
-    pars_sparse.update(Struct(rank=15))
+    pars_sparse.update(Struct(matrank=10))
 
     kl=KL_Fourier(covfun=2, cov_pars={'rho':0.15, 'sigma': 1.}, N=pars.N, puc_size=pars.Y,
                   transform=lambda x: 1.+1e3*np.exp(x))
@@ -89,10 +89,10 @@ mat=Material(mat_conf)
 mats=SparseMaterial(mat_conf, pars_sparse.kind)
 
 Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
-Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.rank)
+Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
 
 Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
-Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.rank)
+Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
 
 if pars.recover_sparse:
     Agani.val = np.einsum('ij,...->ij...', np.eye(dim), Aganis.full())
@@ -108,7 +108,7 @@ pars_sparse.update(Struct(alpha=0.5*(Agani[0,0].min()+Agani[0,0].max())))
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP=homog_GaNi_full_potential(Agani, Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
-
+ 
 print('\n== Full solution with potential by CG (Ga) ===========')
 resP=homog_Ga_full_potential(Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
