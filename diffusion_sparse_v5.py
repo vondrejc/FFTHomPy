@@ -5,9 +5,9 @@ import numpy as np
 from ffthompy import Timer, Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
-from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_Ga_sparse
+from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
+                                            homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
-from ffthompy.trigpol import Grid
 from uq.decomposition import KL_Fourier
 
 import os
@@ -113,8 +113,18 @@ print('\n== Full solution with potential by CG (Ga) ===========')
 resP=homog_Ga_full_potential(Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
 
-print('\n== SPARSE Richardson solver with preconditioner =======================')
+print('\n== SPARSE Richardson solver with preconditioner (Ga) =======================')
 resS=homog_Ga_sparse(Agas, pars_sparse)
+print('homogenised properties (component 11) = {}'.format(resS.AH))
+print(resS.Fu)
+print('iterations={}'.format(resS.solver['kit']))
+if np.array_equal(pars.N, pars_sparse.N):
+    print('norm(dif)={}'.format(np.linalg.norm(resP.Fu.val-resS.Fu.full())))
+print('norm(resP)={}'.format(resS.solver['norm_res']))
+print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
+
+print('\n== SPARSE Richardson solver with preconditioner (GaNi) =======================')
+resS=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
 print('homogenised properties (component 11) = {}'.format(resS.AH))
 
 print(resS.Fu)

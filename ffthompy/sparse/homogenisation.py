@@ -209,3 +209,81 @@ def homog_Ga_sparse(Agas, pars):
     for ii in range(dim):
         AH+=(Agas*FGX[ii]).scal(FGX[ii])
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
+
+def homog_GaNi_sparse(Aganis, Agas, pars):
+    N=Aganis.N
+    dim=N.__len__()
+    hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
+
+    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
+        assert(X.Fourier)
+        FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
+        AFGFx=[Aganis.multiply(FGX[ii], rank=None, tol=None) for ii in range(dim)]
+        # or in following: Fourier, reduce, truncate
+        AFGFx=[AFGFx[ii].truncate(rank=rank, tol=tol) for ii in range(dim)]
+        FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
+        GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
+        for ii in range(1, dim):
+            GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
+        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
+        GFAFGFx.name='fun(x)'
+        return -GFAFGFx
+
+    # R.H.S.
+    Es=SparseTensor(kind=pars.kind, val=np.ones(N), rank=1)
+    Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
+
+    # preconditioner
+    N_ori=N
+    reduce_factor=3.0 # this can be adjusted
+
+    if np.prod(N_ori)>1e8: # this threshold can be adjusted
+        N=np.ceil(N/reduce_factor).astype(int) #
+        N[N % 2==0]+=1 # make them odd numbers
+        need_project=True
+    else:
+        need_project=False
+
+    hGrad=grad_tensor(N, pars.Y)
+    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
+    k2[mean_index(N)]=1.
+    Prank=np.min([8, N[0]-1])
+
+    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True)
+
+    if need_project:
+        Ps=Ps.project(N_ori) # approximation
+        N=N_ori
+
+    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
+        R=DFAFGfun_s(Fx, rank=rank, tol=tol)
+        R=Ps*R
+        R=R.truncate(rank=rank, tol=tol)
+        return R
+
+    normfun=lambda X: X.norm()
+
+    parP={'alpha': pars.alpha,
+          'maxiter': pars.maxiter,
+          'tol': 1e-5,
+          'norm': normfun}
+
+    tic=Timer(name='Richardson (sparse)')
+    PBs=Ps*Bs
+    Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                          norm=normfun, rank=pars.rank, tol=pars.tol)
+    tic.measure()
+    Fu.name='Fu'
+    print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
+    print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
+
+    Nbar=2*np.array(N)-1
+
+    FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
+    Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
+    FGX[0]+=Es # adding mean
+
+    AH=0.
+    for ii in range(dim):
+        AH+=(Agas*FGX[ii]).scal(FGX[ii])
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
