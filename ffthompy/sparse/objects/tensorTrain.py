@@ -205,8 +205,8 @@ class TensorTrain(vector):
     def orthogonalize(self, option='lr'):
         
         d=self.d
-        r=self.r
-        n=self.n
+        r=self.r.copy()
+        n=self.n.copy()
         cr=self.to_list(self)
         cr_new = [None]*d
         
@@ -215,27 +215,30 @@ class TensorTrain(vector):
             for i in range(d-1):            
                 cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
                 cr_new[i], ru = qr(cr[i], 'reduced')
-                cr_new[i]=reshape(cr_new[i],(r[i],n[i],r[i+1]) )
                 cr[i+1]= dot(ru, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))
+                r[i+1]=cr_new[i].shape[1] 
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))
+                
     
             cr[d-1]=reshape(cr[d-1],(r[d-1]*n[d-1],r[d]) )
             cr_new[d-1], ru = qr(cr[d-1], 'reduced')   
-            cr_new[d-1]=reshape(cr_new[d-1]*ru,(r[d-1],n[d-1],r[d]) )
+            cr_new[d-1]=reshape(cr_new[d-1]*ru,(r[d-1],n[d-1], 1) )
             
             return (self.from_list(cr_new))
         
         elif option=='rl' or option=='RL':
             # rq sweep from right to left
-            cr[d-1]=reshape(cr[d-1],(r[d-1], n[d-1]*r[d]) )
-            ru, cr_new[d-1] = rq(cr[d-1], mode='economic')   
-            cr_new[d-1]=reshape(cr_new[d-1],(r[d-1],n[d-1],r[d]) )
+            for i in range(d-1, 0,-1):            
+                cr[i]=reshape(cr[i],(r[i],n[i]*r[i+1]) )
+                ru, cr_new[i] = rq(cr[i], mode='economic')
+                cr[i-1]= dot(reshape(cr[i-1],(r[i-1]*n[i-1],r[i]) ), ru)
+                r[i]=cr_new[i].shape[0] 
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))                
+    
+            cr[0]=reshape(cr[0],(r[0],n[0]*r[1]) )
+            ru, cr_new[0] = rq(cr[0], mode='economic')   
+            cr_new[0]=reshape(cr_new[0]*ru,(r[0],n[0], r[1]) )
             
-            for i in range(d-2,-1,-1):   
-                cr[i]= dot(reshape(cr[i],(r[i]*n[i],r[i+1]) ), ru)            
-                ru, cr_new[i] = rq(reshape(cr[i],(r[i],n[i]*r[i+1] )), mode='economic')   
-                cr_new[i]=reshape(cr_new[i],(r[i],n[i],r[i+1]) )        
-            
-            cr_new[i]*=ru
             return (self.from_list(cr_new))
         else:
             raise ValueError("Unexpected parameter '" + option +"' at tt.vector.tt_qr")
@@ -335,8 +338,11 @@ if __name__=='__main__':
     print(np.linalg.norm(t4.full()-v1-v2))
     #print t4
 
-#    t4o=t4.orthogonalize()
-#    print(np.linalg.norm(t4o.full()-t4.full()))
+    t4o=t4.orthogonalize('lr')
+    print(np.linalg.norm(t4o.full()-t4.full()))
+    
+    t4o=t4.orthogonalize('rl')
+    print(np.linalg.norm(t4o.full()-t4.full()))
 
     #print t5.size
 
