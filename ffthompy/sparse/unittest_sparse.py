@@ -7,6 +7,7 @@ from ffthompy.sparse.objects import CanoTensor
 from ffthompy import Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
+from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential,  homog_sparse
 from ffthompy.sparse.materials import SparseMaterial
 
@@ -103,7 +104,12 @@ class Test_sparse(unittest.TestCase):
         b=SparseTensor(kind='cano',val=self.T2dOther)   
         
         self.assertAlmostEqual(norm((a+b).full()-self.T2d-self.T2dOther),0)
-        self.assertAlmostEqual(norm((a*b).full()-self.T2d*self.T2dOther),0)        
+        self.assertAlmostEqual(norm((a*b).full()-self.T2d*self.T2dOther),0) 
+        
+        Fa=a.fourier()
+        Fa2=DFT.fftnc(a.full(), a.N)
+        self.assertAlmostEqual(norm(Fa.full()-Fa2),0)
+        
         print('...ok')
         
     def test_tucker(self):
@@ -116,6 +122,11 @@ class Test_sparse(unittest.TestCase):
         
         self.assertAlmostEqual(norm((a+b).full()-self.T3d-self.T3dOther),0)
         self.assertAlmostEqual(norm((a*b).full()-self.T3d*self.T3dOther),0)
+ 
+        Fa=a.fourier()
+        Fa2=DFT.fftnc(a.full(), a.N)
+        self.assertAlmostEqual(norm(Fa.full()-Fa2),0)
+
         print('...ok')
 
     def test_tensorTrain(self):
@@ -128,6 +139,11 @@ class Test_sparse(unittest.TestCase):
         
         self.assertAlmostEqual(norm((a+b).full()-self.T3d-self.T3dOther),0)
         self.assertAlmostEqual(norm((a*b).full()-self.T3d*self.T3dOther),0)
+        
+        Fa=a.fourier()
+        Fa2=DFT.fftnc(a.full(), a.N)
+        self.assertAlmostEqual(norm(Fa.full()-Fa2),0)
+        
         print('...ok')
         
     def test_sparse_solver(self):
