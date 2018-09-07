@@ -1,6 +1,6 @@
 import numpy as np
 from ffthompy.materials import Material
-from ffthompy.sparse.sparseTensorWrapper import SparseTensor
+from ffthompy.sparse.objects import SparseTensor
 from ffthompy.trigpol import Grid
 # from ffthompy.tensors.operators import matrix2tensor
 

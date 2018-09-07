@@ -1,8 +1,8 @@
 import numpy as np  
 from tt.core.vector import vector
-from ffthompy.sparse.tucker import Tucker
-from ffthompy.sparse.canoTensor import CanoTensor
-from ffthompy.sparse.tensorTrain import TensorTrain
+from ffthompy.sparse.objects.tucker import Tucker
+from ffthompy.sparse.objects.canoTensor import CanoTensor
+from ffthompy.sparse.objects.tensorTrain import TensorTrain
 
 #np.set_printoptions(precision=3)
 #np.set_printoptions(linewidth=999999)

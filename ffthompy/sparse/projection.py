@@ -3,7 +3,7 @@ from ffthompy.trigpol import Grid
 #from ffthompy.sparse.canoTensor import CanoTensor
 #from ffthompy.sparse.tucker import Tucker
 #from ffthompy.sparse.tensorTrain import TensorTrain
-from ffthompy.sparse.sparseTensorWrapper import SparseTensor
+from ffthompy.sparse.objects import SparseTensor
 
 def grad_tensor(N, Y, kind='TensorTrain'):
     assert( kind.lower() in ['cano','canotensor','tucker','tt','tensortrain'] )

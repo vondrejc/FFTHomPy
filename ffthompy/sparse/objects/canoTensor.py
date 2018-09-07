@@ -1,8 +1,6 @@
 import numpy as np
-from ffthompy.sparse.tensors import SparseTensorFuns
-#from ffthompy.sparse.tucker import Tucker
-#from ffthompy.trigpol import enlarge
-# import decompositions as dc
+from ffthompy.sparse.objects.tensors import SparseTensorFuns
+
 import timeit
 
 class CanoTensor(SparseTensorFuns):

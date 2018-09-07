@@ -1,13 +1,13 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
-from ffthompy.sparse.sparseTensorWrapper import SparseTensor
-from ffthompy.sparse.canoTensor import CanoTensor
+from ffthompy.sparse.objects import SparseTensor
+from ffthompy.sparse.objects import CanoTensor
 
 from ffthompy import Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
-from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_sparse
+from ffthompy.sparse.homogenisation import homog_Ga_full_potential,  homog_sparse
 from ffthompy.sparse.materials import SparseMaterial
 
 def run_full_and_sparse_solver(kind='tt', N=15, rank=10 ):

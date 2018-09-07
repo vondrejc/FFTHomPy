@@ -7,8 +7,7 @@ from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index, Grid
 from ffthompy.sparse.solver import richardson as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
-#from ffthompy.sparse.tensorTrain import TensorTrain
-from ffthompy.sparse.sparseTensorWrapper import SparseTensor
+from ffthompy.sparse.objects import SparseTensor
 
 def homog_Ga_full(Aga, pars):
     Nbar=Aga.N

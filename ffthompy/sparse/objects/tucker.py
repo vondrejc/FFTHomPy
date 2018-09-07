@@ -1,12 +1,9 @@
 import numpy as np
-#sys.path.append("/home/disliu/fft_new/ffthompy-sparse")
-from ffthompy.sparse.canoTensor import CanoTensor
-#from ffthompy.sparse.tensors import SparseTensorFuns
+
+from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD,nModeProduct
 
-#from scipy.linalg import block_diag
-#import numpy.fft as fft
 
 from numpy.linalg import  norm
 from numpy import newaxis, argsort
@@ -67,7 +64,7 @@ class Tucker(CanoTensor):
             self.N=np.array([5,5])
             if self.order==2: # if 2D, use CanoTensor instead
                 self.__class__=CanoTensor
-                CanoTensor.__init__(self, name=name, Fourier=Fourier, orthogonal= orthogonal, r=min(r) ) 
+                CanoTensor.__init__(self, name=name, Fourier=Fourier, orthogonal=orthogonal, r=min(r),randomise=randomise ) 
             else:
                 self.r=np.array(r)
                 self.core=np.zeros(r)
