@@ -5,7 +5,7 @@ import numpy as np
 from ffthompy import Timer, Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
-from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_sparse
+from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_GaNi_full_potential,homog_Ga_sparse
 from ffthompy.sparse.materials import SparseMaterial
 from ffthompy.trigpol import Grid
 from uq.decomposition import KL_Fourier
@@ -114,7 +114,7 @@ resP=homog_Ga_full_potential(Aga, pars)
 print('homogenised properties (component 11) = {}'.format(resP.AH))
 
 print('\n== SPARSE Richardson solver with preconditioner =======================')
-resS=homog_sparse(Agas, pars_sparse)
+resS=homog_Ga_sparse(Agas, pars_sparse)
 print('homogenised properties (component 11) = {}'.format(resS.AH))
 
 print(resS.Fu)

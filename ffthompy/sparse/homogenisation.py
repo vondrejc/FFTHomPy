@@ -122,7 +122,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
-    print('iterations of CG=',info['kit'])
+    print('iterations of CG=', info['kit'])
 
     Fu=P*iPU
     Nbar=2*np.array(N)-1
@@ -132,13 +132,13 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     AH=Aga(XEN)*XEN
     return Struct(AH=AH, Fu=Fu)
 
-def homog_sparse(Agas, pars):
-    Nbar = Agas.N
-    N = np.array((np.array(Nbar)+1)/2, dtype=np.int)
-    dim = Nbar.__len__()
-    hGrad_s = sgrad_tensor(N, pars.Y, kind=pars.kind)
-    # linear operator
-    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol):
+def homog_Ga_sparse(Agas, pars):
+    Nbar=Agas.N
+    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    dim=Nbar.__len__()
+    hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
+
+    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
         AFGFx=[Agas.multiply(FGX[ii], rank=None, tol=None) for ii in range(dim)]
@@ -154,25 +154,16 @@ def homog_sparse(Agas, pars):
         return-GFAFGFx
 
     # R.H.S.
-#    Es=CanoTensor(name='E', core=np.array([1.]), Fourier=False,
-#                  basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
-#    Es=Tucker(name='E', core=np.array([1.]), Fourier=False,
-#              basis=[np.atleast_2d(np.ones(Nbar[ii])) for ii in range(dim)])
-    
-    #Es = TensorTrain(np.ones(Nbar), rmax=1)
-    
-    Es = SparseTensor(kind=pars.kind,val=np.ones(Nbar), rank=1)
-    
+    Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
- 
-    # preconditioner
 
+    # preconditioner
     N_ori=N
     reduce_factor=3.0 # this can be adjusted
 
     if np.prod(N_ori)>1e8: # this threshold can be adjusted
         N=np.ceil(N/reduce_factor).astype(int) #
-        N[N%2==0]+=1 # make them odd numbers
+        N[N % 2==0]+=1 # make them odd numbers
         need_project=True
     else:
         need_project=False
@@ -181,15 +172,9 @@ def homog_sparse(Agas, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     Prank=np.min([8, N[0]-1])
-#    S, U=HOSVD (1./k2, k=Prank)
-#    for i in range(len(U)):
-#        U[i]=U[i].T
-#
-#    Ps=Tucker(name='P', core=S, basis=U, Fourier=True)
-    
-    #Ps=TensorTrain(1./k2, rmax=Prank, Fourier=True)
-    Ps=SparseTensor(kind=pars.kind,val=1./k2, rank=Prank, Fourier=True)
-    
+
+    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True)
+
     if need_project:
         Ps=Ps.project(N_ori) # approximation
         N=N_ori
@@ -200,7 +185,6 @@ def homog_sparse(Agas, pars):
         R=R.truncate(rank=rank, tol=tol)
         return R
 
-#     print('\nsolver results...')
     normfun=lambda X: X.norm()
 
     parP={'alpha': pars.alpha,
@@ -218,7 +202,7 @@ def homog_sparse(Agas, pars):
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
-    FGX[0] += Es # adding mean
+    FGX[0]+=Es # adding mean
 
 #     AH=(Agas*FGX[0]).scal(Es) # homogenised coefficients A_11
     AH=0.

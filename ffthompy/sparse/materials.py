@@ -2,7 +2,6 @@ import numpy as np
 from ffthompy.materials import Material
 from ffthompy.sparse.objects import SparseTensor
 from ffthompy.trigpol import Grid
-# from ffthompy.tensors.operators import matrix2tensor
 
 class SparseMaterial(Material):
     def __init__(self, material_conf, kind='tt'):
@@ -120,8 +119,7 @@ def get_weights_lin(h, Nbar, Y, kind):
         Nrep=np.copy(Nbar)
         Nrep[ii]=1
         Wphi.append(np.atleast_2d(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii])**2))
-    # W = CanoTensor(name='Wraw', core=np.array([1.]), basis=Wphi, Fourier=True)
-    # W=Tucker(name='Wraw', core=np.array([1.]), basis=Wphi, Fourier=True)
+
     if kind.lower() in ['cano', 'canotensor', 'tucker']:
         return SparseTensor(kind=kind, core=np.array([1.]), basis=Wphi, Fourier=True)
     elif kind.lower() in ['tt', 'tensortrain']:
