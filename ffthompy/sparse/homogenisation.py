@@ -6,6 +6,7 @@ from ffthompy.general.solver import linear_solver, richardson, CG
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index, Grid
 from ffthompy.sparse.solver import richardson as richardson_s
+# from ffthompy.sparse.solver import richardson_debug as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
 
@@ -79,6 +80,7 @@ def homog_Ga_full_potential(Aga, pars):
                               x0=x0, par=pars.solver, callback=None)
     tic.measure()
     print('iterations of CG={}'.format(info['kit']))
+    print('norm of residuum={}'.format(info['norm_res']))
 
     Fu=P*iPU
     X=iF2(grad(Fu).enlarge(Nbar))
@@ -124,6 +126,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
     print('iterations of CG={}'.format(info['kit']))
+    print('norm of residuum={}'.format(info['norm_res']))
 
     Fu=P*iPU
     Nbar=2*np.array(N)-1
@@ -186,19 +189,17 @@ def homog_Ga_sparse(Agas, pars):
         R=R.truncate(rank=rank, tol=tol)
         return R
 
-    normfun=lambda X: X.norm()
-
     parP={'alpha': pars.alpha,
-          'maxiter': pars.maxiter,
-          'tol': 1e-5,
-          'norm': normfun}
+          'maxiter': pars.solver['maxiter'],
+          'tol': pars.solver['tol']}
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                           norm=normfun, rank=pars.rank, tol=pars.tol)
+                          rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
+    print('norm of residuum={}'.format(ress['norm_res'][-1]))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
@@ -262,19 +263,17 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         R=R.truncate(rank=rank, tol=tol)
         return R
 
-    normfun=lambda X: X.norm()
-
     parP={'alpha': pars.alpha,
-          'maxiter': pars.maxiter,
-          'tol': 1e-5,
-          'norm': normfun}
+          'maxiter': pars.solver['maxiter'],
+          'tol': pars.solver['tol']}
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                          norm=normfun, rank=pars.rank, tol=pars.tol)
+                          rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
+    print('norm of residuum={}'.format(ress['norm_res'][-1]))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
