@@ -11,14 +11,11 @@ from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_Ga_sparse
 from ffthompy.sparse.materials import SparseMaterial
 
-<<<<<<< HEAD
 import sys
 import os
 
 def run_full_and_sparse_solver(kind='tt', N=15, rank=10 ):
-=======
-def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
->>>>>>> 1780eb57f9f5e541586cc8fede18c77b5ba4b32a
+
     """
     Run  full CG solver and sparse solver and return two solutions
     kind: type of sparse tensor format.
@@ -65,15 +62,21 @@ def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
                   'Y': np.ones(dim),
                   'P': pars.N,
                   'order': 1, }
+        pars_sparse.update(Struct(matrank=2))
     else:
         raise
     
     mat=Material(mat_conf)
     mats=SparseMaterial(mat_conf, pars_sparse.kind )
      
-     
+    Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
+    Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
+    
     Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
     Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=2)
+    
+    
+    pars_sparse.update(Struct(alpha=0.5*(Agani[0,0].min()+Agani[0,0].max())))
     
     stdout_backup= sys.stdout
     sys.stdout = open(os.devnull, "w") # stop screen output
@@ -82,19 +85,17 @@ def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
     resP=homog_Ga_full_potential(Aga, pars)
     #print('homogenised properties (component 11) = {}'.format(resP.AH))
     
-<<<<<<< HEAD
     #print('\n== SPARSE Richardson solver with preconditioner =======================')
-    resS=homog_sparse(Agas, pars_sparse)
+    #resS=homog_sparse(Agas, pars_sparse)
     #print('homogenised properties (component 11) = {}'.format(resS.AH))    
+   
     
+#    print('\n== SPARSE Richardson solver with preconditioner =======================')
+    resS=homog_Ga_sparse(Agas, pars_sparse)
+#    print('homogenised properties (component 11) = {}'.format(resS.AH))    
+
     sys.stdout = stdout_backup  ## restore screen output
     
-=======
-    print('\n== SPARSE Richardson solver with preconditioner =======================')
-    resS=homog_Ga_sparse(Agas, pars_sparse)
-    print('homogenised properties (component 11) = {}'.format(resS.AH))    
-
->>>>>>> 1780eb57f9f5e541586cc8fede18c77b5ba4b32a
     return resP.AH, resS.AH
 
 class Test_sparse(unittest.TestCase):
