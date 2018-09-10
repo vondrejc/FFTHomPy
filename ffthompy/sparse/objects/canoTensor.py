@@ -58,21 +58,23 @@ class CanoTensor(SparseTensorFuns):
 
     def orthogonalise(self):
         """re-orthogonalise the basis"""
-        # re-orthogonalise the basis by QR and SVD
-        qa, ra=np.linalg.qr(self.basis[0].T)
-        qb, rb=np.linalg.qr(self.basis[1].T)
-
-        core=ra*self.core[np.newaxis, :]
-        core=np.dot(core, rb.T)
-
-        u, s, vt=np.linalg.svd(core, full_matrices=0)
-
-        newA=np.dot(qa, u)
-        newB=np.dot(vt, qb.T)
-
-        newBasis=[newA.T, newB]
-
-        return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
+        if self.orthogonal:
+            return self
+        else:
+            # re-orthogonalise the basis by QR and SVD
+            qa, ra=np.linalg.qr(self.basis[0].T)
+            qb, rb=np.linalg.qr(self.basis[1].T)
+    
+            core=ra*self.core[np.newaxis, :]
+            core=np.dot(core, rb.T)
+    
+            u, s, vt=np.linalg.svd(core, full_matrices=0)
+    
+            newA=np.dot(qa, u)
+            newB=np.dot(vt, qb.T)
+    
+            newBasis=[newA.T, newB]        
+            return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
     def __add__(self, Y):
         X=self
@@ -161,8 +163,8 @@ class CanoTensor(SparseTensorFuns):
 
         return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, Fourier=self.Fourier)
 
-    def norm(self, ord='fro'):
-        if ord=='fro':
+    def norm(self, ord='core'):
+        if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.
             R=self*self.conj()
             val=0.
             for ii in range(R.r):
@@ -176,8 +178,8 @@ class CanoTensor(SparseTensorFuns):
         elif ord=='inf':
             pass
         elif ord=='core':
+            self.orthogonalise()
             return np.linalg.norm(self.core)
-
         else:
             raise NotImplementedError()
         return val
@@ -389,6 +391,11 @@ if __name__=='__main__':
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
     b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
+    
+    print(a.norm(ord='fro'))
+    print(a.norm(ord='core'))
+    
+    
 #     N=[100,101]
 #     a=CanoTensor(name='a', r=50, N=N, randomise=True)
 #     b=CanoTensor(name='a', r=60, N=N, randomise=True)
@@ -444,21 +451,23 @@ if __name__=='__main__':
     print "Tensor of 1D FFT costs: %f"%t1
     print "n-D FFT costs         : %f"%t2
     
-    ### test enlarge#####
-    n=3
-#    T1= np.zeros((n,n, n))
-#    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+#    ### test enlarge#####
+#    n=3
+##    T1= np.zeros((n,n, n))
+##    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+#    
+#    T1= np.zeros((n,n ))
+#    T1[n/3:2*n/3, n/3:2*n/3 ]=1
+#    
+#    u1, s1, vt1=np.linalg.svd(T1, full_matrices=0)
+#    
+#    t=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
+#    tf=t.fourier()
+#    tfl=tf.enlarge([3,5])
+#    tfli= tfl.fourier()
+#    
+#    print(tfli.full().real)
     
-    T1= np.zeros((n,n ))
-    T1[n/3:2*n/3, n/3:2*n/3 ]=1
     
-    u1, s1, vt1=np.linalg.svd(T1, full_matrices=0)
-    
-    t=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
-    tf=t.fourier()
-    tfl=tf.enlarge([3,5])
-    tfli= tfl.fourier()
-    
-    print(tfli.full().real)
 
     print('END')
