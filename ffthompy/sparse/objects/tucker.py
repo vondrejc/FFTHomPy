@@ -121,12 +121,7 @@ class Tucker(CanoTensor):
                 newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
                 newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
-            result=Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis, Fourier=self.Fourier)
-
-            new_rank=np.minimum(self.r+Y.r, result.N)
-
-            return result.truncate(rank=new_rank)
-            # return  result.truncate(rank= self.N)
+            return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis, Fourier=self.Fourier)
 
     def orthogonalise(self):
         """re-orthogonalise the basis"""

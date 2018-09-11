@@ -36,6 +36,7 @@ def richardson_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         x=B*omega
     else:
         x=x0
+    x=x.truncate(rank=rank, tol=tol)
 
     if norm is None:
         norm=lambda X: X.norm()
