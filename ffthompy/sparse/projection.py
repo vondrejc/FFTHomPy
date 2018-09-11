@@ -21,7 +21,7 @@ def grad_tensor(N, Y, kind='TensorTrain'):
             hGrad_s.append(SparseTensor(kind=kind, name='hGrad({})'.format(ii), core=np.array([1]), basis=basis,
                                   Fourier=True))
         elif kind.lower() in ['tt','tensortrain']:
-            cl = [bas.reshape((1,-1,1)) for bas in basis]           
+            cl = [bas.reshape((1,-1,1)) for bas in basis]
             hGrad_s.append(SparseTensor(kind=kind, core=cl, name='hGrad({})'.format(ii), Fourier=True))
 
     return hGrad_s

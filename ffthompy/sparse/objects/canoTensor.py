@@ -11,31 +11,31 @@ class CanoTensor(SparseTensorFuns):
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
         self.orthogonal=orthogonal
-        
+
         if val is not None:
             if len(val.shape)==2:
                 u, s, vt=np.linalg.svd(val, full_matrices=0)
-                
-                self.order= 2
+
+                self.order=2
                 self.basis=[u.T, vt]
                 self.core=s
-                self.r=self.core.shape[0]  
-    
+                self.r=self.core.shape[0]
+
                 self.N=np.empty(self.order, dtype=np.int)
                 for ii in range(self.order):
-                    self.N[ii]=self.basis[ii].shape[1]         
+                    self.N[ii]=self.basis[ii].shape[1]
             else:
                 raise ValueError("Canonical format not applicable to tensors higher than 2 dimensional.")
-        
+
         elif core is not None and basis is not None:
             self.order=basis.__len__()
             self.basis=basis
-            
+
             if len(core.shape)==2:
                 self.core=np.diag(core)
             else:
                 self.core=core
-                
+
             self.r=basis[0].shape[0] # since all basis share the same r
 
             self.N=np.empty(self.order, dtype=np.int)
@@ -43,7 +43,7 @@ class CanoTensor(SparseTensorFuns):
                 self.N[ii]=basis[ii].shape[1]
         else:
             self.r=3
-            self.N=[5,5]
+            self.N=[5, 5]
             self.order=self.N.__len__()
             if randomise:
                 self.randomise()
@@ -64,16 +64,16 @@ class CanoTensor(SparseTensorFuns):
             # re-orthogonalise the basis by QR and SVD
             qa, ra=np.linalg.qr(self.basis[0].T)
             qb, rb=np.linalg.qr(self.basis[1].T)
-    
+
             core=ra*self.core[np.newaxis, :]
             core=np.dot(core, rb.T)
-    
+
             u, s, vt=np.linalg.svd(core, full_matrices=0)
-    
+
             newA=np.dot(qa, u)
             newB=np.dot(vt, qb.T)
-    
-            newBasis=[newA.T, newB]        
+
+            newBasis=[newA.T, newB]
             return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
     def __add__(self, Y):
@@ -196,7 +196,7 @@ class CanoTensor(SparseTensorFuns):
 
     def enlarge(self, M):
         dtype=self.basis[0].dtype
-        assert(self.Fourier==True)
+        assert(self.Fourier)
 
         M=np.array(M, dtype=np.int)
         N=np.array(self.N)
@@ -225,7 +225,6 @@ class CanoTensor(SparseTensorFuns):
         newOne=self.copy()
         newOne.core=-newOne.core
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        # return Tucker(core=-self.core, basis=self.basis, Fourier=self.Fourier)
 
     def __sub__(self, Y):
         return self.__add__(-Y)
@@ -342,12 +341,12 @@ class CanoTensor(SparseTensorFuns):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
 
         return ss
-    
+
     @property
     def size(self):
         "return the number of elements of the original full tensor"
         return np.prod(self.N)
- 
+
     @property
     def memory(self):
         "return the number of floating point numbers that consist of the canonical tensor"
@@ -391,11 +390,11 @@ if __name__=='__main__':
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
     b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
-    
+
     print(a.norm(ord='fro'))
     print(a.norm(ord='core'))
-    
-    
+
+
 #     N=[100,101]
 #     a=CanoTensor(name='a', r=50, N=N, randomise=True)
 #     b=CanoTensor(name='a', r=60, N=N, randomise=True)
@@ -450,24 +449,24 @@ if __name__=='__main__':
     print
     print "Tensor of 1D FFT costs: %f"%t1
     print "n-D FFT costs         : %f"%t2
-    
+
 #    ### test enlarge#####
 #    n=3
-##    T1= np.zeros((n,n, n))
-##    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
-#    
+# #    T1= np.zeros((n,n, n))
+# #    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+#
 #    T1= np.zeros((n,n ))
 #    T1[n/3:2*n/3, n/3:2*n/3 ]=1
-#    
+#
 #    u1, s1, vt1=np.linalg.svd(T1, full_matrices=0)
-#    
+#
 #    t=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
 #    tf=t.fourier()
 #    tfl=tf.enlarge([3,5])
 #    tfli= tfl.fourier()
-#    
+#
 #    print(tfli.full().real)
-    
-    
+
+
 
     print('END')

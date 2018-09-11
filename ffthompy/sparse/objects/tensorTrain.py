@@ -9,8 +9,6 @@ from scipy.linalg import rq
 from ffthompy.tensors.operators import DFT
 from tt.core.vector import vector
 
-#import timeit
-
 np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=999999)
 
@@ -19,23 +17,23 @@ class TensorTrain(vector):
 
         if eps is None:  eps = 1e-14
         if rmax is None: rmax=999999
-            
+
         if val is not None:
-            vectorObject=vector(val, eps, rmax)             
+            vectorObject=vector(val, eps, rmax)
         elif core is not None:
-            vectorObject=vector.from_list(core)           
+            vectorObject=vector.from_list(core)
         elif vectorObj is not None: # cast a TTPY object to tensorTrain object
-            vectorObject =vectorObj
+            vectorObject=vectorObj
         else: # a  3D zero tensor
-            vectorObject=vector(np.zeros((3,4,5)), eps, rmax)
+            vectorObject=vector(np.zeros((3, 4, 5)), eps, rmax)
 
         for attr_name in vectorObject.__dict__:
-            setattr(self, attr_name, getattr(vectorObject, attr_name))  
-               
-        self.N=self.n # ttpy use n, we use N.      
+            setattr(self, attr_name, getattr(vectorObject, attr_name))
+
+        self.N=self.n # ttpy use n, we use N.
         self.name=name
         self.Fourier=Fourier
-        
+
     @staticmethod
     def from_list(a, name='unnamed', Fourier=False):
         """Generate TensorTrain object from given TT cores.
@@ -69,17 +67,13 @@ class TensorTrain(vector):
 
         return res
 
-    def truncate(self, tol=None, rank=None):
-        if np.any(tol) is None and np.any(rank) is None:
-            return self
-        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
-            return self
-        else:
-            if tol is None:  tol=1e-14
-
+    def truncate(self, tol=1e-14, rank=np.Inf):
+        if tol>1e-13 or rank<self.r.max():
             res_vec=self.round(eps=tol, rmax=rank) # round produces a TTPY vetcor object
             res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
             return res
+        else:
+            return self
 
     def enlarge(self, M):
         assert(self.Fourier is True)
@@ -181,12 +175,13 @@ class TensorTrain(vector):
     def size(self):
         "return the number of elements of the original full tensor"
         return np.prod(self.n)
+
     @property
     def memory(self):
         "return the number of floating point numbers that consist of the TT tensor"
         return self.core.shape[0]+self.ps.shape[0]
-    # Print statement
-    def __repr__(self):
+
+    def __repr__(self): # Print statement
 
         keys=['name', 'Fourier', 'n', 'r']
         ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.d)
@@ -203,46 +198,45 @@ class TensorTrain(vector):
         return ss+vector.__repr__(self)
 
     def orthogonalize(self, option='lr'):
-        
+
         d=self.d
         r=self.r.copy()
         n=self.n.copy()
         cr=self.to_list(self)
-        cr_new = [None]*d
-        
+        cr_new=[None]*d
+
         if option=='lr' or option=='LR':
             # qr sweep from left to right
-            for i in range(d-1):            
-                cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
-                cr_new[i], ru = qr(cr[i], 'reduced')
-                cr[i+1]= dot(ru, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))
-                r[i+1]=cr_new[i].shape[1] 
-                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))
-                
-    
-            cr[d-1]=reshape(cr[d-1],(r[d-1]*n[d-1],r[d]) )
-            cr_new[d-1], ru = qr(cr[d-1], 'reduced')   
-            cr_new[d-1]=reshape(cr_new[d-1]*ru,(r[d-1],n[d-1], 1) )
-            
+            for i in range(d-1):
+                cr[i]=reshape(cr[i], (r[i]*n[i], r[i+1]))
+                cr_new[i], ru=qr(cr[i], 'reduced')
+                cr[i+1]=dot(ru, reshape(cr[i+1], (r[i+1], n[i+1]*r[i+2])))
+                r[i+1]=cr_new[i].shape[1]
+                cr_new[i]=reshape(cr_new[i], (r[i], n[i], r[i+1]))
+
+            cr[d-1]=reshape(cr[d-1], (r[d-1]*n[d-1], r[d]))
+            cr_new[d-1], ru=qr(cr[d-1], 'reduced')
+            cr_new[d-1]=reshape(cr_new[d-1]*ru, (r[d-1], n[d-1], 1))
+
             return (self.from_list(cr_new))
-        
+
         elif option=='rl' or option=='RL':
             # rq sweep from right to left
-            for i in range(d-1, 0,-1):            
-                cr[i]=reshape(cr[i],(r[i],n[i]*r[i+1]) )
-                ru, cr_new[i] = rq(cr[i], mode='economic')
-                cr[i-1]= dot(reshape(cr[i-1],(r[i-1]*n[i-1],r[i]) ), ru)
-                r[i]=cr_new[i].shape[0] 
-                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))                
-    
-            cr[0]=reshape(cr[0],(r[0],n[0]*r[1]) )
-            ru, cr_new[0] = rq(cr[0], mode='economic')   
-            cr_new[0]=reshape(cr_new[0]*ru,(r[0],n[0], r[1]) )
-            
+            for i in range(d-1, 0,-1):
+                cr[i]=reshape(cr[i], (r[i], n[i]*r[i+1]))
+                ru, cr_new[i]=rq(cr[i], mode='economic')
+                cr[i-1]=dot(reshape(cr[i-1], (r[i-1]*n[i-1], r[i])), ru)
+                r[i]=cr_new[i].shape[0]
+                cr_new[i]=reshape(cr_new[i], (r[i], n[i], r[i+1]))
+
+            cr[0]=reshape(cr[0], (r[0], n[0]*r[1]))
+            ru, cr_new[0]=rq(cr[0], mode='economic')
+            cr_new[0]=reshape(cr_new[0]*ru, (r[0], n[0], r[1]))
+
             return (self.from_list(cr_new))
         else:
-            raise ValueError("Unexpected parameter '" + option +"' at tt.vector.tt_qr")
-            
+            raise ValueError("Unexpected parameter '"+option+"' at tt.vector.tt_qr")
+
 if __name__=='__main__':
 
     print
@@ -254,14 +248,14 @@ if __name__=='__main__':
     n=v1.shape[0]
 
     v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(val=v,rmax=3)
-    
+    t=TensorTrain(val=v, rmax=3)
+
     print t
-    
+
     cl=t.to_list(t)
-    
-    t2= TensorTrain(core=cl)
-    
+
+    t2=TensorTrain(core=cl)
+
     print t2
 
 #    vfft=np.fft.fftn(v)
