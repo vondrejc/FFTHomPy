@@ -143,8 +143,8 @@ def homog_Ga_sparse(Agas, pars):
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
 
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
-        assert(X.Fourier)
-        X=X.truncate(rank=rank, tol=tol)
+        #assert(X.Fourier)
+        #X=X.truncate(rank=rank, tol=tol)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
         AFGFx=[Agas.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
         # or in following: Fourier, reduce, truncate
@@ -155,7 +155,36 @@ def homog_Ga_sparse(Agas, pars):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
         GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
         GFAFGFx.name='fun(x)'
-        return-GFAFGFx
+        return -GFAFGFx
+
+#     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
+#         assert(X.Fourier)
+#         tic=Timer(name='truncate')
+#         X=X.truncate(rank=rank, tol=tol)
+#         tic.measure()
+#         tic=Timer(name='enlarge, fourier')
+#         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
+#         tic.measure()
+#         tic=Timer(name='A(x).truncate()')
+#         AFGFx=[Agas.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
+#         tic.measure()
+#         # or in following: Fourier, reduce, truncate
+#         tic=Timer(name='fourier')
+#         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
+#         tic.measure()
+#         tic=Timer(name='decrease')
+#         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
+#         tic.measure()
+#         tic=Timer(name='div')
+#         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
+#         for ii in range(1, dim):
+#             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
+#         tic.measure()
+#         tic=Timer(name='truncate')
+#         GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
+#         tic.measure()
+#         GFAFGFx.name='fun(x)'
+#         return-GFAFGFx
 
     # R.H.S.
     Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
@@ -202,15 +231,12 @@ def homog_Ga_sparse(Agas, pars):
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
-    print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
+#     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu)).full())))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     FGX[0]+=Es # adding mean
 
-#     AH=(Agas*FGX[0]).scal(Es) # homogenised coefficients A_11
-    AH=0.
-    for ii in range(dim):
-        AH+=(Agas*FGX[ii]).scal(FGX[ii])
+    AH = calculate_AH_sparse(Agas, FGX)
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
@@ -276,15 +302,20 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
-    print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
+#     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
 
     Nbar=2*np.array(N)-1
-
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
     FGX[0]+=Es # adding mean
 
-    AH=0.
-    for ii in range(dim):
-        AH+=(Agas*FGX[ii]).scal(FGX[ii])
+    AH = calculate_AH_sparse(Agas, FGX)
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
+
+def calculate_AH_sparse(Agas, FGX):
+    tic=Timer(name='AH')
+    AH=0.
+    for ii in range(FGX.__len__()):
+        AH+=(Agas*FGX[ii]).scal(FGX[ii])
+    tic.measure()
+    return AH
