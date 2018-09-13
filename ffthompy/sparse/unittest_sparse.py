@@ -70,15 +70,15 @@ def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
     mats=SparseMaterial(mat_conf, pars_sparse.kind)
 
     Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
-    Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
+#    Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
 
     Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
     Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=2)
 
     pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
 
-    stdout_backup=sys.stdout
-    sys.stdout=open(os.devnull, "w") # stop screen output
+#    stdout_backup=sys.stdout
+#    sys.stdout=open(os.devnull, "w") # stop screen output
 
     # print('\n== Full solution with potential by CG (Ga) ===========')
     resP=homog_Ga_full_potential(Aga, pars)
@@ -93,7 +93,7 @@ def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
     resS=homog_Ga_sparse(Agas, pars_sparse)
 #    print('homogenised properties (component 11) = {}'.format(resS.AH))
 
-    sys.stdout=stdout_backup # # restore screen output
+#    sys.stdout=stdout_backup # # restore screen output
 
     return resP.AH, resS.AH
 
@@ -219,19 +219,19 @@ class Test_sparse(unittest.TestCase):
     def test_sparse_solver(self):
         print('\nChecking sparse solver ...')
 
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=5)
+        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=7)
 
         self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
 
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=5)
+        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=7)
 
         self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
 
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=11)
+        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=10)
 
         self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
 
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=11)
+        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=10)
 
         self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
 
