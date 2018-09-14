@@ -56,11 +56,11 @@ class Problem(object):
                         continue
                     elif n_incl == 1:
                         ind = material['inclusions'].index(incl)
-                        if ind == n_incl:
+                        if ind == material['inclusions'].__len__() - 1:
                             continue
-                        for _, vals in material.items():
-                            val = vals.pop(ind)
-                            vals.append(val)
+                        else:
+                            msg='inclusion ("all" or "otherwise") has to be at the end of the list'
+                            raise ValueError(msg)
                     else:
                         msg = "Maximal one occurrence of inclusion \
                             'otherwise' or 'all' is allowed!"
