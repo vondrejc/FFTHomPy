@@ -9,6 +9,8 @@ from scipy.linalg import rq
 from ffthompy.tensors.operators import DFT
 from tt.core.vector import vector
 
+#import timeit
+
 np.set_printoptions(precision=3)
 np.set_printoptions(linewidth=999999)
 
@@ -17,23 +19,23 @@ class TensorTrain(vector):
 
         if eps is None:  eps = 1e-14
         if rmax is None: rmax=999999
-
+            
         if val is not None:
-            vectorObject=vector(val, eps, rmax)
+            vectorObject=vector(val, eps, rmax)             
         elif core is not None:
-            vectorObject=vector.from_list(core)
+            vectorObject=vector.from_list(core)           
         elif vectorObj is not None: # cast a TTPY object to tensorTrain object
-            vectorObject=vectorObj
+            vectorObject =vectorObj
         else: # a  3D zero tensor
-            vectorObject=vector(np.zeros((3, 4, 5)), eps, rmax)
+            vectorObject=vector(np.zeros((3,4,5)), eps, rmax)
 
         for attr_name in vectorObject.__dict__:
-            setattr(self, attr_name, getattr(vectorObject, attr_name))
-
-        self.N=self.n # ttpy use n, we use N.
+            setattr(self, attr_name, getattr(vectorObject, attr_name))  
+               
+        self.N=self.n # ttpy use n, we use N.      
         self.name=name
         self.Fourier=Fourier
-
+        
     @staticmethod
     def from_list(a, name='unnamed', Fourier=False):
         """Generate TensorTrain object from given TT cores.
@@ -67,13 +69,17 @@ class TensorTrain(vector):
 
         return res
 
-    def truncate(self, tol=1e-14, rank=np.Inf):
-        if tol>1e-13 or rank<self.r.max():
+    def truncate(self, tol=None, rank=None):
+        if np.any(tol) is None and np.any(rank) is None:
+            return self
+        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
+            return self
+        else:
+            if tol is None:  tol=1e-14
+
             res_vec=self.round(eps=tol, rmax=rank) # round produces a TTPY vetcor object
             res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
             return res
-        else:
-            return self
 
     def enlarge(self, M):
         assert(self.Fourier is True)
@@ -160,6 +166,12 @@ class TensorTrain(vector):
                           Fourier=self.Fourier)
         return res
 
+    def __kron__(self, other):
+        res_vec=vector.__kron__(self, other)
+        res=TensorTrain(vectorObj=res_vec,
+                          name=self.name+' glued with '+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                          Fourier=self.Fourier)
+        return res
     def __sub__(self, other):
 
         res=self+(-other)
@@ -175,13 +187,12 @@ class TensorTrain(vector):
     def size(self):
         "return the number of elements of the original full tensor"
         return np.prod(self.n)
-
     @property
     def memory(self):
         "return the number of floating point numbers that consist of the TT tensor"
         return self.core.shape[0]+self.ps.shape[0]
-
-    def __repr__(self): # Print statement
+    # Print statement
+    def __repr__(self):
 
         keys=['name', 'Fourier', 'n', 'r']
         ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.d)
@@ -197,46 +208,77 @@ class TensorTrain(vector):
 
         return ss+vector.__repr__(self)
 
-    def orthogonalize(self, option='lr'):
-
+    def orthogonalise(self, direction='lr', r_output=False):
+        """Orthogonalise the list of cores of a TT. If direction is 'lr' it does a left to right sweep of qr decompositions,
+        makes the TT "left orthogonal", i.e. if the i-th core is reshaped to shape (r[i]*n[i],r[i+1]), it has orthogonal columns.
+        While with direction 'rl' the TT would be made "right orthogonal", i.e. if the i-th core is reshaped to 
+        shape (r[i], n[i]*r[i+1]), it has orthogonal rows.
+        
+        If r_output=True, the r factor of the last qr decomposition would be one of the outputs. This is useful when we 
+        orthogonalise only a section of the list of cores and the r can be multiplid to the adjacent core of the next section.
+        If we are orthogonalising the whole TT, set r_output to be False. In this case the border cores have ending rank 1,
+        i.e. only one column (or row) in the sense mentioned above, so the qr decomposition on the last core is saved.
+        """
         d=self.d
         r=self.r.copy()
         n=self.n.copy()
         cr=self.to_list(self)
-        cr_new=[None]*d
-
-        if option=='lr' or option=='LR':
+        cr_new = [None]*d
+        
+        if direction=='lr' or direction=='LR':
             # qr sweep from left to right
-            for i in range(d-1):
-                cr[i]=reshape(cr[i], (r[i]*n[i], r[i+1]))
-                cr_new[i], ru=qr(cr[i], 'reduced')
-                cr[i+1]=dot(ru, reshape(cr[i+1], (r[i+1], n[i+1]*r[i+2])))
-                r[i+1]=cr_new[i].shape[1]
-                cr_new[i]=reshape(cr_new[i], (r[i], n[i], r[i+1]))
-
-            cr[d-1]=reshape(cr[d-1], (r[d-1]*n[d-1], r[d]))
-            cr_new[d-1], ru=qr(cr[d-1], 'reduced')
-            cr_new[d-1]=reshape(cr_new[d-1]*ru, (r[d-1], n[d-1], 1))
-
-            return (self.from_list(cr_new))
-
-        elif option=='rl' or option=='RL':
+            for i in range(d-1):            
+                cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
+                cr_new[i], ru = qr(cr[i], 'reduced')
+                cr[i+1]= dot(ru, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))
+                r[i+1]=cr_new[i].shape[1] 
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))
+                
+            if r_output:
+                cr[d-1]=reshape(cr[d-1],(r[d-1]*n[d-1],r[d]) )
+                cr_new[d-1], ru = qr(cr[d-1], 'reduced')   
+                cr_new[d-1]=reshape(cr_new[d-1],(r[d-1],n[d-1], r[d]) )
+                return self.from_list(cr_new), ru
+            else:
+                cr_new[d-1] = cr[d-1].reshape(r[d-1],n[d-1], r[d])
+                return self.from_list(cr_new)
+        
+        elif direction=='rl' or direction=='RL':
             # rq sweep from right to left
-            for i in range(d-1, 0,-1):
-                cr[i]=reshape(cr[i], (r[i], n[i]*r[i+1]))
-                ru, cr_new[i]=rq(cr[i], mode='economic')
-                cr[i-1]=dot(reshape(cr[i-1], (r[i-1]*n[i-1], r[i])), ru)
-                r[i]=cr_new[i].shape[0]
-                cr_new[i]=reshape(cr_new[i], (r[i], n[i], r[i+1]))
-
-            cr[0]=reshape(cr[0], (r[0], n[0]*r[1]))
-            ru, cr_new[0]=rq(cr[0], mode='economic')
-            cr_new[0]=reshape(cr_new[0]*ru, (r[0], n[0], r[1]))
-
-            return (self.from_list(cr_new))
+            for i in range(d-1, 0,-1):            
+                cr[i]=reshape(cr[i],(r[i],n[i]*r[i+1]) )
+                ru, cr_new[i] = rq(cr[i], mode='economic')
+                cr[i-1]= dot(reshape(cr[i-1],(r[i-1]*n[i-1],r[i]) ), ru)
+                r[i]=cr_new[i].shape[0] 
+                cr_new[i]=reshape(cr_new[i],(r[i],n[i], r[i+1]  ))                
+            
+            if r_output:
+                cr[0]=reshape(cr[0],(r[0],n[0]*r[1]) )
+                ru, cr_new[0] = rq(cr[0], mode='economic')   
+                cr_new[0]=reshape(cr_new[0]*ru,(r[0],n[0], r[1]) )
+                return self.from_list(cr_new), ru
+            else:
+                cr_new[0]=cr[0].reshape(r[0],n[0], r[1])
+                return self.from_list(cr_new)             
+            
         else:
-            raise ValueError("Unexpected parameter '"+option+"' at tt.vector.tt_qr")
+            raise ValueError("Unexpected parameter '" + direction +"' at tt.vector.tt_qr")
 
+    def tt_chunk(self, start, end):
+        """
+        Generate a new TT by taking out one section in the list of cores of the TT 'self'.
+        start and end are python indices, indicating the starting and ending indices of the section.
+        this is a subroutine for qtt_ftt function in which we need to do seperate ffts to the m sections 
+        of the list of cores of a qtt (each section corresponds to a physical variable).
+        """
+        assert(start<=end)
+     
+        cr=self.to_list(self)
+        cr=  cr[start: end+1]
+        return self.from_list(cr)
+
+
+    
 if __name__=='__main__':
 
     print
@@ -244,18 +286,16 @@ if __name__=='__main__':
     print
 
     v1=np.random.rand(120,)
-    # v1=np.arange(24)
-    n=v1.shape[0]
-
+ 
     v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(val=v, rmax=3)
-
+    t=TensorTrain(val=v,rmax=3)
+    
     print t
-
+    
     cl=t.to_list(t)
-
-    t2=TensorTrain(core=cl)
-
+    
+    t2= TensorTrain(core=cl)
+    
     print t2
 
 #    vfft=np.fft.fftn(v)
@@ -323,7 +363,14 @@ if __name__=='__main__':
     t1=TensorTrain(v1)
     v2=np.random.rand(2, 3, 4)
     t2=TensorTrain(v2)
-
+    
+    t3=t1.__dot__(t2)
+    print t3 
+    
+    c1=t1.__getitem__([0,[range(t1.N[1])],[range(t1.N[2])]] )
+    
+    print c1 
+    
     t3=t1*t2
     print t3
     print(np.linalg.norm(t3.full()-v1*v2))
@@ -332,12 +379,61 @@ if __name__=='__main__':
     print(np.linalg.norm(t4.full()-v1-v2))
     #print t4
 
-    t4o=t4.orthogonalize('lr')
+    t4o=t4.orthogonalise('lr')
     print(np.linalg.norm(t4o.full()-t4.full()))
     
-    t4o=t4.orthogonalize('rl')
+    t4o=t4.orthogonalise('rl')
     print(np.linalg.norm(t4o.full()-t4.full()))
 
     #print t5.size
+    v1=np.random.rand(1,5) 
 
+    v=np.reshape(v1, (1,5), order='F') # use 'F' to keep v the same as in matlab
+    t=TensorTrain(val=v,rmax=3)
+    
+#    v1=np.array([[1,0]])
+#    t1=TensorTrain(val=v1)
+#    v2=np.array([[14.2126 ,  -1.2689],[  0.0557,    0.6243]])
+#    t2=TensorTrain(val=v2 )
+#    
+#    t3=t1.__dot__(t2)
+#    
+#    print t3.full() 
+#    print t3.full().shape
+    
+#    c11=t1.get_slice(0,0)
+#    c12=t1.get_slice(0,1)
+#    
+#    c21=t1.get_slice(1,0)
+#    
+#    c34=t1.get_slice(2,3)
+#    
+#    chunk1=t1.tt_chunk(1,1)
+#    
+#    rs1=chunk1.get_rank_slice('left',0)
+#    
+#    v1=np.array(range(1,121))
+#    v=np.reshape(v1**2, (2, 3, 4, 5  ), order='F') # use 'F' to keep v the same as in matlab
+#    t=TensorTrain(val=v)
+#    
+#    chunk1=t.tt_chunk(1,1)
+#    
+#    rs1=chunk1.get_rank_slice('left',0) 
+#    
+##    ## test norm###
+##    print t1.norm()
+##    print np.sqrt(np.sum(t1.full()**2))
+##    
+##    print t3.norm()
+##    print np.sqrt(np.sum(t3.full()**2))
+##    
+##    t3tr=t3.truncate(rank=3)
+##    print t3tr.norm()
+##    print np.sqrt(np.sum(t3tr.full()**2))
+#    tp1=t1.tt_chunk(0,1)
+#    tp1s1=tp1.get_rank_slice('right',0)
+#    
+#    tp2=t1.tt_chunk(1,2)
+#    #tp2s1=tp2.get_rank_slice('right',0)    
+    
     print('END')
