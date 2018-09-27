@@ -200,20 +200,28 @@ class Test_sparse(unittest.TestCase):
         a=SparseTensor(kind='tt', val=self.T3d)
         b=SparseTensor(kind='tt', val=self.T3dOther)
         c=a+b
-        co=c.orthogonalise(option='lr')
+        co=c.orthogonalise(direction='lr')
         cr=co.to_list(co)
         for i in range(co.d):
             cr[i]=np.reshape(cr[i], (-1, co.r[i+1]))
             I=np.eye(co.N[i])
             self.assertAlmostEqual(np.dot(cr[i].T, cr[i]).any(), I.any())
 
-        co=c.orthogonalise(option='rl')
+        co=c.orthogonalise(direction='rl')
         cr=co.to_list(co)
         for i in range(co.d):
             cr[i]=np.reshape(cr[i], (co.r[i],-1))
             I=np.eye(co.N[i])
             self.assertAlmostEqual(np.dot(cr[i], cr[i].T).any(), I.any())
-
+            
+        aSubTrain=c.tt_chunk(0,1)
+        co,ru=aSubTrain.orthogonalise(direction='rl',r_output=True)
+        cr=co.to_list(co)
+        for i in range(co.d):
+            cr[i]=np.reshape(cr[i], (co.r[i],-1))
+            I=np.eye(co.N[i])
+            self.assertAlmostEqual(np.dot(cr[i], cr[i].T).any(), I.any())
+            
         print('...ok')
 
     def test_sparse_solver(self):
