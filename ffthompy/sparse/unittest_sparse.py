@@ -13,6 +13,7 @@ from ffthompy.sparse.materials import SparseMaterial
 
 import sys
 import os
+import time
 
 def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
 
@@ -177,6 +178,37 @@ class Test_sparse(unittest.TestCase):
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
         print('...ok')
+    def test_qtt_fft(self):
+        print('\nChecking QTT FFT functions ...')
+        L1=7
+        L2=8
+        L3=7
+        tol=1e-6
+        #v=np.random.rand(2**L1,2**L2)
+        v=np.array(range(1,2**(L1+L2+L3)+1))
+        v=np.sin(v)/v # to increase the rank
+        
+        v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')        
+        #vFFT= DFT.fftnc(v, [2**L1, 2**L2])
+        start = time.clock()
+        v1fft= np.fft.fftn(v1)/2**(L1+L2+L3) 
+        print("FFT time:     ", (time.clock() - start))
+        
+        vq= np.reshape(v,[2]*(L1+L2+L3),order='F') # a quantic tensor
+        vqtt= SparseTensor(kind='tt', val=vq) # a qtt
+        
+        start = time.clock()
+        vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)  
+        print("QTT_FFT time: ", (time.clock() - start))
+        
+        vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')    
+     
+        print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft) ) 
+        print ("maximum rank of the qtt is:",np.max(vqtt.r))    
+        
+        self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
+
+        print('...ok')
 
     def test_orthogonalise(self):
         print('\nChecking orthogonalization functions ...')
@@ -244,6 +276,7 @@ class Test_sparse(unittest.TestCase):
         self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
 
         print('...ok')
+
 
 if __name__ == "__main__":
     unittest.main()

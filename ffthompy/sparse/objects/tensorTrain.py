@@ -3,15 +3,15 @@ import numpy as np
 from operator import mul
 
 from numpy import reshape, dot
-from numpy.linalg import qr
+from numpy.linalg import qr, norm
 from scipy.linalg import rq
 
 from ffthompy.tensors.operators import DFT
 from tt.core.vector import vector
 
-#import timeit
+import time 
 
-np.set_printoptions(precision=3)
+np.set_printoptions(precision=2)
 np.set_printoptions(linewidth=999999)
 
 class TensorTrain(vector):
@@ -214,10 +214,10 @@ class TensorTrain(vector):
         While with direction 'rl' the TT would be made "right orthogonal", i.e. if the i-th core is reshaped to 
         shape (r[i], n[i]*r[i+1]), it has orthogonal rows.
         
-        If r_output=True, the r factor of the last qr decomposition would be one of the outputs. This is useful when we 
+        If r_output=True, the r factor of the last qr decomposition would be also returned. This is useful when we 
         orthogonalise only a section of the list of cores and the r can be multiplid to the adjacent core of the next section.
-        If we are orthogonalising the whole TT, set r_output to be False. In this case the border cores have ending rank 1,
-        i.e. only one column (or row) in the sense mentioned above, so the qr decomposition on the last core is saved.
+        If we are orthogonalising the whole TT, set r_output to be False. In this case the last core has an ending rank 1,
+        i.e. only one column (or row) in the sense mentioned above, so the qr decomposition to the last core is saved.              
         """
         d=self.d
         r=self.r.copy()
@@ -276,7 +276,59 @@ class TensorTrain(vector):
         cr=self.to_list(self)
         cr=  cr[start: end+1]
         return self.from_list(cr)
-
+    
+    def qtt_fft(self, ds, tol=1e-14 ):
+        """
+        Multidimensional FFT to a tensor of qtt format.
+        
+        The object 'self' should be quantic tensor train, i.e. with n=2 on every dimension.
+    
+        :param ds: numbers of tensor dimensions corresponds to each physical dimensions. 
+                   e.g., Our original tensor has two dimensions x and y, with mode size 4 and 8. 
+                   This translates to a quantic tensor of shape 2*2*2*2*2, with the first 2 dims
+                   corresponds to x, and the last 3 corresponds to y. The ds in this case is [2,3].
+        :type ds: list of integers
+    
+        :param tol: error torlerance
+        :type tol: float
+        """        
+        assert((self.n==2).any())
+        
+        ds=np.array(ds)
+        
+        D = np.prod(ds.shape)
+        x=self.orthogonalise(direction='rl')
+        
+        for i in range(D):
+            cury=x.tt_chunk(0, ds[i]-1)
+            if i<D-1:
+                x =x.tt_chunk(ds[i],x.d-1)
+                
+            cury=cury.qtt_fft1(tol,bitReverse=False)
+            
+            if i<D-1:
+                cury, ru=cury.orthogonalise(direction='lr', r_output=True)
+                crx=x.to_list(x)
+                crx[0]=reshape(crx[0],(x.r[0],x.n[0]*x.r[1]) )
+                crx[0]=np.dot(ru, crx[0])
+                crx[0]=reshape(crx[0],(x.r[0],x.n[0],x.r[1]) )
+                x=x.from_list(crx)
+                
+            if i==0:
+                y=cury
+            else:
+                y=y.__kron__(cury)
+        
+        cr=y.to_list(y)
+        cr2=[None]*y.d
+        
+        for i in range(y.d):
+            cr2[y.d-i-1]= cr[i].T
+        
+        cr2[y.d-1]/=2**((sum(ds))/2.0) # divided by sqrt(prod(N)), another sqrt(prod(N)) was already divided in qtt_fft1()
+        y=y.from_list(cr2)
+        
+        return y 
 
     
 if __name__=='__main__':
@@ -434,6 +486,7 @@ if __name__=='__main__':
 #    tp1s1=tp1.get_rank_slice('right',0)
 #    
 #    tp2=t1.tt_chunk(1,2)
-#    #tp2s1=tp2.get_rank_slice('right',0)    
-    
+#    #tp2s1=tp2.get_rank_slice('right',0)   
+ 
     print('END')
+    
