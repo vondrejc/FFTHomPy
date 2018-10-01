@@ -14,6 +14,7 @@ from ffthompy.sparse.materials import SparseMaterial
 import sys
 import os
 import time
+import timeit
 
 def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
 
@@ -180,9 +181,9 @@ class Test_sparse(unittest.TestCase):
         print('...ok')
     def test_qtt_fft(self):
         print('\nChecking QTT FFT functions ...')
-        L1=7
-        L2=8
-        L3=7
+        L1=3
+        L2=4
+        L3=5
         tol=1e-6
         #v=np.random.rand(2**L1,2**L2)
         v=np.array(range(1,2**(L1+L2+L3)+1))
@@ -190,16 +191,16 @@ class Test_sparse(unittest.TestCase):
         
         v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')        
         #vFFT= DFT.fftnc(v, [2**L1, 2**L2])
-        start = time.clock()
+        #start = time.clock()
         v1fft= np.fft.fftn(v1)/2**(L1+L2+L3) 
-        print("FFT time:     ", (time.clock() - start))
+        #print("FFT time:     ", (time.clock() - start))
         
         vq= np.reshape(v,[2]*(L1+L2+L3),order='F') # a quantic tensor
-        vqtt= SparseTensor(kind='tt', val=vq) # a qtt
+        vqtt= SparseTensor(kind='tt', val=vq) # a qtt 
         
-        start = time.clock()
+        #start = time.clock()
         vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)  
-        print("QTT_FFT time: ", (time.clock() - start))
+        #print("QTT_FFT time: ", (time.clock() - start))
         
         vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')    
      
@@ -207,7 +208,17 @@ class Test_sparse(unittest.TestCase):
         print ("maximum rank of the qtt is:",np.max(vqtt.r))    
         
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
-
+        
+        tt_fft_time= timeit.timeit('v1f= v1tt.fourier()', number=20,
+              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=6; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1tt= SparseTensor(kind='tt', val=v1 )")
+        print("  TT FFT time:",tt_fft_time)
+        
+        qtt_fft_time= timeit.timeit('vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ', number=20,
+              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=6; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
+        print("QTT FFT time:",qtt_fft_time)
+        
+        self.assertTrue(qtt_fft_time < 0.1*tt_fft_time)
+        
         print('...ok')
 
     def test_orthogonalise(self):

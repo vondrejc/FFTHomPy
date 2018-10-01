@@ -236,7 +236,8 @@ class TensorTrain(vector):
                 
             if r_output:
                 cr[d-1]=reshape(cr[d-1],(r[d-1]*n[d-1],r[d]) )
-                cr_new[d-1], ru = qr(cr[d-1], 'reduced')   
+                cr_new[d-1], ru = qr(cr[d-1], 'reduced')
+                r[d]=cr_new[d-1].shape[1]
                 cr_new[d-1]=reshape(cr_new[d-1],(r[d-1],n[d-1], r[d]) )
                 return self.from_list(cr_new), ru
             else:
@@ -311,6 +312,7 @@ class TensorTrain(vector):
                 crx=x.to_list(x)
                 crx[0]=reshape(crx[0],(x.r[0],x.n[0]*x.r[1]) )
                 crx[0]=np.dot(ru, crx[0])
+                x.r[0] = crx[0].shape[0]
                 crx[0]=reshape(crx[0],(x.r[0],x.n[0],x.r[1]) )
                 x=x.from_list(crx)
                 
