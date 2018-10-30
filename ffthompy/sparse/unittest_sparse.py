@@ -178,6 +178,30 @@ class Test_sparse(unittest.TestCase):
         Fa=a.fourier()
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
+    def test_Fourier_truncation(self):
+        print('\nChecking TT truncation in Fourier domain ...')
+        n1=np.random.randint(2,30)
+        n2=np.random.randint(2,30) 
+        n3=np.random.randint(2,30) 
+        k= np.random.randint(2,20) 
+        
+        a=np.random.rand(n1,n2,n3)
+        b=np.random.rand(n1,n2,n3)
+        
+        ta=SparseTensor(kind='tt', val=a)
+        tb=SparseTensor(kind='tt', val=b)
+        tc=ta+tb
+        tct=tc.truncate(rank=k) 
+        
+        taf=ta.fourier()
+        tbf=tb.fourier()
+        tcf = taf + tbf
+        tcft=tcf.truncate(rank=k)
+        
+        tcfti=tcft.fourier()
+ 
+        self.assertAlmostEqual(norm((tct- tcfti).full()), 0)
+
         print('...ok')
     def test_qtt_fft(self):
         print('\nChecking QTT FFT functions ...')
@@ -208,13 +232,17 @@ class Test_sparse(unittest.TestCase):
         print ("maximum rank of the qtt is:",np.max(vqtt.r))    
         
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
+
+#        qtt_fft_time= timeit.timeit('vqf= vqtt.fourier() ', number=50,
+#              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
+#        print("QTT FFT time:",qtt_fft_time)
         
-        tt_fft_time= timeit.timeit('v1f= v1tt.fourier()', number=20,
-              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=6; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1tt= SparseTensor(kind='tt', val=v1 )")
+        tt_fft_time= timeit.timeit('v1f= v1tt.fourier()', number=10,
+              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; v1tt= SparseTensor(kind='tt', val=v1,eps=1e-6 )")
         print("  TT FFT time:",tt_fft_time)
         
-        qtt_fft_time= timeit.timeit('vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ', number=20,
-              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=6; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
+        qtt_fft_time= timeit.timeit('vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ', number=10,
+              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
         print("QTT FFT time:",qtt_fft_time)
         
         self.assertTrue(qtt_fft_time < 0.1*tt_fft_time)
