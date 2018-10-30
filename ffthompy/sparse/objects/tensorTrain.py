@@ -3,7 +3,7 @@ import numpy as np
 from operator import mul
 
 from numpy import reshape, dot
-from numpy.linalg import qr, norm
+from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 
 from ffthompy.tensors.operators import DFT
@@ -77,8 +77,9 @@ class TensorTrain(vector):
         else:
             if tol is None:  tol=1e-14
 
-            res_vec=self.round(eps=tol, rmax=rank) # round produces a TTPY vetcor object
-            res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
+            #res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object              
+            #res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
+            res =self.my_round(rank=rank) 
             return res
 
     def enlarge(self, M):
@@ -207,7 +208,43 @@ class TensorTrain(vector):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
 
         return ss+vector.__repr__(self)
-
+    
+    def my_round(self, rank=None):
+        """
+        An altered version of ttpy's round() function.
+        We do further qr decomposition to the "vt" factor out of the svd decomposition, 
+        so that only real factors are communicated among cores of the train.
+        """
+        self=self.orthogonalise(direction='rl')
+        
+        d=self.d
+        r=self.r.copy()
+        n=self.n.copy()
+        cr=self.to_list(self)
+        cr_new = [None]*d
+        
+        if isinstance(rank, int) :
+            rank=rank*np.ones((d,), dtype=int)
+            rank=np.minimum(abs(rank), self.r[:d])
+            
+        for i in range(d-1):
+            cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
+            cr_new[i], s, vt = svd(cr[i], full_matrices=False)   
+            
+            vtq,vtr = qr( dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), 'reduced')            
+            cr_new[i] = dot(cr_new[i][:,:rank[i+1]], vtq)
+            cr[i+1]= dot(vtr, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))            
+            r[i+1] =cr_new[i].shape[1]
+#            cr[i+1]= dot(dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))   
+#            r[i+1] = cr_new[i].shape[1]
+            cr_new[i] = reshape(cr_new[i], (r[i], n[i], r[i+1]))
+        
+        cr_new[d-1] = cr[d-1].reshape(r[d-1],n[d-1], r[d])
+        
+        newObj=self.from_list(cr_new)
+        newObj.Fourier = self.Fourier
+        return newObj
+    
     def orthogonalise(self, direction='lr', r_output=False):
         """Orthogonalise the list of cores of a TT. If direction is 'lr' it does a left to right sweep of qr decompositions,
         makes the TT "left orthogonal", i.e. if the i-th core is reshaped to shape (r[i]*n[i],r[i+1]), it has orthogonal columns.
@@ -242,7 +279,9 @@ class TensorTrain(vector):
                 return self.from_list(cr_new), ru
             else:
                 cr_new[d-1] = cr[d-1].reshape(r[d-1],n[d-1], r[d])
-                return self.from_list(cr_new)
+                newObj=self.from_list(cr_new)
+                newObj.Fourier = self.Fourier
+                return newObj
         
         elif direction=='rl' or direction=='RL':
             # rq sweep from right to left
@@ -260,7 +299,9 @@ class TensorTrain(vector):
                 return self.from_list(cr_new), ru
             else:
                 cr_new[0]=cr[0].reshape(r[0],n[0], r[1])
-                return self.from_list(cr_new)             
+                newObj=self.from_list(cr_new)
+                newObj.Fourier = self.Fourier
+                return newObj           
             
         else:
             raise ValueError("Unexpected parameter '" + direction +"' at tt.vector.tt_qr")
@@ -444,6 +485,11 @@ if __name__=='__main__':
 
     v=np.reshape(v1, (1,5), order='F') # use 'F' to keep v the same as in matlab
     t=TensorTrain(val=v,rmax=3)
+    
+    print t3.r
+ 
+    t5=t3.truncate(rank=3)
+    print(np.linalg.norm(t3.full()-t5.full()))
     
 #    v1=np.array([[1,0]])
 #    t1=TensorTrain(val=v1)
