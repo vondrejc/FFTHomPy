@@ -180,29 +180,27 @@ class Test_sparse(unittest.TestCase):
 
     def test_Fourier_truncation(self):
         print('\nChecking TT truncation in Fourier domain ...')
-        n1=np.random.randint(2,30)
-        n2=np.random.randint(2,30) 
-        n3=np.random.randint(2,30) 
-        k= np.random.randint(2,20) 
-        
-        a=np.random.rand(n1,n2,n3)
-        b=np.random.rand(n1,n2,n3)
-        
+        N = np.random.randint(10,20, size=3)
+
+        a=np.random.random(N)
+        b=np.random.random(N)
+
         ta=SparseTensor(kind='tt', val=a)
         tb=SparseTensor(kind='tt', val=b)
         tc=ta+tb
-        tct=tc.truncate(rank=k) 
-        
+        k=tc.r[1:-1].min()-5
+        tct=tc.truncate(rank=k)
+
         taf=ta.fourier()
         tbf=tb.fourier()
-        tcf = taf + tbf
+        tcf=taf+tbf
         tcft=tcf.truncate(rank=k)
-        
-        tcfti=tcft.fourier()
- 
-        self.assertAlmostEqual(norm((tct- tcfti).full()), 0)
 
+        tcfti=tcft.fourier()
+
+        self.assertAlmostEqual(norm((tct-tcfti).full()), 0)
         print('...ok')
+
     def test_qtt_fft(self):
         print('\nChecking QTT FFT functions ...')
         L1=3
@@ -212,41 +210,41 @@ class Test_sparse(unittest.TestCase):
         #v=np.random.rand(2**L1,2**L2)
         v=np.array(range(1,2**(L1+L2+L3)+1))
         v=np.sin(v)/v # to increase the rank
-        
+
         v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')        
         #vFFT= DFT.fftnc(v, [2**L1, 2**L2])
         #start = time.clock()
         v1fft= np.fft.fftn(v1)/2**(L1+L2+L3) 
         #print("FFT time:     ", (time.clock() - start))
-        
+
         vq= np.reshape(v,[2]*(L1+L2+L3),order='F') # a quantic tensor
         vqtt= SparseTensor(kind='tt', val=vq) # a qtt 
-        
+
         #start = time.clock()
         vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)  
         #print("QTT_FFT time: ", (time.clock() - start))
-        
+
         vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')    
-     
+
         print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft) ) 
         print ("maximum rank of the qtt is:",np.max(vqtt.r))    
-        
+
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
 
 #        qtt_fft_time= timeit.timeit('vqf= vqtt.fourier() ', number=50,
 #              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
 #        print("QTT FFT time:",qtt_fft_time)
-        
+
         tt_fft_time= timeit.timeit('v1f= v1tt.fourier()', number=10,
               setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; v1tt= SparseTensor(kind='tt', val=v1,eps=1e-6 )")
         print("  TT FFT time:",tt_fft_time)
-        
+
         qtt_fft_time= timeit.timeit('vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ', number=10,
               setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
         print("QTT FFT time:",qtt_fft_time)
-        
+
         self.assertTrue(qtt_fft_time < 0.1*tt_fft_time)
-        
+
         print('...ok')
 
     def test_orthogonalise(self):
@@ -284,7 +282,7 @@ class Test_sparse(unittest.TestCase):
             cr[i]=np.reshape(cr[i], (co.r[i],-1))
             I=np.eye(co.N[i])
             self.assertAlmostEqual(np.dot(cr[i], cr[i].T).any(), I.any())
-            
+
         aSubTrain=c.tt_chunk(0,1)
         co,ru=aSubTrain.orthogonalise(direction='rl',r_output=True)
         cr=co.to_list(co)
@@ -292,7 +290,7 @@ class Test_sparse(unittest.TestCase):
             cr[i]=np.reshape(cr[i], (co.r[i],-1))
             I=np.eye(co.N[i])
             self.assertAlmostEqual(np.dot(cr[i], cr[i].T).any(), I.any())
-            
+
         print('...ok')
 
     def test_sparse_solver(self):
