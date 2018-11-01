@@ -9,6 +9,8 @@ from ffthompy.sparse.solver import richardson as richardson_s
 # from ffthompy.sparse.solver import richardson_debug as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
+from termcolor import colored
+import copy
 
 def homog_Ga_full(Aga, pars):
     Nbar=Aga.N
@@ -87,7 +89,7 @@ def homog_Ga_full_potential(Aga, pars):
 
     AH=Aga(X+EN)*(X+EN)
 
-    return Struct(AH=AH, e=X, Fu=Fu)
+    return Struct(AH=AH, e=X, Fu=Fu, info=info)
 
 def homog_GaNi_full_potential(Agani, Aga, pars):
 
@@ -134,7 +136,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
     XEN=iF2(grad(Fu).enlarge(Nbar))+EN.enlarge(Nbar)
     AH=Aga(XEN)*XEN
-    return Struct(AH=AH, Fu=Fu)
+    return Struct(AH=AH, Fu=Fu, info=info)
 
 def homog_Ga_sparse(Agas, pars):
     Nbar=Agas.N
@@ -153,7 +155,7 @@ def homog_Ga_sparse(Agas, pars):
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
+        GFAFGFx=GFAFGFx.fourier().truncate(rank=rank, tol=tol).fourier()
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
@@ -215,7 +217,7 @@ def homog_Ga_sparse(Agas, pars):
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
         R=Ps*R
-        R=R.truncate(rank=rank, tol=tol)
+        R=R.fourier().truncate(rank=rank, tol=tol).fourier()
         return R
 
     parP={'alpha': pars.alpha,
@@ -237,7 +239,7 @@ def homog_Ga_sparse(Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX)
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
     N=Aganis.N
@@ -253,7 +255,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
+        GFAFGFx=GFAFGFx.fourier().truncate(rank=rank, tol=tol).fourier()
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
@@ -286,7 +288,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
         R=Ps*R
-        R=R.truncate(rank=rank, tol=tol)
+        R=R.fourier().truncate(rank=rank, tol=tol).fourier()
         return R
 
     parP={'alpha': pars.alpha,
@@ -310,7 +312,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX)
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu)
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
 
 def calculate_AH_sparse(Agas, FGX):
     tic=Timer(name='AH')
