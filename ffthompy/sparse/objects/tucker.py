@@ -99,15 +99,15 @@ class Tucker(CanoTensor):
         if X.order==3:
             core=np.zeros((r_new[0], r_new[1], r_new[2]))
             core[:X.r[0], :X.r[1], :X.r[2]]=X.core
-            core[X.r[0]:, X.r[1]:, X.r[2]:]=Y.core
+            core[X.r[0]:, X.r[1]:, X.r[2]:]=Y.core         
         else:
             raise NotImplementedError("currently only support two and three dimensional tensor")
 
         newBasis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(X.order)]
 
         result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis, orthogonal=False, Fourier=self.Fourier)
-
-        return result.orthogonalise()
+ 
+        return result.truncate(rank=self.N)
 
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
@@ -130,8 +130,8 @@ class Tucker(CanoTensor):
                 newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
                 newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
-            return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis, Fourier=self.Fourier).truncate(rank=self.N)
-
+            return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,Fourier=self.Fourier).truncate(rank=self.N)
+        
     def orthogonalise(self):
         """re-orthogonalise the basis"""
         if self.orthogonal:
@@ -151,30 +151,6 @@ class Tucker(CanoTensor):
                 
             return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
-    def sort(self):
-        """Sort the core in term of importance and sort the basis accordinglly"""
-        core=self.core
-        basis=self.basis
-
-        if self.order==3:
-
-            ind0=argsort(np.sum(abs(core), axis=(1, 2)))[::-1]
-            core=core[ind0, :, :]
-
-            ind1=argsort(np.sum(abs(core), axis=(0, 2)))[::-1]
-            core=core[:, ind1, :]
-
-            ind2=argsort(np.sum(abs(core), axis=(0, 1)))[::-1]
-            core=core[:, :, ind2]
-
-            basis[0]=basis[0][ind0, :]
-            basis[1]=basis[1][ind1, :]
-            basis[2]=basis[2][ind2, :]
-        else:
-            raise NotImplementedError("currently only support two and three dimensional tensor")
-
-        return Tucker(name=self.name, core=core, basis=basis, orthogonal=self.orthogonal, Fourier=self.Fourier)
-
     def full(self):
         """convert a tucker representation to a full tensor
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
@@ -190,7 +166,6 @@ class Tucker(CanoTensor):
         for i in range(d):
             res=nModeProduct(res, self.basis[i].T, i)
         return res
-
         
     def truncate(self, tol=None, rank=None):
         """return truncated tensor. tol, if presented, would override rank as truncation criteria.
@@ -230,7 +205,6 @@ class Tucker(CanoTensor):
                 rank[2]=np.searchsorted(np.cumsum(sorted_norm_d2)/np.sum(sorted_norm_d2), 1.0-tol[2])+1
 
         if self.order==3:
-
             if rank[0]<0 :
                 target_storage=np.prod(-rank)
 
@@ -283,33 +257,6 @@ class Tucker(CanoTensor):
             basis[ii]=basis[ii][:rank[ii], :]
 
         return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True, Fourier=self.Fourier)
-
-    def enlarge(self, M):
-        dtype=self.basis[0].dtype
-        assert(self.Fourier)
-
-        M=np.array(M, dtype=np.int)
-        N=np.array(self.N)
-
-        if np.allclose(M, N):
-            return self
-
-        # dim = N.size
-        ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
-
-        basis=[]
-        for ii, m in enumerate(M):
-            basis.append(np.zeros([self.r[ii], m], dtype=dtype))
-            basis[ii][:, ibeg[ii]:iend[ii]]=self.basis[ii]
-
-        newOne=self.copy()
-        newOne.basis=basis
-        newOne.N=np.zeros((newOne.order,), dtype=int)
-        for i in range(newOne.order):
-            newOne.N[i]=newOne.basis[i].shape[1]
-        # return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
-        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
 
     def norm(self, ord='core'):
 
@@ -596,10 +543,10 @@ if __name__=='__main__':
 #
 #
     # multiplication
-#    T1=np.random.rand(N1,N2,N3)
-#    T2=np.random.rand(N1,N2,N3)
+    T1=np.random.rand(N1,N2)
+    T2=np.random.rand(N1,N2)
     
-    T1=np.sin(T )
+    #T1=np.sin(T )
     
     a = Tucker(val=T1,name='a' )
     b = Tucker(val=T2,name='b' )
@@ -611,13 +558,27 @@ if __name__=='__main__':
     print "((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ", norm(c.full()-a.full()*b.full())/norm(a.full()*b.full())
     print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ", np.max(c.full()-a.full()*b.full())/np.mean(a.full()*b.full())
 #
-    c_trunc=c.truncate(rank=-13)
+    c_trunc=c.truncate(rank=13)
+    print(c_trunc)
+
+    print('testing 3d tucker core sorting and  rank-based truncation ...')
+    print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
+#    print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+
+    c_trunc=c.truncate(rank=29)
     print(c_trunc)
 
     print('testing 3d tucker core sorting and  rank-based truncation ...')
     print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
     print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
-
+    print
+    
+    k=N2
+    while k>2:
+        c_trunc=c.truncate(rank=k)
+        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+        k-=1
+        
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)
 #

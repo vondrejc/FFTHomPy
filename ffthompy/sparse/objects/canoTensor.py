@@ -1,4 +1,6 @@
 import numpy as np
+from numpy.linalg import norm
+from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 
 import timeit
@@ -47,7 +49,6 @@ class CanoTensor(SparseTensorFuns):
             self.order=self.N.__len__()
             if randomise:
                 self.randomise()
-                self.sort()
             else:
                 self.core=np.zeros(r)
                 self.basis=[np.zeros([self.r[ii], self.N[ii]]) for ii in range(self.order)]
@@ -62,13 +63,13 @@ class CanoTensor(SparseTensorFuns):
             return self
         else:
             # re-orthogonalise the basis by QR and SVD
-            qa, ra=np.linalg.qr(self.basis[0].T)
-            qb, rb=np.linalg.qr(self.basis[1].T)
+            qa, ra=np.linalg.qr(self.basis[0].T, 'reduced')
+            qb, rb=np.linalg.qr(self.basis[1].T, 'reduced')
 
-            core=ra*self.core[np.newaxis, :]
-            core=np.dot(core, rb.T)
+            core=ra.real*self.core[np.newaxis, :]
+            core=np.dot(core, rb.T.real)
 
-            u, s, vt=np.linalg.svd(core, full_matrices=0)
+            u, s, vt=np.linalg.svd(core,full_matrices=False)
 
             newA=np.dot(qa, u)
             newB=np.dot(vt, qb.T)
@@ -82,8 +83,8 @@ class CanoTensor(SparseTensorFuns):
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalise()
-
+        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).truncate(rank=np.min(self.N))
+        #return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalise()
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
 
@@ -95,33 +96,16 @@ class CanoTensor(SparseTensorFuns):
             R=self.copy()
             R.core=self.core*Y[0]
             return R
-
         else:
-            X=self
-            if X.Fourier:
-                dtype=np.complex
-            else:
-                dtype=np.float
+            coeff=np.kron(self.core, Y.core)
 
-            new_r=X.r*Y.r
+            newBasis=[None]*self.order
+            for d in range(0, self.order):
+                newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
+                newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
-            A=X.basis[0]
-            B=X.basis[1]
-            A2=Y.basis[0]
-            B2=Y.basis[1]
-
-            newA=np.zeros((new_r, X.N[0]), dtype=dtype)
-            newB=np.zeros((new_r, X.N[1]), dtype=dtype)
-            coeff=np.zeros((new_r,))
-
-            for i in range(0, X.r):
-                for j in range(0, Y.r):
-                    newA[i*Y.r+j, :]=A[i, :]*A2[j, :]
-                    newB[i*Y.r+j, :]=B[i, :]*B2[j, :]
-                    coeff[i*Y.r+j]=X.core[i]*Y.core[j]
-
-            return CanoTensor(name=X.name+'*'+Y.name, core=coeff, basis=[newA, newB],
-                              Fourier=self.Fourier).orthogonalise()
+            return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
+                              Fourier=self.Fourier).truncate(rank=np.min(self.N))
 
     def full(self):
         "return a full tensor"
@@ -131,37 +115,32 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def sort(self):
-        "The function sort the modes in accordance with the magnitude of core"
-        inds = np.flip(np.argsort(np.abs(self.core), kind='mergesort'), 0)
-        self.core=self.core[inds]
-        for ii in range(self.order):
-            self.basis[ii] = self.basis[ii][inds]
-
     def truncate(self, rank=None, tol=None):
         "return truncated tensor"
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
         # if tol is not none, it will override rank as the truncation criteria.
-        basis=list(self.basis) # this copying avoids perturbation to the original tensor object
-        core=self.core
+        if tol is None and rank is None:
+            return self 
 
-        if rank>self.r:
+        if rank>=self.r:
             #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
             return self
-
-        # to determine the rank of truncation
-        if tol is None and rank is None:
-            return self
-        elif tol is not None:
+        
+        self=self.orthogonalise()
+        
+        basis=list(self.basis) 
+        core= self.core  
+        
+        if tol is not None:
             # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
             rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
-
+        
         # truncation
-        core=core[:rank] # it is already sorted in case of using svd
+        core=core[:rank]  
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, Fourier=self.Fourier)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,Fourier=self.Fourier)
 
     def norm(self, ord='core'):
         if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.
@@ -190,7 +169,7 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(R.r):
             valii=R.core[ii]
             for jj in range(R.order):
-                valii*=np.sum(R.basis[jj][ii])
+                valii*=np.sum(R.basis[jj][ii]).real
             val+=valii
         return val
 
@@ -203,19 +182,22 @@ class CanoTensor(SparseTensorFuns):
 
         if np.allclose(M, N):
             return self
-
+        
+        r=self.r        
+        if isinstance(r, int) :
+            r=r*np.ones((self.order,), dtype=int)        
         # dim = N.size
         ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
         iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
 
         basis=[]
         for ii, m in enumerate(M):
-            basis.append(np.zeros([self.r, m], dtype=dtype))
+            basis.append(np.zeros([r[ii], m], dtype=dtype))
             basis[ii][:, ibeg[ii]:iend[ii]]=self.basis[ii]
 
         newOne=self.copy()
         newOne.basis=basis
-        newOne.N=[None]*newOne.order
+        newOne.N=np.zeros((newOne.order,), dtype=int)
         for i in range(newOne.order):
             newOne.N[i]=newOne.basis[i].shape[1]
         # return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
@@ -449,6 +431,26 @@ if __name__=='__main__':
     print
     print "Tensor of 1D FFT costs: %f"%t1
     print "n-D FFT costs         : %f"%t2
+    
+
+    N1=10 
+    N2=20
+ 
+    T1=np.random.rand(N1,N2)
+    T2=np.random.rand(N1,N2)
+   
+    a = CanoTensor(val=T1,name='a' )
+    b = CanoTensor(val=T2,name='b' )
+    c=a*b
+    print(c)
+
+    print
+    
+    k=N2
+    while k>2:
+        c_trunc=c.truncate(rank=k)
+        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+        k-=1
 
 #    ### test enlarge#####
 #    n=3
