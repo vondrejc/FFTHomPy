@@ -63,18 +63,18 @@ class Tucker(CanoTensor):
                 self.N=np.array([5,5,5])
             else:
                 self.N=N
-                
-            if r.any()==None:                
+
+            if r.any()==None:
                 self.r =np.array([3,3,3])
             else:
-                self.r=r 
- 
+                self.r=r
+
             self.order=self.r.__len__()
-                
+
             if self.order==2: # if 2D, use CanoTensor instead
                 self.__class__=CanoTensor
                 CanoTensor.__init__(self, name=name, Fourier=Fourier, orthogonal=orthogonal, r=min(r), randomise=randomise)
-            else: 
+            else:
                 self.core=np.zeros(self.r)
                 self.basis=[np.zeros([self.r[ii], self.N[ii]]) for ii in range(self.order)]
 
@@ -99,14 +99,14 @@ class Tucker(CanoTensor):
         if X.order==3:
             core=np.zeros((r_new[0], r_new[1], r_new[2]))
             core[:X.r[0], :X.r[1], :X.r[2]]=X.core
-            core[X.r[0]:, X.r[1]:, X.r[2]:]=Y.core         
+            core[X.r[0]:, X.r[1]:, X.r[2]:]=Y.core
         else:
             raise NotImplementedError("currently only support two and three dimensional tensor")
 
         newBasis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(X.order)]
 
         result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis, orthogonal=False, Fourier=self.Fourier)
- 
+
         return result.truncate(rank=self.N)
 
     def __mul__(self, Y):
@@ -131,12 +131,12 @@ class Tucker(CanoTensor):
                 newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,Fourier=self.Fourier).truncate(rank=self.N)
-        
+
     def orthogonalise(self):
         """re-orthogonalise the basis"""
         if self.orthogonal:
             return self
-        else:        
+        else:
             newBasis=[]
             core=self.core
             # orthogonalise the basis
@@ -144,11 +144,11 @@ class Tucker(CanoTensor):
                 Q, R=np.linalg.qr(self.basis[i].T, 'reduced')
                 newBasis.append(Q.T)
                 core=nModeProduct(core, R.real, i)
-            
+
             S, U=HOSVD(core)
             for i in range(0, self.order):
-                newBasis[i]=np.dot(U[i].T, newBasis[i] ) 
-                
+                newBasis[i]=np.dot(U[i].T, newBasis[i])
+
             return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
     def full(self):
@@ -166,7 +166,7 @@ class Tucker(CanoTensor):
         for i in range(d):
             res=nModeProduct(res, self.basis[i].T, i)
         return res
-        
+
     def truncate(self, tol=None, rank=None):
         """return truncated tensor. tol, if presented, would override rank as truncation criteria.
         """
