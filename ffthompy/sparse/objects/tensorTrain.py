@@ -231,11 +231,12 @@ class TensorTrain(vector):
             cr[i]=reshape(cr[i],(r[i]*n[i],r[i+1]) )
             cr_new[i], s, vt = svd(cr[i], full_matrices=False)   
             
-            vtq,vtr = qr( dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), 'reduced')            
             cr_new[i] = dot(cr_new[i][:,:rank[i+1]], vtq)
             cr[i+1]= dot(vtr, reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))            
             r[i+1] =cr_new[i].shape[1]
 #            cr[i+1]= dot(dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))   
+#             vtq,vtr = qr( dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), 'reduced')
+            vtq, vtr=qr((s[:rank[i+1]]*vt[:rank[i+1], :].real.T).T, 'reduced')
 #            r[i+1] = cr_new[i].shape[1]
             cr_new[i] = reshape(cr_new[i], (r[i], n[i], r[i+1]))
         
