@@ -19,7 +19,7 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
         residuum=B-Afun(x)
-        x=(x+residuum*omega).fourier().truncate(rank=rank, tol=tol).fourier()
+        x=(x+residuum*omega).truncate(rank=rank, tol=tol)
         norm_res=norm(residuum)
         res['norm_res'].append(norm_res)
     res['norm_res'].append(norm(B-Afun(x)))

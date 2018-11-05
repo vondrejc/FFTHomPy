@@ -9,7 +9,6 @@ from ffthompy.sparse.solver import richardson as richardson_s
 # from ffthompy.sparse.solver import richardson_debug as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
-from termcolor import colored
 import copy
 
 def homog_Ga_full(Aga, pars):
@@ -33,8 +32,7 @@ def homog_Ga_full(Aga, pars):
     B=PAfun(-EN) # right-hand side of linear system
     tic=Timer(name='CG (gradient field)')
     X, info=linear_solver(solver='CG', Afun=PAfun, B=B,
-
-                            x0=x0, par=pars.solver, callback=None)
+                          x0=x0, par=pars.solver, callback=None)
 
     tic.measure()
 
@@ -79,7 +77,7 @@ def homog_Ga_full_potential(Aga, pars):
     PB=P*B
     tic=Timer(name='CG (potential)')
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
-                              x0=x0, par=pars.solver, callback=None)
+                            x0=x0, par=pars.solver, callback=None)
     tic.measure()
     print('iterations of CG={}'.format(info['kit']))
     print('norm of residuum={}'.format(info['norm_res']))
@@ -155,7 +153,7 @@ def homog_Ga_sparse(Agas, pars):
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.fourier().truncate(rank=rank, tol=tol).fourier()
+        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
@@ -255,7 +253,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.fourier().truncate(rank=rank, tol=tol).fourier()
+        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
