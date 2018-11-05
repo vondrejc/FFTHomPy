@@ -188,7 +188,7 @@ class Test_sparse(unittest.TestCase):
         ta=SparseTensor(kind='tt', val=a)
         tb=SparseTensor(kind='tt', val=b)
         tc=ta+tb
-        k=tc.r[1:-1].min()-5
+        k=tc.r[1:-1].min()/2-5
         tct=tc.truncate(rank=k)
 
         taf=ta.fourier()
