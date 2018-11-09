@@ -293,27 +293,41 @@ class Test_sparse(unittest.TestCase):
 
         print('...ok')
 
-    def test_sparse_solver(self):
-        print('\nChecking sparse solver ...')
-
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=7)
-
-        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
-
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=7)
-
-        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
-
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=10)
-
-        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
-
-        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=10)
-
-        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
-
+#    def test_sparse_solver(self):
+#        print('\nChecking sparse solver ...')
+#
+#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=7)
+#
+#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
+#
+#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=7)
+#
+#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
+#
+#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=10)
+#
+#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
+#
+#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=10)
+#
+#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
+#
+#        print('...ok')
+        
+    def test_mean(self):
+        print('\nChecking method mean() ...')
+        a=SparseTensor(kind='cano', val=self.T2d)
+        self.assertAlmostEqual(np.mean(self.T2d), a.mean())
+        self.assertAlmostEqual(np.mean(self.T2d), a.fourier().mean())
+        
+        a=SparseTensor(kind='tucker', val=self.T3d)
+        self.assertAlmostEqual(np.mean(self.T3d), a.mean())
+        self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
+        
+        a=SparseTensor(kind='tt', val=self.T3d)
+        self.assertAlmostEqual(np.mean(self.T3d), a.mean())
+        self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())        
         print('...ok')
-
 
 if __name__ == "__main__":
     unittest.main()
