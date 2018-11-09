@@ -5,10 +5,10 @@ from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
 
 from numpy.linalg import norm
-from numpy import newaxis, argsort
+from numpy import newaxis
 
-np.set_printoptions(precision=3)
-np.set_printoptions(linewidth=999999)
+#np.set_printoptions(precision=3)
+#np.set_printoptions(linewidth=999999)
 
 class Tucker(CanoTensor):
 
@@ -292,25 +292,27 @@ class Tucker(CanoTensor):
 
         return val
 
-    def mean(self):
-        R=self
+    def mean(self): 
         val=0.
 
-        L=[None]*R.order
-        for d in range(R.order):
-            L[d]=range(R.r[d])
+        L=[None]*self.order
+        for d in range(self.order):
+            L[d]=range(self.r[d])
 
         ind=np.meshgrid(*L)
         ind=np.array(ind)
-        ind=np.reshape(ind, (R.order,-1))
+        ind=np.reshape(ind, (self.order,-1))
 
         for i in range(ind.shape[1]):
-            val_piece=R.core[tuple(ind[:, i])]
-            for k in range(R.order):
-                val_piece*=np.sum(R.basis[k][ind[k, i]]).real
+            val_piece=self.core[tuple(ind[:, i])]
+            for k in range(self.order):
+                if self.Fourier:
+                    val_piece*=self.basis[k][ind[k, i],self.mean_index()[k]].real
+                else:
+                    val_piece*=np.mean(self.basis[k][ind[k, i]])
 
             val+=val_piece
-        return val
+        return val 
 
     @property
     def memory(self):
@@ -573,12 +575,25 @@ if __name__=='__main__':
     print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
     print
     
-    k=N2
-    while k>2:
-        c_trunc=c.truncate(rank=k)
-        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
-        k-=1
-        
+#    k=N2
+#    while k>2:
+#        c_trunc=c.truncate(rank=k)
+#        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+#        k-=1
+    
+    N1=10  
+    N2=20
+    N3=30
+    T1=np.random.rand(N1,N2,N3)
+    T2=np.random.rand(N1,N2,N3) 
+    
+    a = Tucker(val=T1,name='a' )
+    b = Tucker(val=T2,name='b' )
+    
+    c=a+b
+    
+    print (np.mean(c.full()) - c.mean())
+    print (np.mean(c.full()) - c.fourier().mean())
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)
 #

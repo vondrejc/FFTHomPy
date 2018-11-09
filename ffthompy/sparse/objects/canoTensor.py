@@ -163,15 +163,17 @@ class CanoTensor(SparseTensorFuns):
             raise NotImplementedError()
         return val
 
-    def mean(self):
-        R=self
-        val=0.
-        for ii in range(R.r):
-            valii=R.core[ii]
-            for jj in range(R.order):
-                valii*=np.sum(R.basis[jj][ii]).real
-            val+=valii
-        return val
+    def mean(self): 
+        val=0.        
+        for ii in range(self.r):
+            valii=self.core[ii]
+            for jj in range(self.order):
+                if self.Fourier:
+                    valii*=self.basis[jj][ii,self.mean_index()[jj]].real
+                else:
+                    valii*=np.mean(self.basis[jj][ii]).real
+            val+=valii  
+        return val  
 
     def enlarge(self, M):
         dtype=self.basis[0].dtype
@@ -258,15 +260,11 @@ class CanoTensor(SparseTensorFuns):
         # element-wise multiplication
         return (self*Y).truncate(tol=tol, rank=rank)
 
-
     def scal(self, Y):
         X = self
         assert(X.Fourier==Y.Fourier)
-        XY = X*Y
-        if X.Fourier:
-            return XY.mean()
-        else:
-            return XY.mean()/np.prod(X.N)
+        XY = X*Y 
+        return XY.mean()
 
     def repeat(self, M):
         """
@@ -446,12 +444,14 @@ if __name__=='__main__':
 
     print
     
-    k=N2
-    while k>2:
-        c_trunc=c.truncate(rank=k)
-        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
-        k-=1
+#    k=N2
+#    while k>2:
+#        c_trunc=c.truncate(rank=k)
+#        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+#        k-=1
 
+    print (np.mean(c.full()) - c.mean())
+    print (np.mean(c.full()) - c.fourier().mean())
 #    ### test enlarge#####
 #    n=3
 # #    T1= np.zeros((n,n, n))

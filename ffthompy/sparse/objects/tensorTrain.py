@@ -6,6 +6,7 @@ from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 
 from ffthompy.tensors.operators import DFT
+from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
 
 np.set_printoptions(precision=2)
@@ -127,28 +128,28 @@ class TensorTrain(vector):
 
     def mean(self):
         """
-        compute the sum of all elements of the tensor
+        compute the mean of all elements of the tensor
         """
         cl=self.to_list(self)
-        cl_sum=[None]*self.d
+        cl_mean=[None]*self.d
 
         for i in range(self.d):
             shape=np.ones((self.d+1), dtype=np.int32)
             shape[i:i+2]=self.r[i:i+2]
-            cl_sum[i]=np.sum(cl[i], axis=1).reshape(tuple(shape))
+            if self.Fourier:
+                cl_mean[i]=(cl[i][:, mean_index(self.N)[i],:]).reshape(tuple(shape)).real
+            else:
+                cl_mean[i]=np.mean(cl[i], axis=1).reshape(tuple(shape))
 
-        cl_sum_prod=reduce(mul, cl_sum, 1) # product of all arrays inside cl_sum
+        cl_mean_prod=reduce(mul, cl_mean, 1) # product of all arrays inside cl_sum
 
-        return np.sum(cl_sum_prod)
+        return np.sum(cl_mean_prod)
 
     def scal(self, Y):
         X=self
         assert(X.Fourier==Y.Fourier)
         XY=X*Y
-        if X.Fourier:
-            return XY.mean()
-        else:
-            return XY.mean()/np.prod(X.n)
+        return XY.mean() 
 
     def __mul__(self, other):
         res_vec=vector.__mul__(self, other)
@@ -489,6 +490,10 @@ if __name__=='__main__':
 
     t5=t3.truncate(rank=3)
     print(np.linalg.norm(t3.full()-t5.full()))
+    
+    print
+    print (np.mean(t1.full()) - t1.mean())
+    print (np.mean(t1.full()) - t1.fourier().mean())
 
 #    v1=np.array([[1,0]])
 #    t1=TensorTrain(val=v1)
