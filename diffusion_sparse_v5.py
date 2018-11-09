@@ -135,11 +135,13 @@ pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
+print('mean of solution={}'.format(resP_GaNi.Fu.fourier().mean()))
 print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
 
 print('\n== Full solution with potential by CG (Ga) ===========')
 resP_Ga=homog_Ga_full_potential(Aga, pars)
-print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
+print('mean of solution={}'.format(resP_Ga.Fu.fourier().mean()))
+print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
 
 print('\n== SPARSE Richardson solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
@@ -149,10 +151,12 @@ print('iterations={}'.format(resS_Ga.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
     print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.val-resS_Ga.Fu.full())))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
+print('mean of solution={}'.format(np.mean(resS_Ga.Fu.fourier().full())))
 print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
 
 print('\n== SPARSE Richardson solver with preconditioner (GaNi) =======================')
 resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+print('mean of solution={}'.format(np.mean(resS_GaNi.Fu.fourier().full())))
 print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
 
 print(resS_GaNi.Fu)

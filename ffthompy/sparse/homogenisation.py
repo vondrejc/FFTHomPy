@@ -47,9 +47,6 @@ def homog_Ga_full_potential(Aga, pars):
     dim=Nbar.__len__()
     Y=np.ones(dim) # cell size
 
-    _, Ghat, _=proj.scalar(N, Y)
-    Ghat2=Ghat.enlarge(Nbar)
-
     F2=DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
@@ -57,8 +54,8 @@ def homog_Ga_full_potential(Aga, pars):
 
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
+    # inverse of preconditioner
     P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
-    iP=Tensor(name='P', val=k2**0.5, order=0, Fourier=True, multype=00)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
@@ -68,9 +65,9 @@ def homog_Ga_full_potential(Aga, pars):
         assert(X.Fourier)
         FAX=F2(Aga*iF2(grad(X).enlarge(Nbar)))
         FAX=FAX.decrease(N)
-        return-div(FAX)
+        return div(FAX)
 
-    B=-div(F2(Aga(-EN)).decrease(N))
+    B=-div(F2(Aga(EN)).decrease(N))
     x0=Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
 
     PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
@@ -94,7 +91,6 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     N=Agani.N # double grid number
     dim=N.__len__()
     Y=np.ones(dim) # cell size
-    _, Ghat, _=proj.scalar(N, Y)
 
     F=DFT(name='FN', inverse=False, N=N) # discrete Fourier transform (DFT)
     iF=DFT(name='FiN', inverse=True, N=N) # inverse DFT
@@ -102,9 +98,8 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     hGrad=grad_tensor(N, Y)
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
-
+    # inverse of preconditioner
     P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
-    iP=Tensor(name='P', val=k2**0.5, order=0, Fourier=True, multype=00)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=N, shape=(dim,), Fourier=False) # constant trig. pol.
@@ -113,10 +108,9 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     def DFAFGfun(X):
         assert(X.Fourier)
         FAX=F(Agani*iF(grad(X)))
-        FAX=FAX
-        return-div(FAX)
+        return div(FAX)
 
-    B=-div(F(Agani(-EN)))
+    B=-div(F(Agani(EN)))
     x0=Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
 
     PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
@@ -157,35 +151,6 @@ def homog_Ga_sparse(Agas, pars):
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
-#     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
-#         assert(X.Fourier)
-#         tic=Timer(name='truncate')
-#         X=X.truncate(rank=rank, tol=tol)
-#         tic.measure()
-#         tic=Timer(name='enlarge, fourier')
-#         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-#         tic.measure()
-#         tic=Timer(name='A(x).truncate()')
-#         AFGFx=[Agas.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
-#         tic.measure()
-#         # or in following: Fourier, reduce, truncate
-#         tic=Timer(name='fourier')
-#         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
-#         tic.measure()
-#         tic=Timer(name='decrease')
-#         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
-#         tic.measure()
-#         tic=Timer(name='div')
-#         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
-#         for ii in range(1, dim):
-#             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-#         tic.measure()
-#         tic=Timer(name='truncate')
-#         GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol)
-#         tic.measure()
-#         GFAFGFx.name='fun(x)'
-#         return-GFAFGFx
-
     # R.H.S.
     Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
@@ -215,7 +180,7 @@ def homog_Ga_sparse(Agas, pars):
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
         R=Ps*R
-        R=R.fourier().truncate(rank=rank, tol=tol).fourier()
+        R=R.truncate(rank=rank, tol=tol)
         return R
 
     parP={'alpha': pars.alpha,
@@ -286,7 +251,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
         R=Ps*R
-        R=R.fourier().truncate(rank=rank, tol=tol).fourier()
+        R=R.truncate(rank=rank, tol=tol)
         return R
 
     parP={'alpha': pars.alpha,
