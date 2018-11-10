@@ -143,10 +143,8 @@ print("""---------------------
 Then, we define projection operators represented also with 'Matrix' class
 and FFT operators represented with 'DFT' class.""")
 import ffthompy.projections as proj
-_, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb['solve']['N'],
-                                                pb['material']['Y'],
-                                                centered=True, NyqNul=True,
-                                                tensor=True)
+_, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb['solve']['N'], pb['material']['Y'],
+                                                NyqNul=True, tensor=True)
 
 from ffthompy.tensors import DFT, Operator
 FN = DFT(name='FN', inverse=False, N=N)

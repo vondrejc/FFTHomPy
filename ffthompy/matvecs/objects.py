@@ -7,7 +7,7 @@ relating operators for homogenization.
 import copy
 import itertools
 
-from ffthompy.trigpol import Grid, enlarge, enlarge_M, get_inverse, decrease, mean_index
+from ffthompy.trigpol import Grid, enlarge, get_inverse, decrease, mean_index
 import numpy as np
 import numpy.fft as fft
 import numpy.matlib as npmatlib
@@ -37,7 +37,7 @@ class FieldFun():
         return X
 
     def mean_index(self):
-        return mean_index(self.N)
+        return mean_index(self.N, fft_form='c')
 
     def __getitem__(self, i):
         return self.val[i]
@@ -235,7 +235,7 @@ class VecTri(FieldFun, Grid):
         """
         mean=np.zeros(self.d)
         if self.Fourier:
-            ind=mean_index(self.N)
+            ind=mean_index(self.N, fft_form='c')
             for di in np.arange(self.d):
                 mean[di]=np.real(self.val[di][ind])
         else:
@@ -596,7 +596,9 @@ class Matrix(FieldFun):
 
     def enlarge(self, M):
         if self.Fourier:
-            val=enlarge_M(self.val, M)
+            val=np.zeros(self.ddN(), dtype=np.complex128)
+            for ind in itertools.product(range(self.d), repeat=2):
+                val[ind]=enlarge(self.val[ind], M)
         else:
             val=np.zeros(self.ddN())
             for ii in np.arange(self.d):
@@ -749,7 +751,7 @@ class DFT(FieldFun):
         N=self.N
         prodN=np.prod(N)
         proddN=self.d*prodN
-        ZNl=Grid.get_ZNl(N)
+        ZNl=Grid.get_ZNl(N, fft_form='c')
 
         if self.inverse:
             DFTcoef=lambda k, l, N: np.exp(2*np.pi*1j*np.sum(k*l/N))
@@ -782,15 +784,18 @@ class DFT(FieldFun):
         """
         centered n-dimensional FFT algorithm
         """
-        return fft.fftshift(fft.fftn(fft.ifftshift(x), N))/np.prod(N)
+#         return fft.fftshift(fft.fftn(fft.ifftshift(x), N))/np.prod(N)
+        ax=tuple(np.setdiff1d(range(x.ndim), range(x.ndim-N.__len__()), assume_unique=True))
+        return fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)/np.prod(N)
 
     @staticmethod
     def ifftnc(Fx, N):
         """
         centered n-dimensional inverse FFT algorithm
         """
-        return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N))*np.prod(N)
-
+#         return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N))*np.prod(N)
+        ax=tuple(np.setdiff1d(range(Fx.ndim), range(Fx.ndim-N.__len__()), assume_unique=True))
+        return fft.fftshift(fft.ifftn(fft.ifftshift(Fx, ax), N), ax).real*np.prod(N)
 
 class LinOper():
     """

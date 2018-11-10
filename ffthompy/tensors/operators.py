@@ -5,10 +5,10 @@ This module contains operators working with Tensor from ffthompy.tensors.objects
 import itertools
 import numpy as np
 import numpy.matlib as npmatlib
-
-from ffthompy.trigpol import Grid
+from ffthompy.trigpol import Grid, fft_form_default
 from ffthompy.tensors.objects import Tensor, TensorFuns
-from ffthompy.tensors.fft import fftnc, ifftnc
+from ffthompy.tensors.fft import *
+from copy import copy
 
 
 class DFT(TensorFuns):
@@ -24,9 +24,14 @@ class DFT(TensorFuns):
         N-sized (i)DFT,
     normalized : boolean
         version of DFT that is normalized by factor numpy.prod(N)
+    fft_form : str or num
+        determines the type of the Fourier transform and corresponding format in the Fourier domain
+        the following values are considered:
+        0 : standard numpy.fft.fftn algorithm
+        'c' : centered version of numpy.fft.fftn algorithm with zero frequency in the middle
+        'r' : version of numpy.fft.fftn suitable for real data
     """
-    def __init__(self, inverse=False, N=None, normalized=True, centered=True,
-                 **kwargs):
+    def __init__(self, inverse=False, N=None, fft_form=fft_form_default, **kwargs):
         self.__dict__.update(kwargs)
         if 'name' not in list(kwargs.keys()):
             if inverse:
@@ -36,20 +41,23 @@ class DFT(TensorFuns):
 
         self.N=np.array(N, dtype=np.int32)
         self.inverse=inverse
+        self.set_fft(fft_form)
 
     def __mul__(self, x):
         return self.__call__(x)
 
     def __call__(self, x):
         if isinstance(x, Tensor):
-            if not self.inverse:
-                return Tensor(name='F({0})'.format(x.name[:10]),
-                              val=self.fftnc(x.val, self.N),
-                              order=x.order, Fourier=not x.Fourier, multype=x.multype)
+            assert(x.Fourier==self.inverse)
+            if self.inverse:
+                return Tensor(name='iF({0})'.format(x.name[:10]), order=x.order,
+                              val=self.ifftn(x.val, self.N).real, multype=x.multype,
+                              Fourier=not x.Fourier, fft_form=self.fft_form)
             else:
-                return Tensor(name='iF({0})'.format(x.name[:10]),
-                              val=np.real(self.ifftnc(x.val, self.N)),
-                              order=x.order, Fourier=not x.Fourier, multype=x.multype)
+                assert(x.fft_form==self.fft_form)
+                return Tensor(name='F({0})'.format(x.name[:10]), order=x.order,
+                              val=self.fftn(x.val, self.N), multype=x.multype,
+                              Fourier=not x.Fourier, fft_form=self.fft_form)
 
         elif (isinstance(x, Operator) or isinstance(x, DFT)):
             return Operator(mat=[[self, x]])
@@ -71,7 +79,8 @@ class DFT(TensorFuns):
             raise ValueError('Missing shape of the DFT.')
 
         proddN=dim*prodN
-        ZNl=Grid.get_ZNl(N)
+        ZN_input=Grid.get_ZNl(N, fft_form=0)
+        ZN_output=Grid.get_ZNl(N, fft_form='c')
 
         if self.inverse:
             DFTcoef=lambda k, l, N: np.exp(2*np.pi*1j*np.sum(k*l/N))
@@ -79,8 +88,8 @@ class DFT(TensorFuns):
             DFTcoef=lambda k, l, N: np.exp(-2*np.pi*1j*np.sum(k*l/N))/np.prod(N)
 
         DTM=np.zeros([self.pN(), self.pN()], dtype=np.complex128)
-        for ii, kk in enumerate(itertools.product(*tuple(ZNl))):
-            for jj, ll in enumerate(itertools.product(*tuple(ZNl))):
+        for ii, kk in enumerate(itertools.product(*tuple(ZN_output))):
+            for jj, ll in enumerate(itertools.product(*tuple(ZN_input))):
                 DTM[ii, jj]=DFTcoef(np.array(kk, dtype=np.float),
                                       np.array(ll), N)
 
@@ -90,28 +99,13 @@ class DFT(TensorFuns):
         return DTMd
 
     def __repr__(self):
-        ss="Class : {}\n".format(self.__class__.__name__)
-        ss+='    name : {}\n'.format(self.name)
-        ss+='    inverse = {}\n'.format(self.inverse)
-        ss+='    size N = {}\n'.format(self.N)
-        return ss
+        keys=['name','inverse','fft_form','N']
+        return self._repr(keys)
 
     def transpose(self):
-        return DFT(name=self.name+'.T', inverse=not(self.inverse), N=self.N)
-
-    @staticmethod
-    def fftnc(x, N):
-        """
-        centered n-dimensional FFT algorithm
-        """
-        return fftnc(x, N)
-
-    @staticmethod
-    def ifftnc(Fx, N):
-        """
-        centered n-dimensional inverse FFT algorithm
-        """
-        return ifftnc(Fx, N)
+        kwargs = copy(self.__dict__)
+        kwargs.update(dict(inverse=not self.inverse))
+        return DFT(**kwargs)
 
 class Operator():
     """
@@ -152,8 +146,8 @@ class Operator():
         return res
 
     def __repr__(self):
-        s='Class : {0}\nname : {1}\nexpression : '.format(self.__class__.__name__,
-                                                          self.name)
+        s='Class : {0}\n    name : {1}\n    expression : '.format(self.__class__.__name__,
+                                                                  self.name)
         flag_sum=False
         no_sum=len(self.mat_rev)
         for isum in np.arange(no_sum):
@@ -237,15 +231,16 @@ def grad(X):
     else:
         shape=X.shape+(X.dim,)
     name='grad({0})'.format(X.name[:10])
-    gX=Tensor(name=name, shape=shape, N=X.N, Fourier=True)
+    gX=Tensor(name=name, shape=shape, N=X.N,
+              Fourier=True, fft_form=X.fft_form)
     if X.Fourier:
         FX=X
     else:
-        F=DFT(N=X.N)
+        F=DFT(N=X.N, fft_form=X.fft_form)
         FX=F(X)
 
     dim=len(X.N)
-    freq=Grid.get_freq(X.N, X.Y)
+    freq=Grid.get_freq(X.N, X.Y, fft_form=X.fft_form)
     strfreq='xyz'
     coef=2*np.pi*1j
     val=np.empty((X.dim,)+X.shape+X.N, dtype=np.complex)
@@ -260,7 +255,7 @@ def grad(X):
         gX.val=np.moveaxis(val, 0, X.order)
 
     if not X.Fourier:
-        iF=DFT(N=X.N, inverse=True)
+        iF=DFT(N=X.N, inverse=True, fft_form=gX.fft_form)
         gX=iF(gX)
     gX.name='grad({0})'.format(X.name[:10])
     return gX
@@ -273,15 +268,15 @@ def div(X):
     assert(X.shape[-1]==X.dim)
     assert(X.order==1)
 
-    dX=Tensor(shape=shape, N=X.N, Fourier=True)
+    dX=Tensor(shape=shape, N=X.N, Fourier=True, fft_form=X.fft_form)
     if X.Fourier:
         FX=X
     else:
-        F=DFT(N=X.N)
+        F=DFT(N=X.N, fft_form=X.fft_form)
         FX=F(X)
 
     dim=len(X.N)
-    freq=Grid.get_freq(X.N, X.Y)
+    freq=Grid.get_freq(X.N, X.Y, fft_form=FX.fft_form)
     strfreq='xyz'
     coef=2*np.pi*1j
 
@@ -290,7 +285,7 @@ def div(X):
         dX.val+=np.einsum(mul_str, coef*freq[ii], FX.val[ii], dtype=np.complex)
 
     if not X.Fourier:
-        iF=DFT(N=X.N, inverse=True)
+        iF=DFT(N=X.N, inverse=True, fft_form=dX.fft_form)
         dX=iF(dX)
     dX.name='div({0})'.format(X.name[:10])
     return dX
@@ -321,20 +316,21 @@ def potential(X, small_strain=False):
     if X.Fourier:
         FX=X
     else:
-        F=DFT(N=X.N)
+        F=DFT(N=X.N, fft_form=X.fft_form)
         FX=F(X)
 
-    freq=Grid.get_freq(X.N, X.Y)
+    freq=Grid.get_freq(X.N, X.Y, fft_form=FX.fft_form)
     if X.order==1:
         assert(X.dim==X.shape[0])
-        iX=Tensor(name='potential({0})'.format(X.name[:10]), shape=(1,), N=X.N, Fourier=True)
+        iX=Tensor(name='potential({0})'.format(X.name[:10]), shape=(1,), N=X.N,
+                  Fourier=True, fft_form=FX.fft_form)
         iX.val[0]=potential_scalar(FX.val, freq=freq, mean_index=FX.mean_index())
 
     elif X.order==2:
         assert(X.dim==X.shape[0])
         assert(X.dim==X.shape[1])
-        iX=Tensor(name='potential({0})'.format(X.name[:10]),
-                    shape=(X.dim,), N=X.N, Fourier=True)
+        iX=Tensor(name='potential({0})'.format(X.name[:10]), shape=(X.dim,), N=X.N,
+                  Fourier=True, fft_form=FX.fft_form)
         if not small_strain:
             for ii in range(X.dim):
                 iX.val[ii]=potential_scalar(FX.val[ii], freq=freq, mean_index=FX.mean_index())
@@ -355,40 +351,42 @@ def potential(X, small_strain=False):
     if X.Fourier:
         return iX
     else:
-        iF=DFT(N=X.N, inverse=True)
+        iF=DFT(N=X.N, inverse=True, fft_form=FX.fft_form)
         return iF(iX)
 
 def matrix2tensor(M):
-    T = Tensor(name=M.name, val=M.val, order=2, Fourier=M.Fourier, multype=21)
-    return T
+    return Tensor(name=M.name, val=M.val, order=2, multype=21,
+                  Fourier=M.Fourier, fft_form=fft_form_default)
 
 def vector2tensor(V):
     return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)
 
-def grad_div_tensor(N, Y=None, grad=True, div=True):
+def grad_div_tensor(N, Y=None, grad=True, div=True, fft_form=fft_form_default):
     if grad and div:
-        return grad_tensor(N, Y), div_tensor(N, Y)
+        return grad_tensor(N, Y, fft_form=fft_form), div_tensor(N, Y, fft_form=fft_form)
     elif grad:
-        return grad_tensor(N, Y)
+        return grad_tensor(N, Y, fft_form=fft_form)
     elif div:
-        return div_tensor(N, Y)
+        return div_tensor(N, Y, fft_form=fft_form)
 
-def grad_tensor(N, Y=None):
+def grad_tensor(N, Y=None, fft_form=fft_form_default):
     if Y is None:
         Y = np.ones_like(N)
     # scalar valued versions of gradient and divergence
     N = np.array(N, dtype=np.int)
     dim = N.size
     hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
-    freq = Grid.get_xil(N, Y)
+    freq = Grid.get_xil(N, Y, fft_form=fft_form)
     for ind in itertools.product(*[range(n) for n in N]):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
     hGrad = hGrad*2*np.pi*1j
-    return Tensor(name='hgrad', val=hGrad, order=1, Fourier=True, multype='grad')
+    return Tensor(name='hgrad', val=hGrad, order=1, multype='grad',
+                  Fourier=True, fft_form=fft_form)
 
-def div_tensor(N, Y=None):
+def div_tensor(N, Y=None, fft_form=fft_form_default):
     if Y is None:
         Y = np.ones_like(N)
-    hGrad=grad_tensor(N, Y=Y)
-    return Tensor(name='hdiv', val=hGrad.val, order=1, Fourier=True, multype='div')
+    hGrad=grad_tensor(N, Y=Y, fft_form=fft_form)
+    hGrad.multype='div'
+    return hGrad

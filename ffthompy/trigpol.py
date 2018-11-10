@@ -1,11 +1,16 @@
 """Basic methods for trigonometric polynomials."""
 
+from __future__ import division
 import numpy as np
+
+# fft_form_default='r' # real input data
+# fft_form_default='c' # center version of FFT
+fft_form_default=0 # standard version of FFT
 
 
 class Grid():
     @staticmethod
-    def get_ZNl(N):
+    def get_ZNl(N, fft_form=fft_form_default):
         r"""
         it produces index set ZNl=\underline{\set{Z}}^d_N :
         ZNl[i][j]\in\set{Z} : -N[i]/2 <= ZNl[i] < N[i]/2
@@ -15,10 +20,13 @@ class Grid():
         for m in range(N.size):
             ZNl.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5),
                                  dtype=np.int))
-        return ZNl
+        if fft_form in ['r',0]:
+            return [np.fft.ifftshift(val) for val in ZNl]
+        else:
+            return ZNl
 
     @staticmethod
-    def get_xil(N, Y):
+    def get_xil(N, Y, fft_form=fft_form_default):
         """
         it produces discrete frequencies of Fourier series
         xil[i] = ZNl[i]/Y[i]
@@ -26,11 +34,14 @@ class Grid():
         xil = []
         for m in np.arange(np.size(N)):
             xil.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5))/Y[m])
-        return xil
+        if fft_form in ['r',0]:
+            return [np.fft.ifftshift(xi) for xi in xil]
+        else:
+            return xil
 
     @staticmethod
-    def get_freq(N, Y):
-        return Grid.get_xil(N, Y)
+    def get_freq(N, Y, fft_form=fft_form_default):
+        return Grid.get_xil(N, Y, fft_form=fft_form)
 
     @staticmethod
     def get_product(xi):
@@ -48,7 +59,7 @@ class Grid():
         Coord[i][j] = x_N^{(i,j)}
         """
         d = np.size(N)
-        ZNl = Grid.get_ZNl(N)
+        ZNl = Grid.get_ZNl(N, fft_form='c')
         coord = np.zeros(np.hstack([d, N]))
         for ii in np.arange(d):
             x = Y[ii]*ZNl[ii]/N[ii]
@@ -105,7 +116,6 @@ class TrigPolBasis(Grid):
             ss = "Shape basis function for k = %d and N = %s" \
                 % (self.order, str(self.N))
         return ss
-
 
 def get_inverse(A):
     """
@@ -183,34 +193,6 @@ def enlarge(xN, M):
         raise NotImplementedError('Fun enlarge do not support dim (%d).' % dim)
     return xM
 
-
-def enlarge_M(xN, M):
-    """
-    Matrix representation of enlarge function.
-
-    Parameters
-    ----------
-    xN : numpy.ndarray of shape = (dim, dim) + N
-        input matrix that is to be enlarged
-
-    Returns
-    -------
-    xM : numpy.ndarray of shape = (dim, dim) + M
-        output matrix that is enlarged
-    M : array like
-        number of grid points
-    """
-    M = np.array(M, dtype=np.int32)
-    N = np.array(xN.shape[2:])
-    if np.allclose(M, N):
-        return xN
-    xM = np.zeros(np.hstack([xN.shape[0], xN.shape[1], M]))
-    for m in np.arange(xN.shape[0]):
-        for n in np.arange(xN.shape[1]):
-            xM[m][n] = enlarge(xN[m][n], M)
-    return xM
-
-
 def decrease(xN, M):
     """
     Decreases an array of Fourier coefficients by omitting the highest
@@ -246,5 +228,8 @@ def get_Nodd(N):
     Nodd = N - ((N + 1) % 2)
     return Nodd
 
-def mean_index(N):
-    return tuple(np.array(np.fix(np.array(N)/2), dtype=np.int))
+def mean_index(N, fft_form=fft_form_default):
+    if fft_form in [0, 'r']:
+        return tuple(np.zeros_like(N, dtype=np.int))
+    elif fft_form in ['c']:
+        return tuple(np.array(np.fix(np.array(N)/2), dtype=np.int))

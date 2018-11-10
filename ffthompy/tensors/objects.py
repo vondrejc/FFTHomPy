@@ -2,19 +2,21 @@
 This module contains classes and functions representing tensors
 of trigonometric polynomials and relating operators.
 """
-
+from __future__ import print_function, division
 import numpy as np
-from ffthompy.trigpol import mean_index
+from ffthompy.general.base import Representation
+from ffthompy.trigpol import mean_index, fft_form_default
 from ffthompy.mechanics.matcoef import ElasticTensor
-from ffthompy.trigpol import enlarge, decrease
-from ffthompy.tensors.fft import fftnc, ifftnc
+from ffthompy.trigpol import enlarge, decrease, get_inverse
+from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn, cfftnc, icfftnc
 import itertools
+from copy import copy
 
 
-class TensorFuns():
+class TensorFuns(Representation):
 
     def mean_index(self):
-        return mean_index(self.N)
+        return mean_index(self.N, self.fft_form)
 
     def __getitem__(self, ii):
         return self.val[ii]
@@ -31,19 +33,24 @@ class TensorFuns():
     def sub(self, ii):
         self.val[ii]
 
+    def set_fft(self, fft_form):
+        assert(fft_form in ['c', 'r', 0])
+        if fft_form in ['r']:
+            self.fftn=rfftn
+            self.ifftn=irfftn
+        elif fft_form in [0]:
+            self.fftn=fftn
+            self.ifftn=ifftn
+        elif fft_form in ['c']:
+            self.fftn=fftnc
+            self.ifftn=icfftn
+        self.fft_form=fft_form
+        return self
+
     def __repr__(self, full=False, detailed=False):
-        keys=['name', 'Y', 'shape', 'N', 'Fourier', 'norm']
-        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
+        keys=['order', 'name', 'Y', 'shape', 'N', 'Fourier', 'fft_form', 'norm']
+        ss=self._repr(keys)
         skip=4*' '
-        nstr=np.array([key.__len__() for key in keys]).max()
-
-        for key in keys:
-            attr=getattr(self, key)
-            if callable(attr):
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
-            else:
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
-
         if np.prod(np.array(self.shape))<=36 or detailed:
             ss+='{0}norm component-wise =\n{1}\n'.format(skip, str(self.norm(componentwise=True)))
             ss+='{0}mean = \n{1}\n'.format(skip, str(self.mean()))
@@ -51,32 +58,51 @@ class TensorFuns():
             ss+='{0}val = \n{1}'.format(skip, str(self.val))
         return ss
 
+    def get_N_real(self, N):
+        Nr=np.copy(N)
+        Nr[-1]=np.fix(N[-1]/2)+1
+        return Nr
+
+    def get_N(self, Nr):
+        N=np.copy(Nr)
+        N[-1]=Nr[-1]*2-1
+        return N
+
+
 class Tensor(TensorFuns):
 
-    def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None,
-                 Fourier=False, multype='scal'):
+    def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None, multype='scal',
+                 Fourier=False, fft_form=fft_form_default):
 
         self.name=name
         self.Fourier=Fourier
+        self.fft_form=fft_form
+        self.set_fft(fft_form)
 
         if isinstance(val, np.ndarray): # define: val + order
             self.val=val
-            if order is not None:
-                self.order=int(order)
-                self.shape=self.val.shape[:order]
-                self.N=self.val.shape[order:]
-            else:
-                raise ValueError('order is not defined!')
+            self.order=int(order)
+            self.shape=self.val.shape[:order]
+            self.N=self.val.shape[order:]
+#             if fft_form in ['r'] and Fourier:
+#                 self.Nr=self.val.shape[order:]
+#                 self.N=self.get_N(self.Nr)
+#             else:
+#                 self.N=self.val.shape[order:]
+#                 self.Nr=self.get_N_real(self.N)
 
         elif shape is not None and N is not None: # define: shape + N
             self.N=tuple(np.array(N, dtype=np.int))
             self.shape=tuple(np.array(shape, dtype=np.int))
             self.order=len(self.shape)
 
-            if self.Fourier:
-                self.val=np.zeros(self.shape+self.N, dtype=np.complex)
-            else:
+            if not self.Fourier:
                 self.val=np.zeros(self.shape+self.N, dtype=np.float)
+            elif self.fft_form in [0, 'c']:
+                self.val=np.zeros(self.shape+self.N, dtype=np.complex)
+            elif self.fft_form in ['r']:
+                self.val=np.zeros(self.shape+self.Nr, dtype=np.complex)
+
         else:
             raise ValueError('Initialization of Tensor.')
 
@@ -88,6 +114,19 @@ class Tensor(TensorFuns):
 
         # definition of __mul__ operation
         self.multype=multype
+
+    def set_fft_form(self, fft_form):
+        if self.fft_form==fft_form:
+            return self
+
+        if self.Fourier:
+            if self.fft_form in ['c'] and fft_form in ['r', 0]:
+                self.val=np.fft.ifftshift(self.val, axes=self.axes)
+            elif self.fft_form in ['r', 0] and fft_form in ['c']:
+                self.val=np.fft.fftshift(self.val, axes=self.axes)
+
+        self.set_fft(fft_form)
+        return self
 
     def randomize(self):
         self.val=np.random.random(self.val.shape)
@@ -126,7 +165,9 @@ class Tensor(TensorFuns):
 
     def __mul__(self, Y, *args, **kwargs):
         multype=self.multype
-        X = self
+        X=self
+        assert(X.Fourier==Y.Fourier)
+        assert(X.fft_form==Y.fft_form)
         if multype in ['scal', 'scalar']:
             return scalar_product(X, Y)
         elif multype in [21, '21']:
@@ -142,12 +183,18 @@ class Tensor(TensorFuns):
         else:
             raise ValueError()
 
+    def inv(self):
+        assert(self.Fourier is False)
+        assert(self.order==2)
+        assert(self.shape[0]==self.shape[1])
+        return self.copy(name='inv({})'.format(self.name), val=get_inverse(self.val))
+
     def norm(self, ntype='L2', componentwise=False):
         if componentwise:
             scal=np.empty(self.shape)
             for ind in np.ndindex(*self.shape):
-                obj=Tensor(name='aux', val=self.val[ind], order=0, Fourier=self.Fourier)
-                scal[ind]=norm_fun(obj, ntype='L2')
+                obj=Tensor(name='aux', val=self.val[ind], order=0, N=self.N, Fourier=self.Fourier)
+                scal[ind]=norm_fun(obj, ntype=ntype)
             return scal
         else:
             return norm_fun(self, ntype=ntype)
@@ -159,8 +206,12 @@ class Tensor(TensorFuns):
         mean=np.zeros(self.shape)
         if self.Fourier:
             ind=self.mean_index()
+            if self.fft_form in ['r']:
+                coef=np.prod(self.N)
+            else:
+                coef=1.
             for di in np.ndindex(*self.shape):
-                mean[di]=np.real(self.val[di][ind])
+                mean[di]=np.real(self.val[di][ind])/coef
         else:
             for di in np.ndindex(*self.shape):
                 mean[di]=np.mean(self.val[di])
@@ -191,14 +242,16 @@ class Tensor(TensorFuns):
                 self.val[di]+=mean[di]
         return self
 
-    def __eq__(self, x, full=True, tol=1e-13):
+    def __eq__(self, Y, full=True, tol=1e-13):
         """
         Check the equality with other objects comparable to trig. polynomials.
         """
+        X=self
         _bool=False
-        res=None
-        if isinstance(x, Tensor) and self.val.squeeze().shape==x.val.squeeze().shape:
-            res=np.linalg.norm(self.val.squeeze()-x.val.squeeze())
+        res=np.inf
+        if (isinstance(X, Tensor) and X.fft_form==Y.fft_form and
+                X.val.squeeze().shape==Y.val.squeeze().shape and X.Fourier==Y.Fourier):
+            res=np.linalg.norm(X.val.squeeze()-Y.val.squeeze())
             if res<tol:
                 _bool=True
         if full:
@@ -234,10 +287,10 @@ class Tensor(TensorFuns):
         return res
 
     def identity(self):
-        self.val[:] = 0.
-        assert(self.order % 2 == 0)
+        self.val[:]=0.
+        assert(self.order%2==0)
         for ii in itertools.product(*tuple([range(n) for n in self.shape[:int(self.order/2)]])):
-            self.val[ii + ii] = 1.
+            self.val[ii+ii]=1.
 
     def vec(self):
         """
@@ -247,10 +300,16 @@ class Tensor(TensorFuns):
         return np.matrix(self.val.ravel()).transpose()
 
     def copy(self, **kwargs):
-        data={'name': self.name, 'val': np.copy(self.val), 'order': self.order,
-              'Fourier': self.Fourier, 'multype': self.multype, 'Y': self.Y}
+#         X=self
+#         data={'name': X.name, 'val': np.copy(X.val), 'order': X.order, 'Y': X.Y,
+#               'Fourier': X.Fourier, 'fft_form': X.fft_form, 'multype': X.multype}
+        keys=('name','val','order','Y','multype','Fourier','fft_form')
+        data={k:copy(self.__dict__[k]) for k in keys}
         data.update(kwargs)
         return Tensor(**data)
+
+    def update(self, **kwargs):
+        return self.__dict__.update(**kwargs)
 
     def zeros_like(self, name=None):
         if name is None:
@@ -297,50 +356,63 @@ class Tensor(TensorFuns):
             eigs=np.sort(eigs, axis=0)
         return eigs
 
+    @property
+    def axes(self): # axes for Fourier transform
+        return tuple(range(self.order, self.order+self.dim))
+
     def enlarge(self, M):
-        assert(self.Fourier)
-        val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
-        for di in np.ndindex(*self.shape):
-            val[di]=enlarge(self.val[di], M)
-        return self.copy(val=val)
-
-    def decrease(self, M):
-        assert(self.Fourier)
-        val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
-        for di in np.ndindex(*self.shape):
-            val[di]=decrease(self.val[di], M)
-        return self.copy(val=val)
-
-    def fourier(self):
-        if self.Fourier:
-            return self.copy(val=ifftnc(self.val, self.N), Fourier=not self.Fourier)
-        else:
-            return self.copy(val=fftnc(self.val, self.N), Fourier=not self.Fourier)
-
-    def project(self, M):
         """
         It enlarges a trigonometric polynomial by adding zeros to the Fourier
         coefficients with high frequencies.
         """
+        assert(self.Fourier)
+        fft_form=self.fft_form
+        self.set_fft_form(fft_form='c')
+
+        val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
+        for di in np.ndindex(*self.shape):
+            val[di]=enlarge(self.val[di], M)
+
+        R=self.copy(val=val)
+        return R.set_fft_form(fft_form=fft_form)
+
+    def fourier(self):
+        if self.Fourier:
+            return self.copy(val=self.ifftn(self.val, self.N), Fourier=not self.Fourier)
+        else:
+            return self.copy(val=self.fftn(self.val, self.N), Fourier=not self.Fourier)
+
+    def project(self, M):
+        """
+        It projects a trigonometric polynomial to a polynomial with different grid.
+        """
+
         if np.allclose(self.N, M):
             return self
 
-        if self.Fourier:
-            X=self
-        else:
-            X=self.fourier()
+        Fourier=self.Fourier
+        X=self
+        if Fourier:
+            X=X.fourier()
+
+        Fval = cfftnc(X.val, X.N)
 
         if np.all(np.greater(M, self.N)):
-            X=X.enlarge(M)
+            val=np.zeros(self.shape+tuple(M), dtype=Fval.dtype)
+            for di in np.ndindex(*self.shape):
+                val[di]=enlarge(Fval[di], M)
         elif np.all(np.less(M, self.N)):
-            X=X.decrease(M)
+            val=np.zeros(self.shape+tuple(M), dtype=Fval.dtype)
+            for di in np.ndindex(*self.shape):
+                val[di]=decrease(Fval[di], M)
         else:
             raise NotImplementedError()
 
-        if self.Fourier:
-            return X
-        else:
-            return X.fourier()
+        val = icfftnc(val, M)
+        Y=X.copy(val=val)
+        if Fourier:
+            Y=Y.fourier()
+        return Y
 
     def plot(self, ind=0, N=None, filen=None, ptype='surface'):
         dim=self.N.__len__()
@@ -354,12 +426,7 @@ class Tensor(TensorFuns):
         from ffthompy.trigpol import Grid
         fig=plt.figure()
         coord=Grid.get_coordinates(N, self.Y)
-        if np.all(np.greater(N, self.N)):
-            Z=ifftnc(enlarge(fftnc(self.val[ind], self.N), N), N)
-        elif np.all(np.less(N, self.N)):
-            Z=ifftnc(decrease(fftnc(self.val[ind], self.N), N), N)
-        elif np.allclose(N, self.N):
-            Z=self.val[ind]
+        Z = self.project(N)
 
         if ptype in ['wireframe']:
             ax=fig.add_subplot(111, projection='3d')
@@ -367,9 +434,9 @@ class Tensor(TensorFuns):
         elif ptype in ['surface']:
             from matplotlib import cm
             ax=fig.gca(projection='3d')
-            surf=ax.plot_surface(coord[0], coord[1], Z,
-                                   rstride=1, cstride=1, cmap=cm.coolwarm,
-                                   linewidth=0, antialiased=False)
+            surf=ax.plot_surface(coord[0], coord[1], Z.val[ind],
+                                 rstride=1, cstride=1, cmap=cm.coolwarm,
+                                 linewidth=0, antialiased=False)
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
         if filen is None:
@@ -408,7 +475,6 @@ def einsum(str_operator, x, y):
     order=len(val.shape)-len(x.N)
     return y.copy(name='{0}({1})'.format(x.name, y.name), val=val, order=order)
 
-# @staticmethod
 def norm_fun(X, ntype):
     if ntype in ['L2', 2]:
         scal=(scalar_product(X, X))**0.5
@@ -424,7 +490,31 @@ def norm_fun(X, ntype):
 def scalar_product(y, x):
     assert(isinstance(x, Tensor))
     assert(y.val.shape==x.val.shape)
+    assert(y.fft_form==x.fft_form)
+
     scal=np.sum(y.val[:]*np.conj(x.val[:])).real
     if not y.Fourier:
         scal=scal/np.prod(y.N)
+    elif x.fft_form in ['r']:
+        raise NotImplementedError()
+        scal=scal/np.prod(x.N)**2
     return scal
+
+def get_N_fft_form_real(N):
+    Nreal=np.copy(N)
+    Nreal[-1]=Nreal[-1]/2+1
+    return Nreal
+
+if __name__=='__main__':
+    N=np.array([5,5], dtype=np.int)
+    M=2*N
+    u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form=0)
+    u.randomize()
+    print(u)
+    Fu=u.fourier()
+    print(Fu)
+    u2=u.project(M)
+    print(u2)
+    print(u.val)
+    print(u2.val)
+    print('end')

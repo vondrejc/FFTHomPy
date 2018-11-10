@@ -70,11 +70,10 @@ pb = {'name': 'prob1',
 # definition of material coefficients based on grid-based composite
 mat = Material(pb['material'])
 Nbar = 2*pb['solve']['N'] - 1
-A = matrix2tensor(mat.get_A_Ga(Nbar=Nbar, primaldual=pb['solve']['primaldual'][0]))
+A = mat.get_A_Ga(Nbar=Nbar, primaldual=pb['solve']['primaldual'][0])
 
 # projections in Fourier space
-_, hG1N, _ = proj.scalar(pb['solve']['N'], pb['material']['Y'],
-                         centered=True, NyqNul=True, tensor=True)
+_, hG1N, _ = proj.scalar(pb['solve']['N'], pb['material']['Y'], NyqNul=True, tensor=True)
 # increasing the projection with zeros to comply with a projection
 # on double grid, see Definition 24 in IJNME2016
 hG1N = hG1N.enlarge(Nbar)

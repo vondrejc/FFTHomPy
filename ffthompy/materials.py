@@ -1,8 +1,10 @@
 import numpy as np
 import scipy.special as sp
-from ffthompy.matvecs import DFT, VecTri, Matrix
+from ffthompy.matvecs import Matrix
+from ffthompy.tensors import Tensor
+from ffthompy.tensors.fft import cfftnc, icfftnc
 from ffthompy.trigpol import Grid, decrease, mean_index
-
+import itertools
 
 inclusion_keys = {'ball': ['ball', 'circle'],
                   'cube': ['cube', 'square'],
@@ -49,7 +51,7 @@ class Material():
         else:
             raise NotImplementedError("Improper material definition!")
 
-    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None):
+    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None, tensor=True):
         """
         Returns stiffness matrix for scheme with exact integration.
         """
@@ -77,7 +79,7 @@ class Material():
                 P = self.conf['P']
             coord = Grid.get_coordinates(P, self.Y)
             vals = self.evaluate(coord)
-            dim = vals.d
+
             if primaldual is 'dual':
                 vals = vals.inv()
 
@@ -87,36 +89,38 @@ class Material():
             elif order in [1, 'bilinear']:
                 Wraw = get_weights_lin(h, Nbar, self.Y)
 
-            val = np.zeros(np.hstack([dim, dim, Nbar]))
-            for m in np.arange(dim):
-                for n in np.arange(dim):
-                    hAM0 = np.prod(P)*DFT.fftnc(vals[m, n], P)
-                    if np.allclose(P, Nbar):
-                        hAM = hAM0
-                    elif np.all(np.greater_equal(P, Nbar)):
-                        hAM = decrease(hAM0, Nbar)
-                    elif np.all(np.less(P, Nbar)):
-                        factor = np.ceil(np.array(Nbar, dtype=np.float64) / P)
-                        hAM0per = np.tile(hAM0,
-                                          2*np.array(factor, dtype=np.int)-1)
-                        hAM = decrease(hAM0per, Nbar)
-                    else:
-                        msg = """This combination of double N (%s) and P (%s) "
-                            implemented.""" % (str(Nbar), str(P))
-                        raise NotImplementedError(msg)
+            val = np.zeros(vals.shape+tuple(Nbar))
+            for m,n in itertools.product(*(range(d) for d in vals.shape)):
+                hAM0 = np.prod(P)*cfftnc(vals[m, n], P)
+                if np.allclose(P, Nbar):
+                    hAM = hAM0
+                elif np.all(np.greater_equal(P, Nbar)):
+                    hAM = decrease(hAM0, Nbar)
+                elif np.all(np.less(P, Nbar)):
+                    factor = np.ceil(np.array(Nbar, dtype=np.float64) / P)
+                    hAM0per = np.tile(hAM0,
+                                      2*np.array(factor, dtype=np.int)-1)
+                    hAM = decrease(hAM0per, Nbar)
+                else:
+                    msg = """This combination of double N (%s) and P (%s) "
+                        implemented.""" % (str(Nbar), str(P))
+                    raise NotImplementedError(msg)
 
-                    val[m, n] = np.real(DFT.ifftnc(Wraw*hAM, Nbar))
+                val[m, n] = np.real(icfftnc(Wraw*hAM, Nbar))
 
-            name = 'A_Ga_o%d_P%d' % (order, P.max())
+            name = 'A_Ga_o{0}_P{1}'.format(order, P.max())
 
-        return Matrix(name=name, val=val, Fourier=False)
+        if tensor:
+            return Tensor(name=name, val=val, order=2, Y=self.Y, multype=21, Fourier=False)
+        else:
+            return Matrix(name=name, val=val, Fourier=False)
 
-    def get_A_GaNi(self, N, primaldual='primal'):
+    def get_A_GaNi(self, N, primaldual='primal', tensor=True):
         """
         Returns stiffness matrix for a scheme with trapezoidal quadrature rule.
         """
         coord = Grid.get_coordinates(N, self.Y)
-        A = self.evaluate(coord)
+        A = self.evaluate(coord, tensor=tensor)
         if primaldual is 'dual':
             A = A.inv()
         return A
@@ -139,7 +143,7 @@ class Material():
 
             if incl in inclusion_keys['cube']:
                 Wraw = get_weights_con(params[ii], N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
+                chars.append(np.real(icfftnc(SS*Wraw, N2)))
 
             elif incl in inclusion_keys['ball']:
                 r = params[ii]/2
@@ -147,11 +151,11 @@ class Material():
                     Wraw = np.zeros(N2)
                 else:
                     Wraw = get_weights_circ(r, N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
+                chars.append(np.real(icfftnc(SS*Wraw, N2)))
 
             elif incl in inclusion_keys['pyramid']:
                 Wraw = get_weights_lin(params[ii]/2., N2, self.Y)
-                chars.append(np.real(DFT.ifftnc(SS*Wraw, N2)))
+                chars.append(np.real(icfftnc(SS*Wraw, N2)))
 
             elif incl == 'all':
                 chars.append(np.ones(N2))
@@ -167,7 +171,7 @@ class Material():
 
         return chars
 
-    def evaluate(self, coord):
+    def evaluate(self, coord, tensor=True):
         """
         Evaluate material at coordinates (coord).
 
@@ -191,10 +195,11 @@ class Material():
             topos = self.get_topologies(coord)
 
             for ii in np.arange(len(self.conf['inclusions'])):
-                A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii],
-                                   topos[ii])
-
-        return Matrix(name='A_GaNi', val=A_val, Fourier=False)
+                A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii], topos[ii])
+        if tensor:
+            return Tensor(name='A_GaNi', val=A_val, order=2, Y=self.Y, multype=21, Fourier=False)
+        else:
+            return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 
     def get_topologies(self, coord):
         """
@@ -334,7 +339,7 @@ def get_weights_con(h, Nbar, Y):
     """
     dim = np.size(Y)
     meas_puc = np.prod(Y)
-    ZN2l = VecTri.get_ZNl(Nbar)
+    ZN2l = Grid.get_ZNl(Nbar, fft_form='c')
     Wphi = np.ones(Nbar) / meas_puc
     for ii in np.arange(dim):
         Nshape = np.ones(dim, dtype=np.int)
@@ -364,7 +369,7 @@ def get_weights_lin(h, Nbar, Y):
     """
     d = np.size(Y)
     meas_puc = np.prod(Y)
-    ZN2l = VecTri.get_ZNl(Nbar)
+    ZN2l = Grid.get_ZNl(Nbar, fft_form='c')
     Wphi = np.ones(Nbar) / meas_puc
     for ii in np.arange(d):
         Nshape = np.ones(d, dtype=np.int)
@@ -392,7 +397,7 @@ def get_weights_circ(r, Nbar, Y):
         Wphi - integral weights at regular grid sizing Nbar
     """
     d = np.size(Y)
-    ZN2l = Grid.get_ZNl(Nbar)
+    ZN2l = Grid.get_ZNl(Nbar, fft_form='c')
     meas_puc = np.prod(Y)
     circ = 0
     for m in range(d):
@@ -403,7 +408,7 @@ def get_weights_circ(r, Nbar, Y):
         xi_p2 = np.tile(np.reshape((ZN2l[m]/Y[m])**2, Nshape), Nrep)
         circ += xi_p2
     circ = circ**0.5
-    ind = mean_index(Nbar)
+    ind = mean_index(Nbar, fft_form='c')
     circ[ind] = 1.
 
     Wphi = r**2 * sp.jn(1, 2*np.pi*circ*r) / (circ*r)

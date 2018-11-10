@@ -18,7 +18,7 @@ class Test_materials(unittest.TestCase):
     def test_operators(self):
         print('\nChecking materials...')
         for dim in [2,3]: #[2, 3]:
-            for mat in ['pyramid','square']: #,'square'
+            for mat in ['square','pyramid']: #,'square'
                 N = dim*(5,)
                 print('...checking dim={}; material="{}"'.format(dim,mat))
                 materials=dict(
@@ -50,9 +50,9 @@ class Test_materials(unittest.TestCase):
                               'order': 1, },)
 
                 mat0=Material(materials[mat+'0'])
-                Aga0=matrix2tensor(mat0.get_A_Ga(N, primaldual='primal'))
+                Aga0=mat0.get_A_Ga(N, primaldual='primal')
                 mat1=Material(materials[mat+'1'])
-                Aga1=matrix2tensor(mat1.get_A_Ga(N, primaldual='primal'))
+                Aga1=mat1.get_A_Ga(N, primaldual='primal')
 
                 msg='dim={}; material={}'.format(dim,mat)
                 self.assertAlmostEqual(0, np.linalg.norm(Aga0.val[0, 0]-Aga1.val[0, 0]),

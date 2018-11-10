@@ -1,6 +1,6 @@
 import numpy as np
 from ffthompy.general.base import Timer
-from ffthompy.tensors import matrix2tensor
+import itertools
 
 
 def postprocess(pb, A, mat, solutions, results, primaldual):
@@ -15,7 +15,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             order_name = ''
             Nname = ''
             if A.name is not 'A_GaNi':
-                A = matrix2tensor(mat.get_A_GaNi(pb.solve['N'], primaldual))
+                A = mat.get_A_GaNi(pb.solve['N'], primaldual)
 
         elif pp['kind'] in ['Ga', 'ga']:
             if 'order' in pp:
@@ -23,13 +23,12 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
                 if pp['order'] is None:
                     Nname = ''
                     order_name = ''
-                    A = matrix2tensor(mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
-                                                   order=pp['order']))
+                    A = mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual, order=pp['order'])
                 else:
                     order_name = '_o' + str(pp['order'])
                     Nname = '_P%d' % np.mean(pp['P'])
-                    A = matrix2tensor(mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
-                                                   order=pp['order'], P=pp['P']))
+                    A = mat.get_A_Ga(Nbar=Nbarpp, primaldual=primaldual,
+                                     order=pp['order'], P=pp['P'])
             else:
                 order_name = ''
                 Nname = ''
@@ -37,7 +36,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             ValueError()
 
         name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
-        print('calculated: ' + name)
+        print('calculating: ' + name)
 
         AH = assembly_matrix(A, solutions)
 
@@ -66,9 +65,8 @@ def assembly_matrix(Afun, solutions):
         sol = solutions
 
     AH = np.zeros([dim, dim])
-    for ii in np.arange(dim):
-        for jj in np.arange(dim):
-            AH[ii, jj] = Afun(sol[ii]) * sol[jj]
+    for ii, jj in itertools.product(range(dim), repeat=2):
+        AH[ii, jj] = Afun(sol[ii]) * sol[jj]
     return AH
 
 

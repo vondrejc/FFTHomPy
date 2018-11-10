@@ -1,11 +1,12 @@
 import numpy as np
 import scipy as sp
-from ffthompy.trigpol import Grid, get_Nodd, mean_index
+from ffthompy.trigpol import Grid, get_Nodd, mean_index, fft_form_default
 from ffthompy.matvecs import Matrix
 from ffthompy.tensors import Tensor
+import itertools
 
 
-def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
+def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     """
     Assembly of discrete kernels in Fourier space for scalar elliptic problems.
 
@@ -32,7 +33,7 @@ def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
     else:
         Nred = N
 
-    xi = Grid.get_xil(Nred, Y)
+    xi = Grid.get_xil(Nred, Y, fft_form=fft_form)
     xi2 = []
     for m in np.arange(d):
         xi2.append(xi[m]**2)
@@ -43,7 +44,7 @@ def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
     num = np.zeros(np.hstack([d, d, Nred]))
     denom = np.zeros(Nred)
 
-    ind_center = mean_index(Nred)
+    ind_center = mean_index(Nred, fft_form=fft_form)
     for m in np.arange(d): # diagonal components
         Nshape = np.ones(d, dtype=np.int)
         Nshape[m] = Nred[m]
@@ -83,16 +84,13 @@ def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
             G1l[m][n] = G1l[n][m]
             G2l[m][n] = G2l[n][m]
 
-    if not centered:
-        for m in np.arange(d):
-            for n in np.arange(d):
-                G1l[m][n] = np.fft.ifftshift(G1l[m][n])
-                G2l[m][n] = np.fft.ifftshift(G2l[m][n])
-
     if tensor:
-        G0l = Tensor(name='hG0', val=G0l, order=2, Fourier=True, multype=21)
-        G1l = Tensor(name='hG1', val=G1l, order=2, Fourier=True, multype=21)
-        G2l = Tensor(name='hG2', val=G2l, order=2, Fourier=True, multype=21)
+        G0l = Tensor(name='hG0', val=G0l, order=2, multype=21,
+                     Fourier=True, fft_form=fft_form)
+        G1l = Tensor(name='hG1', val=G1l, order=2, multype=21,
+                     Fourier=True, fft_form=fft_form)
+        G2l = Tensor(name='hG2', val=G2l, order=2, multype=21,
+                     Fourier=True, fft_form=fft_form)
     else:
         G0l = Matrix(name='hG0', val=G0l, Fourier=True)
         G1l = Matrix(name='hG1', val=G1l, Fourier=True)
@@ -102,9 +100,10 @@ def scalar(N, Y, centered=True, NyqNul=True, tensor=True):
         G0l = G0l.enlarge(N)
         G1l = G1l.enlarge(N)
         G2l = G2l.enlarge(N)
+
     return G0l, G1l, G2l
 
-def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
+def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     """
     Projection matrix on a space of admissible strain fields
     INPUT =
@@ -115,7 +114,7 @@ def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
     OUTPUT =
         G1h,G1s,G2h,G2s : projection matrices of size DxDxN
     """
-    xi = Grid.get_xil(N, Y)
+    xi = Grid.get_xil(N, Y, fft_form=fft_form)
     N = np.array(N, dtype=np.int)
     d = N.size
     D = int(d*(d+1)/2)
@@ -140,7 +139,7 @@ def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
         norm2_xi += num[mm][mm]
 
     norm4_xi = norm2_xi**2
-    ind_center = mean_index(Nred)
+    ind_center = mean_index(Nred, fft_form=fft_form)
     # avoid division by zero
     norm2_xi[ind_center] = 1
     norm4_xi[ind_center] = 1
@@ -226,20 +225,12 @@ def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
     G2h = 1./(d-1)*(d*Lamh + G1h - W - WT)
     G2s = IS0 - G1h - G1s - G2h
 
-    if not centered:
-        for m in np.arange(d):
-            for n in np.arange(d):
-                G1h[m][n] = np.fft.ifftshift(G1h[m][n])
-                G1s[m][n] = np.fft.ifftshift(G1s[m][n])
-                G2h[m][n] = np.fft.ifftshift(G2h[m][n])
-                G2s[m][n] = np.fft.ifftshift(G2s[m][n])
-
     if tensor:
-        G0 = Tensor(name='hG0', val=mean, order=2, Fourier=True, multype=21)
-        G1h = Tensor(name='hG1h', val=G1h, order=2, Fourier=True, multype=21)
-        G1s = Tensor(name='hG1s', val=G1s, order=2, Fourier=True, multype=21)
-        G2h = Tensor(name='hG2h', val=G2h, order=2, Fourier=True, multype=21)
-        G2s = Tensor(name='hG2s', val=G2s, order=2, Fourier=True, multype=21)
+        G0 = Tensor(name='hG0', val=mean, order=2, Fourier=True, multype=21, fft_form=fft_form)
+        G1h = Tensor(name='hG1h', val=G1h, order=2, Fourier=True, multype=21, fft_form=fft_form)
+        G1s = Tensor(name='hG1s', val=G1s, order=2, Fourier=True, multype=21, fft_form=fft_form)
+        G2h = Tensor(name='hG2h', val=G2h, order=2, Fourier=True, multype=21, fft_form=fft_form)
+        G2s = Tensor(name='hG2s', val=G2s, order=2, Fourier=True, multype=21, fft_form=fft_form)
     else:
         G0 = Matrix(name='hG0', val=mean, Fourier=True)
         G1h = Matrix(name='hG1h', val=G1h, Fourier=True)
@@ -253,4 +244,5 @@ def elasticity(N, Y, centered=True, NyqNul=True, tensor=True):
         G1s = G1s.enlarge(N)
         G2h = G2h.enlarge(N)
         G2s = G2s.enlarge(N)
+
     return mean, G1h, G1s, G2h, G2s
