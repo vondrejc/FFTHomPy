@@ -107,7 +107,7 @@ class Test_operators(unittest.TestCase):
             iF = DFT(inverse=True, N=N, fft_form=fft_form)
 
             # scalar problem
-            _, G1l, G2l = scalar(N, Y=np.ones(dim), NyqNul=True, fft_form=fft_form)
+            _, G1l, G2l = scalar(N, Y=np.ones(dim), fft_form=fft_form)
             P1 = Operator(name='P1', mat=[[iF, G1l, F]])
             P2 = Operator(name='P2', mat=[[iF, G2l, F]])
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False, fft_form=fft_form)

@@ -540,11 +540,5 @@ if __name__=='__main__':
     print(Fu_0)
     print(Fu_c)
     print(Fu_r)
-#     print(Fu_0==Fu_0.set_fft_form('c').set_fft_form(0))
-#     print(Fu_0==Fu_0.set_fft_form('r').set_fft_form(0))
-#     print(Fu_c==Fu_0.set_fft_form(0).set_fft_form('c'))
-#     print(Fu_c==Fu_0.set_fft_form('r').set_fft_form('c'))
-#     gX=Tensor(name='name', shape=(2,), N=N, Fourier=True)
-#     print(gX)
 
     print('end')

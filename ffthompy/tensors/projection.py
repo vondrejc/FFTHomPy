@@ -3,14 +3,9 @@ from ffthompy.trigpol import Grid, get_Nodd, mean_index, fft_form_default
 from .objects import Tensor
 import itertools
 
-def scalar(N, Y, NyqNul=True, fft_form=fft_form_default):
+def scalar(N, Y, fft_form=fft_form_default):
     dim = np.size(N)
     N = np.array(N, dtype=np.int)
-    if NyqNul:
-        Nred = get_Nodd(N)
-    else:
-        Nred = N
-    assert(np.allclose(N, Nred))
 
     xi = Grid.get_freq(N, Y, fft_form=fft_form)
     N_fft=tuple(xi[i].size for i in range(dim))

@@ -24,7 +24,7 @@ class Test_solvers(unittest.TestCase):
         n=5
         N = n*np.ones(dim, dtype=np.int)
         hG0N, hG1N, hG2N = scalar(N, Y=np.ones(dim), NyqNul=True)
-        hG0Nt, hG1Nt, hG2Nt = scalar_tensor(N, Y=np.ones(dim), NyqNul=True)
+        hG0Nt, hG1Nt, hG2Nt = scalar_tensor(N, Y=np.ones(dim))
 
         self.assertAlmostEqual(0, norm(hG0N.val-hG0Nt.val), delta=1e-13)
         self.assertAlmostEqual(0, norm(hG1N.val-hG1Nt.val), delta=1e-13)
@@ -37,7 +37,7 @@ class Test_solvers(unittest.TestCase):
         n=5
         N = n*np.ones(dim, dtype=np.int)
 
-        _, hG1Nt, _ = scalar_tensor(N, Y=np.ones(dim), NyqNul=True)
+        _, hG1Nt, _ = scalar_tensor(N, Y=np.ones(dim))
 
         FN=DFT(name='FN', inverse=False, N=N)
         FiN=DFT(name='FiN', inverse=True, N=N)
