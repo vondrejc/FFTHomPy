@@ -26,6 +26,12 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         discrete kernel in Fourier space; provides projection
         on divergence-free fields with zero mean
     """
+    if fft_form in ['r']:
+        fft_form_flag=True
+        fft_form=0
+    else:
+        fft_form_flag=False
+
     d = np.size(N)
     N = np.array(N, dtype=np.int)
     if NyqNul:
@@ -85,12 +91,9 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
             G2l[m][n] = G2l[n][m]
 
     if tensor:
-        G0l = Tensor(name='hG0', val=G0l, order=2, multype=21,
-                     Fourier=True, fft_form=fft_form)
-        G1l = Tensor(name='hG1', val=G1l, order=2, multype=21,
-                     Fourier=True, fft_form=fft_form)
-        G2l = Tensor(name='hG2', val=G2l, order=2, multype=21,
-                     Fourier=True, fft_form=fft_form)
+        G0l = Tensor(name='hG0', val=G0l, order=2, multype=21, Fourier=True, fft_form=fft_form)
+        G1l = Tensor(name='hG1', val=G1l, order=2, multype=21, Fourier=True, fft_form=fft_form)
+        G2l = Tensor(name='hG2', val=G2l, order=2, multype=21, Fourier=True, fft_form=fft_form)
     else:
         G0l = Matrix(name='hG0', val=G0l, Fourier=True)
         G1l = Matrix(name='hG1', val=G1l, Fourier=True)
@@ -100,6 +103,10 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         G0l = G0l.enlarge(N)
         G1l = G1l.enlarge(N)
         G2l = G2l.enlarge(N)
+
+    if fft_form_flag:
+        for tensor in [G0l, G1l, G2l]:
+            tensor.set_fft_form(fft_form='r')
 
     return G0l, G1l, G2l
 
@@ -114,6 +121,12 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     OUTPUT =
         G1h,G1s,G2h,G2s : projection matrices of size DxDxN
     """
+    if fft_form in ['r']:
+        fft_form_flag=True
+        fft_form=0
+    else:
+        fft_form_flag=False
+
     xi = Grid.get_xil(N, Y, fft_form=fft_form)
     N = np.array(N, dtype=np.int)
     d = N.size
@@ -244,5 +257,9 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         G1s = G1s.enlarge(N)
         G2h = G2h.enlarge(N)
         G2s = G2s.enlarge(N)
+
+    if fft_form_flag:
+        for tensor in [G0, G1h, G1s, G2h, G2s]:
+            tensor.set_fft_form(fft_form='r')
 
     return mean, G1h, G1s, G2h, G2s

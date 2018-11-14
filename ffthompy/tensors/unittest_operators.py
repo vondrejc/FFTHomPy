@@ -5,9 +5,11 @@ from ffthompy import PrintControl
 from ffthompy.tensors import Tensor, DFT, grad, div, symgrad, potential, Operator, grad_div_tensor
 from ffthompy.tensors.projection import scalar, elasticity_small_strain, elasticity_large_deformation
 import itertools
+from copy import copy
 
 prt=PrintControl()
-fft_forms=[0,'c']
+fft_forms=[0,'c','r']
+# fft_forms=['r']
 
 
 class Test_operators(unittest.TestCase):
@@ -21,19 +23,30 @@ class Test_operators(unittest.TestCase):
     def test_operators(self):
         print('\nChecking operators...')
         for dim, fft_form in itertools.product([2, 3], fft_forms):
-            N = 3*np.ones(dim, dtype=np.int)
+            N = 5*np.ones(dim, dtype=np.int)
             F = DFT(N=N, inverse=False, fft_form=fft_form)
             iF = DFT(N=N, inverse=True, fft_form=fft_form)
+
             # Fourier transform
             prt.disable()
             print(F) # checking representation
             prt.enable()
 
-            u = Tensor(name='u', shape=(1,), N=N, Fourier=False,
+            u = Tensor(name='u', shape=(), N=N, Fourier=False,
                        fft_form=fft_form).randomize()
-            u2 = iF(F(u))
-            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
-                                   msg='Fourier tranform')
+            Fu=F(u)
+            u2 = iF(Fu)
+            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13, msg='Fourier transform')
+
+            fft_formsC=copy(fft_forms)
+            fft_formsC.remove(fft_form)
+            for fft_formc in fft_formsC:
+                FuC=Fu.set_fft_form(fft_formc, copy=True)
+                Fu2=FuC.set_fft_form(fft_form, copy=True)
+                msg='Tensor.set_fft_form()'
+                self.assertAlmostEqual(0, Fu.norm()-FuC.norm(), delta=1e-13, msg=msg)
+                self.assertAlmostEqual(0, norm(Fu.mean()-FuC.mean()), delta=1e-13, msg=msg)
+                self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13, msg=msg)
 
             # scalar problem
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False,
@@ -94,8 +107,7 @@ class Test_operators(unittest.TestCase):
             iF = DFT(inverse=True, N=N, fft_form=fft_form)
 
             # scalar problem
-            _, G1l, G2l = scalar(N, Y=np.ones(dim), NyqNul=True,
-                                 fft_form=fft_form)
+            _, G1l, G2l = scalar(N, Y=np.ones(dim), NyqNul=True, fft_form=fft_form)
             P1 = Operator(name='P1', mat=[[iF, G1l, F]])
             P2 = Operator(name='P2', mat=[[iF, G2l, F]])
             u = Tensor(name='u', shape=(1,), N=N, Fourier=False, fft_form=fft_form)

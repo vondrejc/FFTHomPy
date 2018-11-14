@@ -41,7 +41,7 @@ class DFT(TensorFuns):
 
         self.N=np.array(N, dtype=np.int32)
         self.inverse=inverse
-        self.set_fft(fft_form)
+        self._set_fft(fft_form)
 
     def __mul__(self, x):
         return self.__call__(x)
@@ -236,14 +236,14 @@ def grad(X):
     if X.Fourier:
         FX=X
     else:
-        F=DFT(N=X.N, fft_form=X.fft_form)
+        F=DFT(N=X.N, fft_form=X.fft_form) # TODO:change to X.fourier()
         FX=F(X)
 
     dim=len(X.N)
     freq=Grid.get_freq(X.N, X.Y, fft_form=X.fft_form)
     strfreq='xyz'
     coef=2*np.pi*1j
-    val=np.empty((X.dim,)+X.shape+X.N, dtype=np.complex)
+    val=np.empty((X.dim,)+X.shape+X.N_fft, dtype=np.complex)
 
     for ii in range(X.dim):
         mul_str='{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
@@ -375,9 +375,11 @@ def grad_tensor(N, Y=None, fft_form=fft_form_default):
     # scalar valued versions of gradient and divergence
     N = np.array(N, dtype=np.int)
     dim = N.size
-    hGrad = np.zeros((dim,)+ tuple(N)) # zero initialize
+
     freq = Grid.get_xil(N, Y, fft_form=fft_form)
-    for ind in itertools.product(*[range(n) for n in N]):
+    N_fft=tuple(freq[i].size for i in range(dim))
+    hGrad = np.zeros((dim,)+ N_fft) # zero initialize
+    for ind in itertools.product(*[range(n) for n in N_fft]):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
     hGrad = hGrad*2*np.pi*1j

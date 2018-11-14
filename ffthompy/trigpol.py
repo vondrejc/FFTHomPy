@@ -3,9 +3,7 @@
 from __future__ import division
 import numpy as np
 
-# fft_form_default='r' # real input data
-# fft_form_default='c' # center version of FFT
-fft_form_default=0 # standard version of FFT
+fft_form_default='r' # real input data
 
 
 class Grid():
@@ -34,10 +32,12 @@ class Grid():
         xil = []
         for m in np.arange(np.size(N)):
             xil.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5))/Y[m])
-        if fft_form in ['r',0]:
-            return [np.fft.ifftshift(xi) for xi in xil]
-        else:
-            return xil
+        if fft_form in ['r',]:
+            xil=[np.fft.ifftshift(xi) for xi in xil]
+            xil[-1] = xil[-1][:int(np.fix(N[-1]/2)+1)]
+        elif fft_form in [0]:
+            xil = [np.fft.ifftshift(xi) for xi in xil]
+        return xil
 
     @staticmethod
     def get_freq(N, Y, fft_form=fft_form_default):

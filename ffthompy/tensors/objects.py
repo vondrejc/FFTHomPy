@@ -33,15 +33,18 @@ class TensorFuns(Representation):
     def sub(self, ii):
         self.val[ii]
 
-    def set_fft(self, fft_form):
+    def _set_fft(self, fft_form):
         assert(fft_form in ['c', 'r', 0])
         if fft_form in ['r']:
+            self.N_fft=self.get_N_real(self.N)
             self.fftn=rfftn
             self.ifftn=irfftn
         elif fft_form in [0]:
+            self.N_fft=self.N
             self.fftn=fftn
             self.ifftn=ifftn
         elif fft_form in ['c']:
+            self.N_fft=self.N
             self.fftn=fftnc
             self.ifftn=icfftn
         self.fft_form=fft_form
@@ -59,49 +62,46 @@ class TensorFuns(Representation):
         return ss
 
     def get_N_real(self, N):
-        Nr=np.copy(N)
-        Nr[-1]=np.fix(N[-1]/2)+1
-        return Nr
+        N_rfft=np.copy(N)
+        N_rfft[-1]=int(np.fix(N[-1]/2)+1)
+        return tuple(N_rfft)
 
-    def get_N(self, Nr):
-        N=np.copy(Nr)
-        N[-1]=Nr[-1]*2-1
-        return N
+    def get_N(self, N_rfft):
+        N=np.copy(N_rfft)
+        N[-1]=N_rfft[-1]*2-1
+        return tuple(N)
 
 
 class Tensor(TensorFuns):
 
-    def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None, multype='scal',
-                 Fourier=False, fft_form=fft_form_default):
+    def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None,
+                 multype='scal', Fourier=False, fft_form=fft_form_default):
 
         self.name=name
         self.Fourier=Fourier
-        self.fft_form=fft_form
-        self.set_fft(fft_form)
 
         if isinstance(val, np.ndarray): # define: val + order
             self.val=val
             self.order=int(order)
             self.shape=self.val.shape[:order]
-            self.N=self.val.shape[order:]
-#             if fft_form in ['r'] and Fourier:
-#                 self.Nr=self.val.shape[order:]
-#                 self.N=self.get_N(self.Nr)
-#             else:
-#                 self.N=self.val.shape[order:]
-#                 self.Nr=self.get_N_real(self.N)
+
+            if fft_form in ['r'] and Fourier:
+                self.N=self.get_N(self.val.shape[order:])
+            else:
+                self.N=self.val.shape[order:]
+
+            self._set_fft(fft_form)
 
         elif shape is not None and N is not None: # define: shape + N
             self.N=tuple(np.array(N, dtype=np.int))
+            self._set_fft(fft_form)
             self.shape=tuple(np.array(shape, dtype=np.int))
             self.order=len(self.shape)
 
             if not self.Fourier:
                 self.val=np.zeros(self.shape+self.N, dtype=np.float)
-            elif self.fft_form in [0, 'c']:
-                self.val=np.zeros(self.shape+self.N, dtype=np.complex)
-            elif self.fft_form in ['r']:
-                self.val=np.zeros(self.shape+self.Nr, dtype=np.complex)
+            else:
+                self.val=np.zeros(self.shape+self.N_fft, dtype=np.complex)
 
         else:
             raise ValueError('Initialization of Tensor.')
@@ -115,18 +115,32 @@ class Tensor(TensorFuns):
         # definition of __mul__ operation
         self.multype=multype
 
-    def set_fft_form(self, fft_form):
+    def set_fft_form(self, fft_form, copy=False):
+        if copy:
+            R=self.copy()
+        else:
+            R=self
+
         if self.fft_form==fft_form:
-            return self
+            return R
 
-        if self.Fourier:
-            if self.fft_form in ['c'] and fft_form in ['r', 0]:
-                self.val=np.fft.ifftshift(self.val, axes=self.axes)
-            elif self.fft_form in ['r', 0] and fft_form in ['c']:
-                self.val=np.fft.fftshift(self.val, axes=self.axes)
-
-        self.set_fft(fft_form)
-        return self
+        fft_form_orig = self.fft_form
+        if R.Fourier:
+            if fft_form_orig in ['r']:
+                R.fourier()
+                R.set_fft_form(fft_form)
+                R.fourier()
+            elif fft_form_orig in ['c']:
+                R.val=np.fft.ifftshift(R.val, axes=R.axes) # common for fft_form in [0,'r']
+                if fft_form in ['r']:
+                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]
+            if fft_form_orig in [0]:
+                if fft_form in ['c']:
+                    R.val=np.fft.fftshift(R.val, axes=R.axes)
+                else: # if fft_form in ['r']:
+                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]
+        R._set_fft(fft_form)
+        return R
 
     def randomize(self):
         self.val=np.random.random(self.val.shape)
@@ -193,7 +207,7 @@ class Tensor(TensorFuns):
         if componentwise:
             scal=np.empty(self.shape)
             for ind in np.ndindex(*self.shape):
-                obj=Tensor(name='aux', val=self.val[ind], order=0, N=self.N, Fourier=self.Fourier)
+                obj=self.copy(name='aux', val=self.val[ind], order=0)
                 scal[ind]=norm_fun(obj, ntype=ntype)
             return scal
         else:
@@ -206,10 +220,10 @@ class Tensor(TensorFuns):
         mean=np.zeros(self.shape)
         if self.Fourier:
             ind=self.mean_index()
-            if self.fft_form in ['r']:
-                coef=np.prod(self.N)
-            else:
-                coef=1.
+#             if self.fft_form in ['r']:
+#                 coef=np.prod(self.N)
+#             else:
+            coef=1.
             for di in np.ndindex(*self.shape):
                 mean[di]=np.real(self.val[di][ind])/coef
         else:
@@ -265,7 +279,6 @@ class Tensor(TensorFuns):
         return self.shape
 
     def transpose(self):
-        res=self.empty_like(name=self.name[:10]+'.T')
         if self.order==2:
             val=np.einsum('ij...->ji...', self.val)
         elif self.order==4:
@@ -288,7 +301,7 @@ class Tensor(TensorFuns):
 
     def identity(self):
         self.val[:]=0.
-        assert(self.order%2==0)
+        assert(self.order % 2 == 0)
         for ii in itertools.product(*tuple([range(n) for n in self.shape[:int(self.order/2)]])):
             self.val[ii+ii]=1.
 
@@ -300,9 +313,6 @@ class Tensor(TensorFuns):
         return np.matrix(self.val.ravel()).transpose()
 
     def copy(self, **kwargs):
-#         X=self
-#         data={'name': X.name, 'val': np.copy(X.val), 'order': X.order, 'Y': X.Y,
-#               'Fourier': X.Fourier, 'fft_form': X.fft_form, 'multype': X.multype}
         keys=('name','val','order','Y','multype','Fourier','fft_form')
         data={k:copy(self.__dict__[k]) for k in keys}
         data.update(kwargs)
@@ -373,14 +383,22 @@ class Tensor(TensorFuns):
         for di in np.ndindex(*self.shape):
             val[di]=enlarge(self.val[di], M)
 
-        R=self.copy(val=val)
+        R=self.copy(val=val, fft_form='c')
         return R.set_fft_form(fft_form=fft_form)
 
-    def fourier(self):
-        if self.Fourier:
-            return self.copy(val=self.ifftn(self.val, self.N), Fourier=not self.Fourier)
+    def fourier(self, copy=False):
+        if copy:
+            if self.Fourier:
+                return self.copy(val=self.ifftn(self.val, self.N), Fourier=not self.Fourier)
+            else:
+                return self.copy(val=self.fftn(self.val, self.N), Fourier=not self.Fourier)
         else:
-            return self.copy(val=self.fftn(self.val, self.N), Fourier=not self.Fourier)
+            if self.Fourier:
+                self.val=self.ifftn(self.val, self.N)
+            else:
+                self.val=self.fftn(self.val, self.N)
+            self.Fourier=not self.Fourier
+            return self
 
     def project(self, M):
         """
@@ -496,8 +514,13 @@ def scalar_product(y, x):
     if not y.Fourier:
         scal=scal/np.prod(y.N)
     elif x.fft_form in ['r']:
-        raise NotImplementedError()
-        scal=scal/np.prod(x.N)**2
+        if x.N[-1] % 2 == 1:
+            scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
+                  2*np.sum(y.val[...,1:]*np.conj(x.val[...,1:])).real)
+        else:
+            scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
+                  np.sum(y.val[...,-1]*np.conj(x.val[...,-1])).real +
+                  2*np.sum(y.val[...,1:-1]*np.conj(x.val[...,1:-1])).real)
     return scal
 
 def get_N_fft_form_real(N):
@@ -511,10 +534,17 @@ if __name__=='__main__':
     u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form=0)
     u.randomize()
     print(u)
-    Fu=u.fourier()
-    print(Fu)
-    u2=u.project(M)
-    print(u2)
-    print(u.val)
-    print(u2.val)
+    Fu_0=u.fourier()
+    Fu_c=Fu_0.set_fft_form('c', copy=True)
+    Fu_r=Fu_0.set_fft_form('r', copy=True)
+    print(Fu_0)
+    print(Fu_c)
+    print(Fu_r)
+#     print(Fu_0==Fu_0.set_fft_form('c').set_fft_form(0))
+#     print(Fu_0==Fu_0.set_fft_form('r').set_fft_form(0))
+#     print(Fu_c==Fu_0.set_fft_form(0).set_fft_form('c'))
+#     print(Fu_c==Fu_0.set_fft_form('r').set_fft_form('c'))
+#     gX=Tensor(name='name', shape=(2,), N=N, Fourier=True)
+#     print(gX)
+
     print('end')
