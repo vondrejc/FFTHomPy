@@ -27,10 +27,10 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         on divergence-free fields with zero mean
     """
     if fft_form in ['r']:
-        fft_form_flag=True
+        fft_form_r=True
         fft_form=0
     else:
-        fft_form_flag=False
+        fft_form_r=False
 
     d = np.size(N)
     N = np.array(N, dtype=np.int)
@@ -104,9 +104,10 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         G1l = G1l.enlarge(N)
         G2l = G2l.enlarge(N)
 
-    if fft_form_flag:
+    if fft_form_r:
         for tensor in [G0l, G1l, G2l]:
             tensor.set_fft_form(fft_form='r')
+            tensor.val/=np.prod(tensor.N)
 
     return G0l, G1l, G2l
 
@@ -122,10 +123,10 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         G1h,G1s,G2h,G2s : projection matrices of size DxDxN
     """
     if fft_form in ['r']:
-        fft_form_flag=True
+        fft_form_r=True
         fft_form=0
     else:
-        fft_form_flag=False
+        fft_form_r=False
 
     xi = Grid.get_xil(N, Y, fft_form=fft_form)
     N = np.array(N, dtype=np.int)
@@ -258,8 +259,9 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         G2h = G2h.enlarge(N)
         G2s = G2s.enlarge(N)
 
-    if fft_form_flag:
+    if fft_form_r:
         for tensor in [G0, G1h, G1s, G2h, G2s]:
             tensor.set_fft_form(fft_form='r')
+            tensor.val/=np.prod(tensor.N)
 
-    return mean, G1h, G1s, G2h, G2s
+    return G0, G1h, G1s, G2h, G2s

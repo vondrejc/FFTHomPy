@@ -35,20 +35,24 @@ class TensorFuns(Representation):
 
     def _set_fft(self, fft_form):
         assert(fft_form in ['c', 'r', 0])
+
         if fft_form in ['r']:
             self.N_fft=self.get_N_real(self.N)
             self.fftn=rfftn
             self.ifftn=irfftn
+            self.fft_coef=np.prod(self.N)
         elif fft_form in [0]:
             self.N_fft=self.N
             self.fftn=fftn
             self.ifftn=ifftn
+            self.fft_coef=1.
         elif fft_form in ['c']:
             self.N_fft=self.N
             self.fftn=fftnc
             self.ifftn=icfftn
+            self.fft_coef=1.
+
         self.fft_form=fft_form
-        return self
 
     def __repr__(self, full=False, detailed=False):
         keys=['order', 'name', 'Y', 'shape', 'N', 'Fourier', 'fft_form', 'norm']
@@ -133,12 +137,12 @@ class Tensor(TensorFuns):
             elif fft_form_orig in ['c']:
                 R.val=np.fft.ifftshift(R.val, axes=R.axes) # common for fft_form in [0,'r']
                 if fft_form in ['r']:
-                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]
+                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]*np.prod(self.N)
             if fft_form_orig in [0]:
                 if fft_form in ['c']:
                     R.val=np.fft.fftshift(R.val, axes=R.axes)
                 else: # if fft_form in ['r']:
-                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]
+                    R.val=R.val[...,:self.get_N_real(self.N)[-1]]*np.prod(self.N)
         R._set_fft(fft_form)
         return R
 
@@ -220,12 +224,8 @@ class Tensor(TensorFuns):
         mean=np.zeros(self.shape)
         if self.Fourier:
             ind=self.mean_index()
-#             if self.fft_form in ['r']:
-#                 coef=np.prod(self.N)
-#             else:
-            coef=1.
             for di in np.ndindex(*self.shape):
-                mean[di]=np.real(self.val[di][ind])/coef
+                mean[di]=np.real(self.val[di][ind])/self.fft_coef
         else:
             for di in np.ndindex(*self.shape):
                 mean[di]=np.mean(self.val[di])
@@ -237,7 +237,7 @@ class Tensor(TensorFuns):
         if self.Fourier:
             ind=self.mean_index()
             for di in np.ndindex(*self.shape):
-                self.val[di+ind]=mean[di]
+                self.val[di+ind]=mean[di]*self.fft_coef
         else:
             for di in np.ndindex(*self.shape):
                 self.val[di]+=mean[di]
@@ -250,7 +250,7 @@ class Tensor(TensorFuns):
         if self.Fourier:
             ind=self.mean_index()
             for di in np.ndindex(*self.shape):
-                self.val[di+ind]=mean[di]
+                self.val[di+ind]=mean[di]*self.fft_coef
         else:
             for di in np.ndindex(*self.shape):
                 self.val[di]+=mean[di]
@@ -510,17 +510,19 @@ def scalar_product(y, x):
     assert(y.val.shape==x.val.shape)
     assert(y.fft_form==x.fft_form)
 
-    scal=np.sum(y.val[:]*np.conj(x.val[:])).real
-    if not y.Fourier:
-        scal=scal/np.prod(y.N)
-    elif x.fft_form in ['r']:
-        if x.N[-1] % 2 == 1:
-            scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
-                  2*np.sum(y.val[...,1:]*np.conj(x.val[...,1:])).real)
+    if y.Fourier:
+        if x.fft_form in ['r']:
+            if x.N[-1] % 2 == 1:
+                scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
+                      2*np.sum(y.val[...,1:]*np.conj(x.val[...,1:])).real)/np.prod(y.N)**2
+            else:
+                scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
+                      np.sum(y.val[...,-1]*np.conj(x.val[...,-1])).real +
+                      2*np.sum(y.val[...,1:-1]*np.conj(x.val[...,1:-1])).real)/np.prod(y.N)**2
         else:
-            scal=(np.sum(y.val[...,0]*np.conj(x.val[...,0])).real +
-                  np.sum(y.val[...,-1]*np.conj(x.val[...,-1])).real +
-                  2*np.sum(y.val[...,1:-1]*np.conj(x.val[...,1:-1])).real)
+            scal=np.sum(y.val[:]*np.conj(x.val[:])).real
+    else:
+        scal=np.sum(y.val[:]*x.val[:])/np.prod(y.N)
     return scal
 
 def get_N_fft_form_real(N):
@@ -531,14 +533,13 @@ def get_N_fft_form_real(N):
 if __name__=='__main__':
     N=np.array([5,5], dtype=np.int)
     M=2*N
-    u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form=0)
+    u=Tensor(name='test', shape=(2,), N=N, Fourier=False, fft_form='r')
     u.randomize()
     print(u)
-    Fu_0=u.fourier()
-    Fu_c=Fu_0.set_fft_form('c', copy=True)
-    Fu_r=Fu_0.set_fft_form('r', copy=True)
-    print(Fu_0)
-    print(Fu_c)
-    print(Fu_r)
+    Fu=u.fourier(copy=True)
+    print(Fu)
+    print(Fu.norm())
+    print(Fu.norm(componentwise=True))
+    print(Fu.mean())
 
     print('end')

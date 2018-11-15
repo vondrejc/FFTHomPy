@@ -23,7 +23,8 @@ class Test_solvers(unittest.TestCase):
         dim=2
         n=5
         N = n*np.ones(dim, dtype=np.int)
-        hG0N, hG1N, hG2N = scalar(N, Y=np.ones(dim), NyqNul=True)
+
+        hG0N, hG1N, hG2N = scalar(N, Y=np.ones(dim))
         hG0Nt, hG1Nt, hG2Nt = scalar_tensor(N, Y=np.ones(dim))
 
         self.assertAlmostEqual(0, norm(hG0N.val-hG0Nt.val), delta=1e-13)

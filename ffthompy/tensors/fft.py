@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.fft as fft
+import warnings
 
 def cfftnc(x, N):
     """
@@ -37,7 +38,7 @@ def ifftn(x, N):
     return fft.ifftn(x, N).real*np.prod(N) # numpy.fft.fftn
 
 def rfftn(x, N):
-    return fft.rfftn(x, N)/np.prod(N) # real version of numpy.fft.fftn
+    return fft.rfftn(x, N) # real version of numpy.fft.fftn
 
 def irfftn(x, N):
-    return fft.irfftn(x, N)*np.prod(N) # real version of numpy.fft.fftn
+    return fft.irfftn(x, N) # real version of numpy.fft.fftn

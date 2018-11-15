@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 print("""
 The problem in topological dimension
 dim = """)
-dim = 3 # topological dimension of a problem
+dim = 2 # topological dimension of a problem
 print(dim)
 print("""is defined on cell sizing
 Y =""")
@@ -47,8 +47,11 @@ The we express material coefficients as stiffness matrices in Mandel`s
 engineering notation:
 matcoefM.mandel =""")
 from ffthompy.mechanics.matcoef import ElasticTensor
-matcoefM = ElasticTensor(bulk=K[0], mu=G[0]) # mat. coef. of matrix phase 
-matcoefI = ElasticTensor(bulk=K[1], mu=G[1]) # mat. coef. of inclusion
+plane=None
+if dim==2:
+    plane='strain'
+matcoefM = ElasticTensor(bulk=K[0], mu=G[0], plane=plane) # mat. coef. of matrix phase 
+matcoefI = ElasticTensor(bulk=K[1], mu=G[1], plane=plane) # mat. coef. of inclusion
 print(matcoefM.mandel)
 print("matcoefI.mandel =")
 print(matcoefI.mandel)
@@ -105,7 +108,7 @@ from 'tutorial_01.py'. In order to show its application, we create a material
 coefficients composed of random values, symmetrize them, and sum them with
 a multiplication of identity to obtain positive definite matrix, i.e.
 A =""")
-from ffthompy.tensors import Tensor, matrix2tensor
+from ffthompy.tensors import Tensor
 D = int(dim*(dim+1)/2)
 A = Tensor(N=N, shape=(D,D), Fourier=False, multype=21)
 A.randomize()
@@ -136,7 +139,7 @@ A =""")
 # definition of material
 from ffthompy.materials import Material
 mat = Material(pb['material'])
-A = matrix2tensor(mat.get_A_GaNi(pb['solve']['N'], 'primal'))
+A = mat.get_A_GaNi(pb['solve']['N'], 'primal')
 print(A)
 
 print("""---------------------
