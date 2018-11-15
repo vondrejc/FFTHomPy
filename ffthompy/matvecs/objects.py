@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 This module contains classes and functions for trigonometric polynomials and
 relating operators for homogenization.
@@ -11,6 +10,7 @@ from ffthompy.trigpol import Grid, enlarge, get_inverse, decrease, mean_index
 import numpy as np
 import numpy.fft as fft
 import numpy.matlib as npmatlib
+from warnings import warn
 
 
 class FieldFun():
@@ -105,6 +105,8 @@ class VecTri(FieldFun, Grid):
     def __init__(self, name='?', N=None, d=None, Fourier=False, valtype=None,
                  **kwargs):
         self.Fourier=Fourier
+        cls_name=self.__class__.__name__
+        warn("The class {} will be depreciated. Use ffthompy.tensors.".format(cls_name))
 
         if 'val' in kwargs:
             self.val=kwargs['val']
