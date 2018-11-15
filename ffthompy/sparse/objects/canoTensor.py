@@ -2,6 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
+from ffthompy.tensors import Tensor
 
 import timeit
 
@@ -110,8 +111,18 @@ class CanoTensor(SparseTensorFuns):
     def full(self):
         "return a full tensor"
         if self.order==2:
-            return np.einsum('i,ik,il->kl', self.core, self.basis[0], self.basis[1])
-#             return(np.dot(np.dot(self.basis[0].T, self.core), self.basis[1]))
+            if self.Fourier:
+                Fourier=True
+                self.fourier()
+
+            # generate Tensor in real domain
+            val=np.einsum('i,ik,il->kl', self.core, self.basis[0], self.basis[1])
+            T=Tensor(name=self.name, val=val, order=0,
+                     Fourier=self.Fourier, fft_form=self.fft_form)
+
+            if Fourier:
+                T.fourier()
+            return T
         else:
             raise NotImplementedError()
 
@@ -120,23 +131,23 @@ class CanoTensor(SparseTensorFuns):
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
         # if tol is not none, it will override rank as the truncation criteria.
         if tol is None and rank is None:
-            return self 
+            return self
 
         if rank>=self.r:
             #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
             return self
-        
+
         self=self.orthogonalise()
-        
-        basis=list(self.basis) 
-        core= self.core  
-        
+
+        basis=list(self.basis)
+        core=self.core
+
         if tol is not None:
             # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
             rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
-        
+
         # truncation
-        core=core[:rank]  
+        core=core[:rank]
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
@@ -163,17 +174,17 @@ class CanoTensor(SparseTensorFuns):
             raise NotImplementedError()
         return val
 
-    def mean(self): 
-        val=0.        
+    def mean(self):
+        val=0.
         for ii in range(self.r):
             valii=self.core[ii]
             for jj in range(self.order):
                 if self.Fourier:
-                    valii*=self.basis[jj][ii,self.mean_index()[jj]].real
+                    valii*=self.basis[jj][ii, self.mean_index()[jj]].real
                 else:
                     valii*=np.mean(self.basis[jj][ii]).real
-            val+=valii  
-        return val  
+            val+=valii
+        return val
 
     def enlarge(self, M):
         dtype=self.basis[0].dtype
@@ -184,10 +195,10 @@ class CanoTensor(SparseTensorFuns):
 
         if np.allclose(M, N):
             return self
-        
-        r=self.r        
+
+        r=self.r
         if isinstance(r, int) :
-            r=r*np.ones((self.order,), dtype=int)        
+            r=r*np.ones((self.order,), dtype=int)
         # dim = N.size
         ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
         iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)

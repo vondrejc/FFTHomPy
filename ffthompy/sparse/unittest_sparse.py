@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import numpy as np
 from numpy.linalg import norm
@@ -7,13 +8,9 @@ from ffthompy.sparse.objects import CanoTensor
 from ffthompy import Struct
 from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
-from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_Ga_sparse
 from ffthompy.sparse.materials import SparseMaterial
 
-import sys
-import os
-import time
 import timeit
 
 def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
@@ -127,7 +124,7 @@ class Test_sparse(unittest.TestCase):
         self.assertAlmostEqual(norm((a*b).full()-self.T2d*self.T2dOther), 0)
 
         Fa=a.fourier()
-        Fa2=DFT.fftnc(a.full(), a.N)
+        Fa2=a.full().fourier()
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
         print('...ok')
@@ -156,7 +153,7 @@ class Test_sparse(unittest.TestCase):
         self.assertAlmostEqual(norm((a*b).full()-self.T3d*self.T3dOther), 0)
 
         Fa=a.fourier()
-        Fa2=DFT.fftnc(a.full(), a.N)
+        Fa2=a.full().fourier()
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
         print('...ok')
@@ -165,12 +162,12 @@ class Test_sparse(unittest.TestCase):
         print('\nChecking Fourier functions ...')
 
         a=SparseTensor(kind='cano', val=self.T2d)
-        Fa2=DFT.fftnc(a.full(), a.N)
+        Fa2=a.full().fourier()
         Fa=a.fourier()
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
         a=SparseTensor(kind='tucker', val=self.T3d)
-        Fa2=DFT.fftnc(a.full(), a.N)
+        Fa2=a.full().fourier()
         Fa=a.fourier()
         self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
@@ -201,6 +198,7 @@ class Test_sparse(unittest.TestCase):
         self.assertAlmostEqual(norm((tct-tcfti).full()), 0)
         print('...ok')
 
+    @unittest.skip("The testing is too slow.")
     def test_qtt_fft(self):
         print('\nChecking QTT FFT functions ...')
         L1=3
@@ -313,20 +311,20 @@ class Test_sparse(unittest.TestCase):
 #        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
 #
 #        print('...ok')
-        
+
     def test_mean(self):
         print('\nChecking method mean() ...')
         a=SparseTensor(kind='cano', val=self.T2d)
         self.assertAlmostEqual(np.mean(self.T2d), a.mean())
         self.assertAlmostEqual(np.mean(self.T2d), a.fourier().mean())
-        
+
         a=SparseTensor(kind='tucker', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
         self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
-        
+
         a=SparseTensor(kind='tt', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
-        self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())        
+        self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
         print('...ok')
 
 if __name__ == "__main__":

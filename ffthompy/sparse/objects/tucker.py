@@ -156,7 +156,7 @@ class Tucker(CanoTensor):
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
         from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
         """
-        # if core is a single scalor value, make it in a n-D array shape
+        # if core is a single scalar value, make it in a n-D array shape
         if np.prod(self.core.shape)==1:
             self.core=np.reshape(self.core, tuple(self.r))
 
