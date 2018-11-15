@@ -60,10 +60,10 @@ class Test_main(unittest.TestCase):
                     dif = prob.output[kwpd][kw]-res[kwpd][kw]
                     val = np.linalg.norm(dif.ravel(), np.inf)
                     msg = 'Incorrect ({}) in problem ({})'.format(kw, prob.name)
-                    self.assertAlmostEqual(0, val, msg=msg, delta=1e-13)
-        prt.disable()
-        prob.postprocessing()
-        prt.enable()
+                    self.assertAlmostEqual(0, val, msg=msg, delta=1e-9)
+            prt.disable()
+            prob.postprocessing()
+            prt.enable()
 
     def test_tutorials(self): # test tutorials
         print('\nControling tutorials...')

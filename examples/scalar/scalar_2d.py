@@ -10,6 +10,7 @@ base_dir = get_base_dir()
 
 dim = 2
 N = 5*np.ones(dim, dtype=np.int32)
+tol = 1e-8
 
 materials = {'square': {'inclusions': ['square', 'otherwise'],
                         'positions': [np.zeros(dim), ''],
@@ -88,7 +89,7 @@ problems = [
                       'order': 1,
                       'P': 27*N}],
      'solver': {'kind': 'CG',
-                'tol': 1e-6,
+                'tol': tol,
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob1'),
               'data': 'all'},
@@ -102,7 +103,7 @@ problems = [
      'postprocess': [{'kind': 'Ga',
                       }],
      'solver': {'kind': 'CG',
-                'tol': 1e-2,
+                'tol': tol,
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob2'),
               'data': 'all'},
@@ -116,7 +117,7 @@ problems = [
      'postprocess': [{'kind': 'Ga',
                       },],
      'solver': {'kind': 'CG',
-                'tol': 1e-2,
+                'tol': tol,
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob3'),
               'data': 'all'},
@@ -136,7 +137,7 @@ problems = [
                       'order': 1,
                       'P': N}],
      'solver': {'kind': 'CG',
-                'tol': 1e-6,
+                'tol': tol,
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob4'),
               'data': 'all'},
@@ -153,7 +154,7 @@ problems = [
                       'order': 0,
                       'P': N}],
      'solver': {'kind': 'CG',
-                'tol': 1e-6,
+                'tol': tol,
                 'maxiter': 1e3},
      'save': {'filename': os.path.join(base_dir, 'temp/scalar_2d_prob5'),
               'data': 'all'},
