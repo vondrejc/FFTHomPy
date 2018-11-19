@@ -97,15 +97,20 @@ class Tucker(CanoTensor):
         """element-wise addition of two Tucker tensors"""
         assert((self.N==Y.N).any())
         X=self
-
         r_new=X.r+Y.r
+        core=np.zeros(r_new)
 
-        if X.order==3:
-            core=np.zeros((r_new[0], r_new[1], r_new[2]))
-            core[:X.r[0], :X.r[1], :X.r[2]]=X.core
-            core[X.r[0]:, X.r[1]:, X.r[2]:]=Y.core
-        else:
-            raise NotImplementedError("currently only support two and three dimensional tensor")
+        L1=[None]*self.order
+        L2=[None]*self.order
+        for d in range(self.order):
+            L1[d]=range(X.r[d])
+            L2[d]=range(X.r[d],r_new[d])
+
+        X_locations=np.ix_(*L1)
+        Y_locations=np.ix_(*L2)
+
+        core[X_locations] = X.core
+        core[Y_locations] = Y.core
 
         newBasis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(X.order)]
 
@@ -523,6 +528,17 @@ if __name__=='__main__':
 
     a = Tucker(val=T1,name='a' )
     b = Tucker(val=T2,name='b' )
+
+
+
+    c=a+b
+    print(c)
+
+    print('testing 3d addtion ...')
+    print "(a+b).full - (a.full+b.full) = ", norm(c.full()-a.full()-b.full())
+    print "((a+b).full - (a.full+b.full))/|(a.full+b.full)| = ", norm(c.full()-a.full()-b.full())/norm(a.full()+b.full())
+    print "max((a+b).full - (a.full+b.full))/mean(a.full+b.full) = ", np.max(c.full().val-a.full().val-b.full().val)/np.mean(a.full().val+b.full().val)
+#
     c=a*b
     print(c)
 
@@ -534,7 +550,7 @@ if __name__=='__main__':
     c_trunc=c.truncate(rank=8)
     print(c_trunc)
 
-    print('testing 3d tucker core sorting and  rank-based truncation ...')
+    print('testing 3d tucker rank-based truncation ...')
     print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
     print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 
@@ -549,7 +565,7 @@ if __name__=='__main__':
     c_trunc=c.truncate(tol=0.2)
     print(c_trunc)
 
-    print('testing 3d tucker core sorting and  rank-based truncation ...')
+    print('testing 3d tucker tol-based truncation ...')
     print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
     print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
     print
