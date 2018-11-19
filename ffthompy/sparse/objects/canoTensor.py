@@ -65,16 +65,14 @@ class CanoTensor(SparseTensorFuns):
         if self.fft_form==fft_form:
             return R
 
-        fft_form_orig = self.fft_form
+#        fft_form_orig = self.fft_form
         if R.Fourier:
-            if fft_form_orig in ['c','cc']:
-                for i in range(self.order):
-                    R.basis[i]= R.ifft(R.basis[i], R.N[i])
+            for i in range(R.order):
+                R.basis[i]= R.ifft(R.basis[i], R.N[i])
 
-                if fft_form in ['sr']:
-                    R._set_fft(fft_form)
-                    for i in range(R.order):
-                        R.basis[i]= R.fft(R.basis[i], R.N[i])
+            R._set_fft(fft_form)
+            for i in range(R.order):
+                R.basis[i]= R.fft(R.basis[i], R.N[i])
 
         return R
 

@@ -66,7 +66,7 @@ class SparseTensorFuns(TensorFuns):
             name = 'copy({})'.format(self.name)
         Cls = self.__class__
         return Cls(name=name, core=np.copy(self.core), basis=copy(self.basis),
-                   Fourier=self.Fourier)
+                   Fourier=self.Fourier, fft_form=self.fft_form)
 
 
 if __name__=='__main__':

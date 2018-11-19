@@ -4,16 +4,19 @@ from operator import mul
 from numpy import reshape, dot
 from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
-
-from ffthompy.tensors.operators import DFT
+from ffthompy.tensors import Tensor
+from ffthompy.sparse.objects.tensors import SparseTensorFuns
+#from ffthompy.tensors.operators import DFT
 from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
+from ffthompy.trigpol import fft_form_default
+
 
 np.set_printoptions(precision=2)
 np.set_printoptions(linewidth=999999)
 
-class TensorTrain(vector):
-    def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed', vectorObj=None):
+class TensorTrain(vector,SparseTensorFuns):
+    def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed', vectorObj=None,fft_form=fft_form_default):
 
         if eps is None:  eps = 1e-14
         if rmax is None: rmax=999999
@@ -33,9 +36,10 @@ class TensorTrain(vector):
         self.N=self.n # ttpy use n, we use N.
         self.name=name
         self.Fourier=Fourier
+        self._set_fft(fft_form)
 
     @staticmethod
-    def from_list(a, name='unnamed', Fourier=False):
+    def from_list(a, name='unnamed', Fourier=False, fft_form=fft_form_default):
         """Generate TensorTrain object from given TT cores.
 
         :param a: List of TT cores.
@@ -45,17 +49,18 @@ class TensorTrain(vector):
         """
         vectorObj=vector.from_list(a)
 
-        ttObj=TensorTrain(vectorObj=vectorObj, name=name, Fourier=Fourier)
+        ttObj=TensorTrain(vectorObj=vectorObj, name=name, Fourier=Fourier,fft_form=fft_form)
 
         return ttObj
 
     def fourier(self):
         "(inverse) discrete Fourier transform"
+
         if self.Fourier:
-            fftfun=lambda Fx, N: np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Fx, axes=1), axis=1), axes=1).real*N
+            fftfun=lambda Fx, N: self.ifft(Fx, N)
             name='Fi({})'.format(self.name)
         else:
-            fftfun=lambda x, N: np.fft.fftshift(np.fft.fft(np.fft.ifftshift(x, axes=1), axis=1), axes=1)/N
+            fftfun=lambda x, N:  self.fft(x, N)
             name='F({})'.format(self.name)
 
         cl=self.to_list(self)
@@ -63,9 +68,30 @@ class TensorTrain(vector):
         for i in range(self.d):
             clf[i]=fftfun(cl[i], self.n[i])
 
-        res=self.from_list(clf, name=name, Fourier=not self.Fourier)
+        res=self.from_list(clf, name=name, Fourier=not self.Fourier, fft_form=self.fft_form)
 
         return res
+
+    def set_fft_form(self, fft_form, copy=False):
+        if copy:
+            R=self.copy()
+        else:
+            R=self
+
+        if self.fft_form==fft_form:
+            return R
+
+        if R.Fourier:
+            cl=R.to_list(R)
+            for i in range(R.d):
+                cl[i]= R.ifft(cl[i], R.N[i])
+
+            R._set_fft(fft_form)
+            for i in range(R.d):
+                cl[i]= R.fft(cl[i], R.N[i])
+
+        return R.from_list(cl, name=R.name, Fourier=R.Fourier, fft_form=fft_form)
+
 
     def truncate(self, tol=None, rank=None):
         if np.any(tol) is None and np.any(rank) is None:
@@ -145,11 +171,30 @@ class TensorTrain(vector):
 
         return np.sum(cl_mean_prod)
 
+    def full(self):
+        """
+        convert TT to a full tensor object
+        """
+
+        if self.Fourier:
+            res=self.fourier()
+        else:
+            res=self
+
+        val= vector.full(res)
+
+        T=Tensor(name=res.name, val=val, order=0, Fourier=False, fft_form=self.fft_form)
+
+        if self.Fourier:
+            T.fourier()
+
+        return T
+
     def scal(self, Y):
         X=self
         assert(X.Fourier==Y.Fourier)
         XY=X*Y
-        return XY.mean() 
+        return XY.mean()
 
     def __mul__(self, other):
         res_vec=vector.__mul__(self, other)
@@ -408,10 +453,10 @@ if __name__=='__main__':
 #    tf=t.fft(shift=False)
 #    print(np.linalg.norm(vfft-tf.full()))
 
-    tf2=t.fourier()
-    vfft_shift=DFT.fftnc(v, v.shape)
-
-    print(np.linalg.norm(vfft_shift-tf2.full()))
+#    tf2=t.fourier()
+#    vfft_shift=DFT.fftnc(v, v.shape)
+#
+#    print(np.linalg.norm(vfft_shift-tf2.full()))
 
     tf2i=tf2.fourier()
     print(np.linalg.norm(v-tf2i.full()))
@@ -490,7 +535,7 @@ if __name__=='__main__':
 
     t5=t3.truncate(rank=3)
     print(np.linalg.norm(t3.full()-t5.full()))
-    
+
     print
     print (np.mean(t1.full()) - t1.mean())
     print (np.mean(t1.full()) - t1.fourier().mean())

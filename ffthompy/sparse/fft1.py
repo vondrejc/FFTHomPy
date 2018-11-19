@@ -39,7 +39,7 @@ def irfft(x, N):
     return npfft.irfft(x, axis=1)*N # real version of numpy.fft.fft
 
 def srfft(x, N):
-    return fftpack.rfft(x, N)/N  # 1-D real fft from scipy.fftpack.rfft
+    return fftpack.rfft(x, axis=1)/N  # 1-D real fft from scipy.fftpack.rfft
 
 def sirfft(x, N):
-    return fftpack.irfft(x, N)*N  # 1-D real inverse fft from scipy.fftpack.irfft
+    return fftpack.irfft(x, axis=1)*N  # 1-D real inverse fft from scipy.fftpack.irfft

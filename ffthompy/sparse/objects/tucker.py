@@ -1,7 +1,7 @@
 import numpy as np
 
 from ffthompy.sparse.objects.canoTensor import CanoTensor
-from ffthompy.tensors.operators import DFT
+#from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
 from ffthompy.tensors import Tensor
 from ffthompy.trigpol import fft_form_default
@@ -169,15 +169,13 @@ class Tucker(CanoTensor):
         if np.prod(self.core.shape)==1:
             self.core=np.reshape(self.core, tuple(self.r))
 
-        d=self.N.shape[0]
-
         if self.Fourier:
             res=self.fourier()
         else:
             res=self
 
         val=res.core.copy()
-        for i in range(d):
+        for i in range(self.order):
             val=nModeProduct(val, res.basis[i].T, i)
 
         T=Tensor(name=res.name, val=val, order=0,

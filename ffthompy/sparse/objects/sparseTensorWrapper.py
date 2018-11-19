@@ -3,9 +3,10 @@ from tt.core.vector import vector
 from ffthompy.sparse.objects.tucker import Tucker
 from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.sparse.objects.tensorTrain import TensorTrain
+from ffthompy.trigpol import fft_form_default
 
 def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None,
-                 Fourier=False, name='unnamed', vectorObj=None):
+                 Fourier=False, name='unnamed', vectorObj=None, fft_form=fft_form_default):
     """
     A uniform wrapper of different sparse tensor format
 
@@ -39,14 +40,12 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
         rmax=r=rank
 
     if kind.lower() in ['cano','canotensor'] :
-        return CanoTensor(name=name, val=val, core=core, basis=basis,
-                          Fourier=Fourier).truncate(rank=r, tol=eps)
+        return CanoTensor(name=name, val=val, core=core,basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=r, tol=eps)
     elif kind.lower() in ['tucker']:
-        return Tucker(name=name, val=val, core=core, basis=basis,
-                      Fourier=Fourier).truncate(rank=rank, tol=eps)
+        return Tucker(name=name, val=val, core=core, basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=rank, tol=eps)
     elif kind.lower() in ['tt', 'tensortrain']:
         return TensorTrain(val=val, core=core, eps=eps, rmax=rmax, name=name,
-                           Fourier=Fourier, vectorObj=vectorObj)
+                           Fourier=Fourier, vectorObj=vectorObj,fft_form=fft_form)
     else:
         raise ValueError("Unexpected argument value: '" + kind +"'")
 

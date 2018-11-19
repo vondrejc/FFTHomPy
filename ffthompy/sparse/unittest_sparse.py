@@ -10,6 +10,7 @@ from ffthompy.materials import Material
 from ffthompy.tensors import matrix2tensor
 from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_Ga_sparse
 from ffthompy.sparse.materials import SparseMaterial
+from ffthompy.tensors import Tensor
 
 import timeit
 
@@ -99,11 +100,11 @@ def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
 class Test_sparse(unittest.TestCase):
 
     def setUp(self):
-        self.T2d=np.random.rand(10, 20)
-        self.T2dOther=np.random.rand(10, 20)
+        self.T2d=np.random.rand(5, 10)
+        self.T2dOther=np.random.rand(*self.T2d.shape)
 
-        self.T3d=np.random.rand(5, 7, 10)
-        self.T3dOther=np.random.rand(5, 7, 10)
+        self.T3d=np.random.rand(10, 5, 20)
+        self.T3dOther=np.random.rand(*self.T3d.shape)
 
     def tearDown(self):
         pass
@@ -122,10 +123,6 @@ class Test_sparse(unittest.TestCase):
 
         self.assertAlmostEqual(norm((a+b).full()-self.T2d-self.T2dOther), 0)
         self.assertAlmostEqual(norm((a*b).full()-self.T2d*self.T2dOther), 0)
-
-        Fa=a.fourier()
-        Fa2=a.full().fourier()
-        self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
 
         print('...ok')
 
@@ -152,28 +149,41 @@ class Test_sparse(unittest.TestCase):
         self.assertAlmostEqual(norm((a+b).full()-self.T3d-self.T3dOther), 0)
         self.assertAlmostEqual(norm((a*b).full()-self.T3d*self.T3dOther), 0)
 
-        Fa=a.fourier()
-        Fa2=a.full().fourier()
-        self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
-
         print('...ok')
 
     def test_Fourier(self):
         print('\nChecking Fourier functions ...')
 
-        a=SparseTensor(kind='cano', val=self.T2d)
-        Fa2=a.full().fourier()
-        Fa=a.fourier()
-        self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
+        for opt in [0,'c','cc']:
 
-        a=SparseTensor(kind='tucker', val=self.T3d)
-        Fa2=a.full().fourier()
-        Fa=a.fourier()
-        self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
+            a=SparseTensor(kind='cano', val=self.T2d, fft_form=opt)
+            T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full()- T.fourier(copy=True)), 0)
 
-        a=SparseTensor(kind='tt', val=self.T3d)
-        Fa=a.fourier()
-        self.assertAlmostEqual(norm(Fa.full()-Fa2), 0)
+            a=SparseTensor(kind='tucker', val=self.T3d, fft_form=opt)
+            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full()- T.fourier(copy=True)), 0)
+
+            a=SparseTensor(kind='tt', val=self.T3d, fft_form=opt)
+            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full()- T.fourier(copy=True).val), 0)
+
+        sparse_opt='sr'
+        for full_opt in [0,'c','cc']:
+
+            a=SparseTensor(kind='cano', val=self.T2d, fft_form= sparse_opt)
+            T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form= full_opt)
+            self.assertAlmostEqual(norm(a.fourier().set_fft_form(full_opt).full()- T.fourier(copy=True)), 0)
+
+            a=SparseTensor(kind='tucker', val=self.T3d, fft_form= sparse_opt)
+            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form= full_opt)
+            self.assertAlmostEqual(norm(a.fourier().set_fft_form(full_opt).full()- T.fourier(copy=True)), 0)
+
+            a=SparseTensor(kind='tt', val=self.T3d, fft_form= sparse_opt)
+            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form= full_opt)
+            self.assertAlmostEqual(norm(a.fourier().set_fft_form(full_opt).full()- T.fourier(copy=True)), 0)
+
+        print('...ok')
 
     def test_Fourier_truncation(self):
         print('\nChecking TT truncation in Fourier domain ...')
@@ -209,23 +219,23 @@ class Test_sparse(unittest.TestCase):
         v=np.array(range(1,2**(L1+L2+L3)+1))
         v=np.sin(v)/v # to increase the rank
 
-        v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')        
+        v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')
         #vFFT= DFT.fftnc(v, [2**L1, 2**L2])
         #start = time.clock()
-        v1fft= np.fft.fftn(v1)/2**(L1+L2+L3) 
+        v1fft= np.fft.fftn(v1)/2**(L1+L2+L3)
         #print("FFT time:     ", (time.clock() - start))
 
         vq= np.reshape(v,[2]*(L1+L2+L3),order='F') # a quantic tensor
-        vqtt= SparseTensor(kind='tt', val=vq) # a qtt 
+        vqtt= SparseTensor(kind='tt', val=vq) # a qtt
 
         #start = time.clock()
-        vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)  
+        vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)
         #print("QTT_FFT time: ", (time.clock() - start))
 
-        vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')    
+        vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')
 
-        print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft) ) 
-        print ("maximum rank of the qtt is:",np.max(vqtt.r))    
+        print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft) )
+        print ("maximum rank of the qtt is:",np.max(vqtt.r))
 
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
 
@@ -321,7 +331,7 @@ class Test_sparse(unittest.TestCase):
         a=SparseTensor(kind='tucker', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
         self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
-
+#
         a=SparseTensor(kind='tt', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
         self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
