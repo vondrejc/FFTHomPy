@@ -3,6 +3,8 @@ import numpy as np
 from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
+from ffthompy.tensors import Tensor
+from ffthompy.trigpol import fft_form_default
 
 from numpy.linalg import norm
 from numpy import newaxis
@@ -13,7 +15,7 @@ from numpy import newaxis
 class Tucker(CanoTensor):
 
     def __init__(self, name='unnamed', val=None, core=None, basis=None, Fourier=False, orthogonal=False,
-                 r=None, N=None, randomise=False):
+                 r=None, N=None, randomise=False, fft_form=fft_form_default):
 
         self.name=name
         self.Fourier=Fourier
@@ -80,6 +82,8 @@ class Tucker(CanoTensor):
 
             if randomise:
                 self.randomise()
+
+        self._set_fft(fft_form)
 
     def randomise(self):
         if self.order==2:
@@ -152,7 +156,7 @@ class Tucker(CanoTensor):
             return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
 
     def full(self):
-        """convert a tucker representation to a full tensor
+        """convert a tucker representation to a full tensor object
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
         from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
         """
@@ -162,10 +166,22 @@ class Tucker(CanoTensor):
 
         d=self.N.shape[0]
 
-        res=self.core.copy()
+        if self.Fourier:
+            res=self.fourier()
+        else:
+            res=self
+
+        val=res.core.copy()
         for i in range(d):
-            res=nModeProduct(res, self.basis[i].T, i)
-        return res
+            val=nModeProduct(val, res.basis[i].T, i)
+
+        T=Tensor(name=res.name, val=val, order=0,
+                 Fourier=False, fft_form=self.fft_form)
+
+        if self.Fourier:
+            T.fourier()
+
+        return T
 
     def truncate(self, tol=None, rank=None):
         """return truncated tensor. tol, if presented, would override rank as truncation criteria.
@@ -179,14 +195,12 @@ class Tucker(CanoTensor):
 
         if isinstance(rank, int) :
             rank=rank*np.ones((self.order,), dtype=int)
-            sg=np.sign(rank)
-            rank=np.minimum(abs(rank), self.r)
-            rank*=sg
+            rank=np.minimum(rank, self.r)
+
         if isinstance(tol, float) :
             tol=tol*np.ones((self.order,))
 
         self=self.orthogonalise()
-        #self=self.sort()
 
         basis=list(self.basis)
         core=self.core
@@ -195,63 +209,19 @@ class Tucker(CanoTensor):
         if np.any(tol) is not None:
             rank=np.zeros((self.order), dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
-            if self.order==3:
-                sorted_norm_d0=np.sum(abs(core), axis=(1, 2))
-                sorted_norm_d1=np.sum(abs(core), axis=(0, 2))
-                sorted_norm_d2=np.sum(abs(core), axis=(0, 1))
+            sorted_norm=[]
+            ind=range(self.order)
+            for i in ind:
+                sorted_norm.append(np.sum(abs(core), axis= tuple(np.setdiff1d(ind, i))  ))
+                rank[i]=np.searchsorted(np.cumsum(sorted_norm[i])/np.sum(sorted_norm[i]), 1.0-tol[i])+1
 
-                rank[0]=np.searchsorted(np.cumsum(sorted_norm_d0)/np.sum(sorted_norm_d0), 1.0-tol[0])+1
-                rank[1]=np.searchsorted(np.cumsum(sorted_norm_d1)/np.sum(sorted_norm_d1), 1.0-tol[1])+1
-                rank[2]=np.searchsorted(np.cumsum(sorted_norm_d2)/np.sum(sorted_norm_d2), 1.0-tol[2])+1
 
-        if self.order==3:
-            if rank[0]<0 :
-                target_storage=np.prod(-rank)
+        L=[None]*self.order
+        for d in range(self.order):
+            L[d]=range(rank[d])
 
-                R=np.array([1, 1, 1])
-                storage=1
-
-                while storage<=target_storage:
-
-                    newCore=core[:R[0], :R[1], :R[2]]
-                    newCore_enlarged=core[:min(self.r[0], R[0]+1), :min(self.r[1], R[1]+1), :min(self.r[2], R[2]+1)]
-
-                    sorted_norm_d0=np.sum(abs(newCore_enlarged), axis=(1, 2))
-                    sorted_norm_d1=np.sum(abs(newCore_enlarged), axis=(0, 2))
-                    sorted_norm_d2=np.sum(abs(newCore_enlarged), axis=(0, 1))
-
-                    candi=np.zeros((3,))
-
-                    if R[0]<self.r[0]:
-                        candi[0]=sorted_norm_d0[R[0]]
-                    else:
-                        candi[0]=-999
-
-                    if R[1]<self.r[1]:
-                        candi[1]=sorted_norm_d1[R[1]]
-                    else:
-                        candi[1]=-999
-
-                    if R[2]<self.r[2]:
-                        candi[2]=sorted_norm_d2[R[2]]
-                    else:
-                        candi[2]=-999
-
-                    if candi[0]>=candi[1] and candi[0]>=candi[2]:
-                        R[0]+=1
-                    elif candi[1]>=candi[0] and candi[1]>=candi[2]:
-                        R[1]+=1
-                    elif candi[2]>=candi[0] and candi[2]>=candi[1]:
-                        R[2]+=1
-
-                    storage=np.prod(R)
-
-                rank=np.array(newCore.shape)
-                core=newCore
-            else:
-                core=core[:rank[0], :rank[1], :rank[2]]
-        else:
-            raise NotImplementedError("currently only support two and three dimensional tensor")
+        part_taken_ind=np.ix_(*L)
+        core=core[part_taken_ind] # truncate the core
 
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank[ii], :]
@@ -292,7 +262,7 @@ class Tucker(CanoTensor):
 
         return val
 
-    def mean(self): 
+    def mean(self):
         val=0.
 
         L=[None]*self.order
@@ -312,7 +282,7 @@ class Tucker(CanoTensor):
                     val_piece*=np.mean(self.basis[k][ind[k, i]])
 
             val+=val_piece
-        return val 
+        return val
 
     @property
     def memory(self):
@@ -401,13 +371,13 @@ if __name__=='__main__':
     print('testing multiplication...')
     print(np.linalg.norm(c.full()-c2)/np.linalg.norm(c2))
 
-    # DFT
-    print('testing DFT...')
-
-    Fa=a.fourier()
-    print(Fa)
-    Fa2=DFT.fftnc(a.full(), a.N)
-    print(np.linalg.norm(Fa.full()-Fa2))
+#    # DFT
+#    print('testing DFT...')
+#
+#    Fa=a.fourier()
+#    print(Fa)
+#    Fa2=DFT.fftnc(a.full(), a.N)
+#    print(np.linalg.norm(Fa.full()-Fa2))
 
 ######### 3-d tenssor test #########
 
@@ -416,8 +386,8 @@ if __name__=='__main__':
     print
 
     N1=10 # warning: in 3d multiplication too large N number could kill the machine.
-    N2=20
-    N3=30
+    N2=12
+    N3=15
 
     # creat 3d tensor for test
 
@@ -544,12 +514,13 @@ if __name__=='__main__':
 #
 #
 #
+    N4=5
     # multiplication
-    T1=np.random.rand(N1,N2)
-    T2=np.random.rand(N1,N2)
-    
+    T1=np.random.rand(N1,N2,N3,N4)
+    T2=np.random.rand(N1,N2,N3,N4)
+
     #T1=np.sin(T )
-    
+
     a = Tucker(val=T1,name='a' )
     b = Tucker(val=T2,name='b' )
     c=a*b
@@ -558,42 +529,50 @@ if __name__=='__main__':
     print('testing 3d multiplication and re-orthogonalization...')
     print "(a*b).full - (a.full*b.full) = ", norm(c.full()-a.full()*b.full())
     print "((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ", norm(c.full()-a.full()*b.full())/norm(a.full()*b.full())
-    print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ", np.max(c.full()-a.full()*b.full())/np.mean(a.full()*b.full())
+    print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ", np.max(c.full().val-a.full().val*b.full().val)/np.mean(a.full()*b.full())
 #
-    c_trunc=c.truncate(rank=13)
+    c_trunc=c.truncate(rank=8)
     print(c_trunc)
 
     print('testing 3d tucker core sorting and  rank-based truncation ...')
     print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
+    print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+
+
+#    c_trunc=c.truncate(rank=-5)
+#    print(c_trunc)
+#
+#    print('testing 3d tucker core sorting and  rank-based truncation ...')
+#    print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
 #    print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 
-    c_trunc=c.truncate(rank=29)
+    c_trunc=c.truncate(tol=0.2)
     print(c_trunc)
 
     print('testing 3d tucker core sorting and  rank-based truncation ...')
     print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
     print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
     print
-    
+
 #    k=N2
 #    while k>2:
 #        c_trunc=c.truncate(rank=k)
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
-    
-    N1=10  
+
+    N1=10
     N2=20
     N3=30
     T1=np.random.rand(N1,N2,N3)
-    T2=np.random.rand(N1,N2,N3) 
-    
+    T2=np.random.rand(N1,N2,N3)
+
     a = Tucker(val=T1,name='a' )
     b = Tucker(val=T2,name='b' )
-    
+
     c=a+b
-    
-    print (np.mean(c.full()) - c.mean())
-    print (np.mean(c.full()) - c.fourier().mean())
+
+    print (np.mean(c.full().val) - c.mean())
+    print (np.mean(c.full().val) - c.fourier().mean())
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)
 #
@@ -645,16 +624,16 @@ if __name__=='__main__':
 # #    print "n-D FFT costs         : %f"%t2
 # #
 # #    print('END')
-#     
+#
 #    a2= Tucker(N=np.array([7,7,7]),r=np.array([5,5,5]), randomise=True)
 #    a2t=a2.truncate(rank=3)
-#    
+#
 #    print "a2_truncated.full - a2.full = ", norm(a2t.full()-a2.full())
 #    print "norm(a2_truncated.full - a2.full)/norm(a2.full) = ", norm(a2t.full()-a2.full())/norm(a2.full())
 #
 #    a2t2=a2.truncate2(rank=3)
-#    
+#
 #    print
 #    print "a2_truncated.full - a2.full = ", norm(a2t2.full()-a2.full())
-#    print "norm(a2_truncated.full - a2.full)/norm(a2.full) = ", norm(a2t2.full()-a2.full())/norm(a2.full())    
+#    print "norm(a2_truncated.full - a2.full)/norm(a2.full) = ", norm(a2t2.full()-a2.full())/norm(a2.full())
 #    print('END')

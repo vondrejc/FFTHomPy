@@ -133,24 +133,36 @@ class CanoTensor(SparseTensorFuns):
                               Fourier=self.Fourier).truncate(rank=np.min(self.N))
 
     def full(self):
-        "return a full tensor"
-        Fourier=False
+        "return a full tensor object"
+
         if self.order==2:
             if self.Fourier:
-                Fourier=True
-                self.fourier()
+                res=self.fourier()
+            else:
+                res=self
 
             # generate Tensor in real domain
-            val=np.einsum('i,ik,il->kl', self.core, self.basis[0], self.basis[1])
-            T=Tensor(name=self.name, val=val, order=0,
-                     Fourier=self.Fourier, fft_form=self.fft_form)
+            val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
+            T=Tensor(name=res.name, val=val, order=0,
+                     Fourier=False, fft_form=self.fft_form)
 
-            if Fourier:
+            if self.Fourier:
                 T.fourier()
             return T
         else:
             raise NotImplementedError()
 
+    def full2(self):
+        "return a full tensor object"
+
+        if self.order==2:
+            # generate Tensor in real domain
+            val=np.einsum('i,ik,il->kl', self.core, self.basis[0], self.basis[1])
+            T=Tensor(name=self.name, val=val, order=0,
+                     Fourier=self.Fourier, fft_form=self.fft_form)
+            return T
+        else:
+            raise NotImplementedError()
     def truncate(self, rank=None, tol=None):
         "return truncated tensor"
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
@@ -489,6 +501,8 @@ if __name__=='__main__':
 
     print (np.mean(c.full().val) - c.mean())
     print (np.mean(c.full().val) - c.fourier().mean())
+
+
 #    ### test enlarge#####
 #    n=3
 # #    T1= np.zeros((n,n, n))
@@ -510,5 +524,15 @@ if __name__=='__main__':
 
     af=a.fourier()
     print ( np.linalg.norm(af.full().val - T1) )
+
+    ### test full ###
+
+
+    print (np.linalg.norm(c.full()-T1*T2))
+    print (np.linalg.norm(c.full2()-T1*T2))
+
+    T=Tensor(val=T1*T2, order=0, Fourier=False)
+
+    print (np.linalg.norm(c.fourier().full().val- T.fourier().val ))
 
     print('END')
