@@ -36,6 +36,7 @@ class TensorTrain(vector,SparseTensorFuns):
         self.N=self.n # ttpy use n, we use N.
         self.name=name
         self.Fourier=Fourier
+        self.fft_form=fft_form
         self._set_fft(fft_form)
 
     @staticmethod
@@ -93,19 +94,6 @@ class TensorTrain(vector,SparseTensorFuns):
         return R.from_list(cl, name=R.name, Fourier=R.Fourier, fft_form=fft_form)
 
 
-    def truncate(self, tol=None, rank=None):
-        if np.any(tol) is None and np.any(rank) is None:
-            return self
-        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
-            return self
-        else:
-            if tol is None:  tol=1e-14
-
-            #res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
-            #res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
-            res =self.my_round(rank=rank)
-            return res
-
     def enlarge(self, M):
         assert(self.Fourier is True)
 
@@ -126,9 +114,10 @@ class TensorTrain(vector,SparseTensorFuns):
             cl_new[i]=np.zeros([self.r[i], M[i], self.r[i+1]], dtype=dtype)
             cl_new[i][:, ibeg[i]:iend[i], :]=cl[i]
 
-        res=self.from_list(cl_new)
+        res=self.from_list(cl_new,  fft_form=self.fft_form)
         res.name=self.name+"_enlarged"
         res.Fourier=self.Fourier
+
         return res
 
     def decrease(self, M):
@@ -147,9 +136,10 @@ class TensorTrain(vector,SparseTensorFuns):
         for i in range(self.d):
             cl_new[i]=cl[i][:, ibeg[i]:iend[i], :]
 
-        res=self.from_list(cl_new)
+        res=self.from_list(cl_new, fft_form=self.fft_form)
         res.name=self.name+"_decreased"
         res.Fourier=self.Fourier
+
         return res
 
     def mean(self):
@@ -200,21 +190,21 @@ class TensorTrain(vector,SparseTensorFuns):
         res_vec=vector.__mul__(self, other)
         res=TensorTrain(vectorObj=res_vec,
                           name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier)
+                          Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __add__(self, other):
         res_vec=vector.__add__(self, other)
         res=TensorTrain(vectorObj=res_vec,
                           name=self.name+'+'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier)
+                          Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __kron__(self, other):
         res_vec=vector.__kron__(self, other)
         res=TensorTrain(vectorObj=res_vec,
                           name=self.name+' glued with '+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier)
+                          Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __sub__(self, other):
@@ -253,6 +243,19 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return ss+vector.__repr__(self)
 
+    def truncate(self, tol=None, rank=None):
+        if np.any(tol) is None and np.any(rank) is None:
+            return self
+        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
+            return self
+        else:
+            if tol is None:  tol=1e-14
+
+            #res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
+            #res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
+            res =self.my_round(rank=rank)
+            return res
+
     def my_round(self, rank=None):
         """
         An altered version of ttpy's round() function.
@@ -286,8 +289,9 @@ class TensorTrain(vector,SparseTensorFuns):
 
         cr_new[d-1]=cr[d-1].reshape(r[d-1], n[d-1], r[d])
 
-        newObj=self.from_list(cr_new)
+        newObj=self.from_list(cr_new, fft_form=self.fft_form)
         newObj.Fourier=self.Fourier
+
         return newObj
 
     def orthogonalise(self, direction='lr', r_output=False):
@@ -326,6 +330,7 @@ class TensorTrain(vector,SparseTensorFuns):
                 cr_new[d-1]=cr[d-1].reshape(r[d-1], n[d-1], r[d])
                 newObj=self.from_list(cr_new)
                 newObj.Fourier=self.Fourier
+                newObj.fft_form=self.fft_form
                 return newObj
 
         elif direction=='rl' or direction=='RL':
@@ -344,8 +349,9 @@ class TensorTrain(vector,SparseTensorFuns):
                 return self.from_list(cr_new), ru
             else:
                 cr_new[0]=cr[0].reshape(r[0], n[0], r[1])
-                newObj=self.from_list(cr_new)
+                newObj=self.from_list(cr_new, fft_form=self.fft_form)
                 newObj.Fourier=self.Fourier
+
                 return newObj
 
         else:

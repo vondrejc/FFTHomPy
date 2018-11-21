@@ -187,25 +187,36 @@ class Test_sparse(unittest.TestCase):
 
     def test_Fourier_truncation(self):
         print('\nChecking TT truncation in Fourier domain ...')
-        N = np.random.randint(10,20, size=3)
+        N = np.random.randint(40,60, size=3)
+        a=np.arange(1,np.prod(N)+1).reshape(N)
+        cases=[[None]*2,[None]*2]
+        # first a random test case
+        cases[0]=[np.random.random(N),np.random.random(N)]
+        # this produces a "smooth", more realistic, tensor with modest rank
+        cases[1]=[np.sin(a)/a, np.exp(a/np.max(a))]
 
-        a=np.random.random(N)
-        b=np.random.random(N)
+        for i in range(len(cases)):
+            a=cases[i][0]
+            b=cases[i][1]
+            ta=SparseTensor(kind='tt', val=a, fft_form='sr') # Fourier truncation works the best with option 'sr'
+            tb=SparseTensor(kind='tt', val=b, fft_form='sr')
+            tc=ta+tb
+            k=tc.r[1:-1].min()/2-5
+            tct=tc.truncate(rank=k)
 
-        ta=SparseTensor(kind='tt', val=a)
-        tb=SparseTensor(kind='tt', val=b)
-        tc=ta+tb
-        k=tc.r[1:-1].min()/2-5
-        tct=tc.truncate(rank=k)
+            err_normal_truncate= (tct-tc).norm()
 
-        taf=ta.fourier()
-        tbf=tb.fourier()
-        tcf=taf+tbf
-        tcft=tcf.truncate(rank=k)
+            taf=ta.fourier()
+            tbf=tb.fourier()
+            tcf=taf+tbf
+            tcft=tcf.truncate(rank=k)
+            tcfti=tcft.fourier()
 
-        tcfti=tcft.fourier()
+            err_Fourier_truncate=(tcfti-tc).norm()
 
-        self.assertAlmostEqual(norm((tct-tcfti).full()), 0)
+            # assert the two truncations are in the same order
+            self.assertAlmostEqual(err_normal_truncate, err_Fourier_truncate, delta=err_normal_truncate*3)
+
         print('...ok')
 
     @unittest.skip("The testing is too slow.")
