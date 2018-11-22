@@ -1,13 +1,12 @@
 import numpy as np
 import numpy.fft as fft
-import warnings
 
 def cfftnc(x, N):
     """
     centered n-dimensional FFT algorithm
     """
     ax=tuple(np.setdiff1d(range(x.ndim), range(x.ndim-N.__len__()), assume_unique=True))
-    return fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)/np.prod(N)
+    return 1./np.prod(N)*fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)
 
 def icfftnc(Fx, N):
     """
@@ -21,7 +20,7 @@ def fftnc(x, N):
     centered n-dimensional FFT algorithm
     """
     ax=tuple(np.setdiff1d(range(x.ndim), range(x.ndim-N.__len__()), assume_unique=True))
-    return fft.fftshift(fft.fftn(x, N), ax)/np.prod(N)
+    return 1./np.prod(N)*fft.fftshift(fft.fftn(x, N), ax)
 
 def icfftn(Fx, N):
     """
@@ -32,7 +31,7 @@ def icfftn(Fx, N):
 
 
 def fftn(x, N):
-    return fft.fftn(x, N)/np.prod(N) # numpy.fft.fftn
+    return 1./np.prod(N)*fft.fftn(x, N) # numpy.fft.fftn
 
 def ifftn(x, N):
     return fft.ifftn(x, N).real*np.prod(N) # numpy.fft.fftn
