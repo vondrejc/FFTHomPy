@@ -55,7 +55,7 @@ class TensorFuns(Representation):
         self.fft_form=fft_form
 
     def __repr__(self, full=False, detailed=False):
-        keys=['order', 'name', 'Y', 'shape', 'N', 'Fourier', 'fft_form', 'norm']
+        keys=['order', 'name', 'Y', 'shape', 'N', 'Fourier', 'fft_form', 'origin', 'norm']
         ss=self._repr(keys)
         skip=4*' '
         if np.prod(np.array(self.shape))<=36 or detailed:
@@ -79,10 +79,11 @@ class TensorFuns(Representation):
 class Tensor(TensorFuns):
 
     def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None,
-                 multype='scal', Fourier=False, fft_form=fft_form_default):
+                 multype='scal', Fourier=False, fft_form=fft_form_default, origin=0):
 
         self.name=name
         self.Fourier=Fourier
+        self.origin=origin
 
         if isinstance(val, np.ndarray): # define: val + order
             self.val=val
@@ -138,13 +139,32 @@ class Tensor(TensorFuns):
                 R.val=np.fft.ifftshift(R.val, axes=R.axes) # common for fft_form in [0,'r']
                 if fft_form in ['r']:
                     R.val=R.val[...,:self.get_N_real(self.N)[-1]]*np.prod(self.N)
-            if fft_form_orig in [0]:
+            elif fft_form_orig in [0]:
                 if fft_form in ['c']:
                     R.val=np.fft.fftshift(R.val, axes=R.axes)
                 else: # if fft_form in ['r']:
                     R.val=R.val[...,:self.get_N_real(self.N)[-1]]*np.prod(self.N)
         R._set_fft(fft_form)
         return R
+
+    def shift(self, origin=None):
+        """
+        shift the values to the format (format)
+        """
+        assert(not self.Fourier)
+
+        if origin==self.origin:
+            return self
+        elif origin is None:
+            if self.origin in [0]:
+                self.val = np.fft.fftshift(self.val, self.axes)
+                self.origin='c'
+            elif self.origin in ['c']:
+                self.val = np.fft.ifftshift(self.val, self.axes)
+                self.origin=0
+            return self
+        else:
+            raise ValueError()
 
     def randomize(self):
         self.val=np.random.random(self.val.shape)
@@ -313,7 +333,7 @@ class Tensor(TensorFuns):
         return np.matrix(self.val.ravel()).transpose()
 
     def copy(self, **kwargs):
-        keys=('name','val','order','Y','multype','Fourier','fft_form')
+        keys=('name','val','order','Y','multype','Fourier','fft_form','origin')
         data={k:copy(self.__dict__[k]) for k in keys}
         data.update(kwargs)
         return Tensor(**data)
@@ -370,23 +390,8 @@ class Tensor(TensorFuns):
     def axes(self): # axes for Fourier transform
         return tuple(range(self.order, self.order+self.dim))
 
-    def enlarge(self, M):
-        """
-        It enlarges a trigonometric polynomial by adding zeros to the Fourier
-        coefficients with high frequencies.
-        """
-        assert(self.Fourier)
-        fft_form=self.fft_form
-        self.set_fft_form(fft_form='c')
-
-        val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
-        for di in np.ndindex(*self.shape):
-            val[di]=enlarge(self.val[di], M)
-
-        R=self.copy(val=val, fft_form='c')
-        return R.set_fft_form(fft_form=fft_form)
-
     def fourier(self, copy=False):
+        assert(self.origin==0)
         if copy:
             if self.Fourier:
                 return self.copy(val=self.ifftn(self.val, self.N), Fourier=not self.Fourier)
@@ -400,6 +405,44 @@ class Tensor(TensorFuns):
             self.Fourier=not self.Fourier
             return self
 
+    def enlarge(self, M):
+        """
+        It enlarges a trigonometric polynomial by adding zeros to the Fourier
+        coefficients with high frequencies.
+        """
+        assert(self.Fourier)
+        if np.allclose(self.N, M):
+            return self
+        else:
+            fft_form=self.fft_form
+            self.set_fft_form(fft_form='c')
+
+            val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
+            for di in np.ndindex(*self.shape):
+                val[di]=enlarge(self.val[di], M)
+
+            R=self.copy(val=val, fft_form='c')
+            return R.set_fft_form(fft_form=fft_form)
+
+    def decrease(self, M):
+        """
+        It enlarges a trigonometric polynomial by adding zeros to the Fourier
+        coefficients with high frequencies.
+        """
+        assert(self.Fourier)
+        if np.allclose(self.N, M):
+            return self
+        else:
+            fft_form=self.fft_form
+            self.set_fft_form(fft_form='c')
+
+            val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
+            for di in np.ndindex(*self.shape):
+                val[di]=enlarge(self.val[di], M)
+
+            R=self.copy(val=val, fft_form='c')
+            return R.set_fft_form(fft_form=fft_form)
+
     def project(self, M):
         """
         It projects a trigonometric polynomial to a polynomial with different grid.
@@ -409,26 +452,19 @@ class Tensor(TensorFuns):
             return self
 
         Fourier=self.Fourier
-        X=self
         if Fourier:
-            X=X.fourier()
-
-        Fval = cfftnc(X.val, X.N)
+            Y=self.copy()
+        else:
+            Y=self.fourier(copy=copy)
 
         if np.all(np.greater(M, self.N)):
-            val=np.zeros(self.shape+tuple(M), dtype=Fval.dtype)
-            for di in np.ndindex(*self.shape):
-                val[di]=enlarge(Fval[di], M)
+            Y=Y.enlarge(M)
         elif np.all(np.less(M, self.N)):
-            val=np.zeros(self.shape+tuple(M), dtype=Fval.dtype)
-            for di in np.ndindex(*self.shape):
-                val[di]=decrease(Fval[di], M)
+            Y=Y.decrease(M)
         else:
             raise NotImplementedError()
 
-        val = icfftnc(val, M)
-        Y=X.copy(val=val)
-        if Fourier:
+        if not Fourier:
             Y=Y.fourier()
         return Y
 

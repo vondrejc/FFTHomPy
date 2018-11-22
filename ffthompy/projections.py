@@ -262,6 +262,6 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     if fft_form_r:
         for tensor in [G0, G1h, G1s, G2h, G2s]:
             tensor.set_fft_form(fft_form='r')
-            tensor.val/=np.prod(tensor.N)
+            tensor.val=1./np.prod(tensor.N)*tensor.val
 
     return G0, G1h, G1s, G2h, G2s

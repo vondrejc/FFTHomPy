@@ -5,7 +5,7 @@ from ffthompy.postprocess import postprocess, add_macro2minimizer
 from ffthompy.general.solver import linear_solver
 from ffthompy.general.solver_pp import CallBack, CallBack_GA
 from ffthompy.general.base import Timer
-from ffthompy.tensors import Tensor, DFT, Operator, matrix2tensor
+from ffthompy.tensors import Tensor, DFT, Operator
 
 
 def scalar(problem):

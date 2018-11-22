@@ -51,7 +51,7 @@ class Material():
         else:
             raise NotImplementedError("Improper material definition!")
 
-    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None, tensor=True):
+    def get_A_Ga(self, Nbar, primaldual='primal', order=-1, P=None):
         """
         Returns stiffness matrix for scheme with exact integration.
         """
@@ -108,12 +108,10 @@ class Material():
 
                 val[m, n] = np.real(icfftnc(Wraw*hAM, Nbar))
 
-            name = 'A_Ga_o{0}_P{1}'.format(order, P.max())
+            name = 'A_Ga_o{0}_P{1}'.format(order, np.array(P).max())
 
-        if tensor:
-            return Tensor(name=name, val=val, order=2, Y=self.Y, multype=21, Fourier=False)
-        else:
-            return Matrix(name=name, val=val, Fourier=False)
+        return Tensor(name=name, val=val, order=2, Y=self.Y, multype=21,
+                      Fourier=False, origin='c').shift()
 
     def get_A_GaNi(self, N, primaldual='primal', tensor=True):
         """
@@ -123,7 +121,7 @@ class Material():
         A = self.evaluate(coord, tensor=tensor)
         if primaldual is 'dual':
             A = A.inv()
-        return A
+        return A.shift()
 
     def get_shape_functions(self, N2):
         """
@@ -197,7 +195,8 @@ class Material():
             for ii in np.arange(len(self.conf['inclusions'])):
                 A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii], topos[ii])
         if tensor:
-            return Tensor(name='A_GaNi', val=A_val, order=2, Y=self.Y, multype=21, Fourier=False)
+            return Tensor(name='A_GaNi', val=A_val, order=2, Y=self.Y, multype=21, Fourier=False,
+                          origin='c')
         else:
             return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 
