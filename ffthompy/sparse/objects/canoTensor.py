@@ -3,13 +3,13 @@ from numpy.linalg import norm
 from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
-
+from ffthompy.trigpol import fft_form_default
 import timeit
 
 class CanoTensor(SparseTensorFuns):
 
     def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False, Fourier=False,
-                 r=None, N=None, randomise=False):
+                 r=None, N=None, randomise=False, fft_form=fft_form_default ):
 
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
@@ -53,6 +53,30 @@ class CanoTensor(SparseTensorFuns):
             else:
                 self.core=np.zeros(r)
                 self.basis=[np.zeros([self.r[ii], self.N[ii]]) for ii in range(self.order)]
+
+        self._set_fft(fft_form)
+
+    def set_fft_form(self, fft_form, copy=False):
+        if copy:
+            R=self.copy()
+        else:
+            R=self
+
+        if self.fft_form==fft_form:
+            return R
+
+        fft_form_orig = self.fft_form
+        if R.Fourier:
+            if fft_form_orig in ['c','cc']:
+                for i in range(self.order):
+                    R.basis[i]= R.ifft(R.basis[i], R.N[i])
+
+                if fft_form in ['sr']:
+                    R._set_fft(fft_form)
+                    for i in range(R.order):
+                        R.basis[i]= R.fft(R.basis[i], R.N[i])
+
+        return R
 
     def randomise(self):
         self.core=np.random.random((self.r,))
@@ -110,6 +134,7 @@ class CanoTensor(SparseTensorFuns):
 
     def full(self):
         "return a full tensor"
+        Fourier=False
         if self.order==2:
             if self.Fourier:
                 Fourier=True
@@ -274,7 +299,7 @@ class CanoTensor(SparseTensorFuns):
     def scal(self, Y):
         X = self
         assert(X.Fourier==Y.Fourier)
-        XY = X*Y 
+        XY = X*Y
         return XY.mean()
 
     def repeat(self, M):
@@ -422,47 +447,48 @@ if __name__=='__main__':
     print  "a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full())
     print
 
-    # DFT
-    print('testing DFT...')
+#    # DFT
+#    print('testing DFT...')
 
-    from ffthompy.tensors.operators import DFT
+#    from ffthompy.tensors.operators import DFT
+#
+#    Fa=a.fourier()
+#    Fa2=DFT.fftnc(a.full(), a.N)
+#
+#    print(np.linalg.norm(Fa.full()-Fa2))
+#
+#    print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
+#    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)
+#    afull=a.full()
+#    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.tensors.operators import DFT;from __main__ import a, afull', number=10)
+#    # t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
+#    print
+#    print "Tensor of 1D FFT costs: %f"%t1
+#    print "n-D FFT costs         : %f"%t2
 
-    Fa=a.fourier()
-    Fa2=DFT.fftnc(a.full(), a.N)
 
-    print(np.linalg.norm(Fa.full()-Fa2))
+    N1=3
+    N2=4
 
-    print('Comparing time cost of tensor of 1-D FFT and n-D FFT ...')
-    t1=timeit.timeit("a.fourier()", setup='from __main__ import a', number=10)
-    afull=a.full()
-    t2=timeit.timeit("DFT.fftnc(afull, a.N)", setup='from ffthompy.tensors.operators import DFT;from __main__ import a, afull', number=10)
-    # t1=timeit.timeit("aa=a.truncate(tol=0.05); aa.fourier()", setup='from __main__ import a', number=10000)
-    print
-    print "Tensor of 1D FFT costs: %f"%t1
-    print "n-D FFT costs         : %f"%t2
-    
-
-    N1=10 
-    N2=20
- 
     T1=np.random.rand(N1,N2)
     T2=np.random.rand(N1,N2)
-   
+
     a = CanoTensor(val=T1,name='a' )
     b = CanoTensor(val=T2,name='b' )
     c=a*b
     print(c)
 
     print
-    
+
+    m=c.mean()
 #    k=N2
 #    while k>2:
 #        c_trunc=c.truncate(rank=k)
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
 
-    print (np.mean(c.full()) - c.mean())
-    print (np.mean(c.full()) - c.fourier().mean())
+    print (np.mean(c.full().val) - c.mean())
+    print (np.mean(c.full().val) - c.fourier().mean())
 #    ### test enlarge#####
 #    n=3
 # #    T1= np.zeros((n,n, n))
@@ -480,6 +506,9 @@ if __name__=='__main__':
 #
 #    print(tfli.full().real)
 
+### test Fourier #####
 
+    af=a.fourier()
+    print ( np.linalg.norm(af.full().val - T1) )
 
     print('END')

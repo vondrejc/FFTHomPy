@@ -1,12 +1,8 @@
-import sys
 import numpy as np
-import numpy.fft as fft
-from scipy.linalg import block_diag
 from ffthompy.tensors.objects import TensorFuns
 import itertools
 from copy import deepcopy as copy
-
-sys.path.append("/home/disliu/ffthompy-sparse")
+from ffthompy.sparse.fft1 import fft, ifft, fftc, icfft, cfftc, icfftc, srfft,sirfft
 
 
 def multiply(A, B, *args, **kwargs):
@@ -24,13 +20,36 @@ def multiply(A, B, *args, **kwargs):
 
 
 class SparseTensorFuns(TensorFuns):
+
+    def _set_fft(self, fft_form):
+        assert(fft_form in ['cc','c', 'sr', 0]) # 'sr' for scipy.fftpack.rfft
+        if fft_form in [0]:
+            self.N_fft=self.N
+            self.fft=fft
+            self.ifft=ifft
+        elif fft_form in ['c']:
+            self.N_fft=self.N
+            self.fft=fftc
+            self.ifft=icfft
+        elif fft_form in ['cc']:
+            self.N_fft=self.N
+            self.fft=cfftc
+            self.ifft=icfftc
+        elif fft_form in ['sr']:
+            self.N_fft=self.N
+            self.fft=srfft
+            self.ifft=sirfft
+        self.fft_form=fft_form
+        return self
+
     def fourier(self):
         "(inverse) discrete Fourier transform"
+
         if self.Fourier:
-            fftfun=lambda Fx, N: fft.fftshift(fft.ifft(fft.ifftshift(Fx, axes=1), axis=1), axes=1).real*N
+            fftfun=lambda Fx, N: self.ifft(Fx, N)
             name='Fi({})'.format(self.name)
         else:
-            fftfun=lambda x, N: fft.fftshift(fft.fft(fft.ifftshift(x, axes=1), axis=1), axes=1)/N
+            fftfun=lambda x, N:  self.fft(x, N)
             name='F({})'.format(self.name)
 
         basis=[]
