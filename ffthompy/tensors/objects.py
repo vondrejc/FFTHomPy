@@ -132,9 +132,14 @@ class Tensor(TensorFuns):
         fft_form_orig = self.fft_form
         if R.Fourier:
             if fft_form_orig in ['r']:
-                R.fourier()
-                R.set_fft_form(fft_form)
-                R.fourier()
+                nval=np.flip(R.val[...,1:].conj(),axis=-1)
+                for ax in self.axes[:-1]:
+                    N,F = np.split(nval, [1], axis=ax)
+                    nval=np.concatenate((N, np.flip(F, axis=ax)), axis=ax)
+                val=np.concatenate((R.val,nval), axis=-1)
+                R.val=1./np.prod(R.N)*val # fft_form=0
+                if fft_form in ['c']:
+                    R.val=np.fft.fftshift(R.val, axes=R.axes)
             elif fft_form_orig in ['c']:
                 R.val=np.fft.ifftshift(R.val, axes=R.axes) # common for fft_form in [0,'r']
                 if fft_form in ['r']:
@@ -561,21 +566,12 @@ def scalar_product(y, x):
         scal=np.sum(y.val[:]*x.val[:])/np.prod(y.N)
     return scal
 
-def get_N_fft_form_real(N):
-    Nreal=np.copy(N)
-    Nreal[-1]=Nreal[-1]/2+1
-    return Nreal
-
 if __name__=='__main__':
     N=np.array([5,5], dtype=np.int)
     M=2*N
-    u=Tensor(name='test', shape=(2,), N=N, Fourier=False, fft_form='r')
+    u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
     u.randomize()
     print(u)
-    Fu=u.fourier(copy=True)
-    print(Fu)
-    print(Fu.norm())
-    print(Fu.norm(componentwise=True))
-    print(Fu.mean())
-
+    Fur=u.fourier(copy=True)
+    print(Fur)
     print('end')
