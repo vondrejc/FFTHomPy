@@ -89,12 +89,7 @@ class Tensor(TensorFuns):
             self.val=val
             self.order=int(order)
             self.shape=self.val.shape[:order]
-
-            if fft_form in ['r'] and Fourier:
-                self.N=self.get_N(self.val.shape[order:])
-            else:
-                self.N=self.val.shape[order:]
-
+            self.N=N
             self._set_fft(fft_form)
 
         elif shape is not None and N is not None: # define: shape + N
@@ -338,7 +333,7 @@ class Tensor(TensorFuns):
         return np.matrix(self.val.ravel()).transpose()
 
     def copy(self, **kwargs):
-        keys=('name','val','order','Y','multype','Fourier','fft_form','origin')
+        keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin')
         data={k:copy(self.__dict__[k]) for k in keys}
         data.update(kwargs)
         return Tensor(**data)
@@ -426,7 +421,7 @@ class Tensor(TensorFuns):
             for di in np.ndindex(*self.shape):
                 val[di]=enlarge(self.val[di], M)
 
-            R=self.copy(val=val, fft_form='c')
+            R=self.copy(val=val, N=M, fft_form='c')
             return R.set_fft_form(fft_form=fft_form)
 
     def decrease(self, M):
@@ -445,7 +440,7 @@ class Tensor(TensorFuns):
             for di in np.ndindex(*self.shape):
                 val[di]=decrease(self.val[di], M)
 
-            R=self.copy(val=val, fft_form='c')
+            R=self.copy(val=val, N=M, fft_form='c')
             return R.set_fft_form(fft_form=fft_form)
 
     def project(self, M):
@@ -575,11 +570,14 @@ def scalar_product(y, x):
     return scal
 
 if __name__=='__main__':
-    N=np.array([5,5], dtype=np.int)
+    N=np.array([3,3], dtype=np.int)
     M=2*N
     u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
     u.randomize()
     print(u)
-    Fur=u.fourier(copy=True)
-    print(Fur)
+    Fu=u.fourier(copy=True)
+    print(Fu)
+    FuM=Fu.project(M)
+    print(FuM.norm(componentwise=True))
+    print(FuM)
     print('end')

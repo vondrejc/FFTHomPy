@@ -46,10 +46,10 @@ class Test_solvers(unittest.TestCase):
         G1N=Operator(name='G1', mat=[[FiN, hG1Nt, FN]])
 
         A=Tensor(name='A', val=np.einsum('ij,...->ij...', np.eye(dim), 1.+10.*np.random.random(N)),
-                 order=2, multype=21)
+                 order=2, N=N, multype=21)
 
         E=np.zeros((dim,)+dim*(n,)); E[0] = 1. # set macroscopic loading
-        E=Tensor(name='E', val=E, order=1)
+        E=Tensor(name='E', val=E, order=1, N=N)
 
         GAfun=Operator(name='GA', mat=[[G1N, A]])
         GAfun.define_operand(E)

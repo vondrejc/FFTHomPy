@@ -50,14 +50,12 @@ class DFT(TensorFuns):
         if isinstance(x, Tensor):
             assert(x.Fourier==self.inverse)
             if self.inverse:
-                return Tensor(name='iF({0})'.format(x.name[:10]), order=x.order,
-                              val=self.ifftn(x.val, self.N).real, multype=x.multype,
-                              Fourier=not x.Fourier, fft_form=self.fft_form)
+                return x.copy(name='iF({0})'.format(x.name[:10]),
+                              val=self.ifftn(x.val, self.N).real, Fourier=not x.Fourier)
             else:
                 assert(x.fft_form==self.fft_form)
-                return Tensor(name='F({0})'.format(x.name[:10]), order=x.order,
-                              val=self.fftn(x.val, self.N), multype=x.multype,
-                              Fourier=not x.Fourier, fft_form=self.fft_form)
+                return x.copy(name='F({0})'.format(x.name[:10]),
+                              val=self.fftn(x.val, self.N), Fourier=not x.Fourier)
 
         elif (isinstance(x, Operator) or isinstance(x, DFT)):
             return Operator(mat=[[self, x]])
@@ -113,7 +111,7 @@ class Operator():
     it is designed to provide __call__ function as a linear operation
 
     parameters :
-        X : numpy.ndarray or VecTri or something else
+        X : numpy.ndarray or Tensor or something else
             it represents the operand,
             it provides the information about size and shape of operand
         dtype : data type of operand, usually numpy.float64
@@ -179,6 +177,7 @@ class Operator():
             self.matshape=(Y.val.size, X.val.size)
             self.X_reshape=X.val.shape
             self.X_order=X.order
+            self.X_N=X.N
             self.Y_reshape=Y.val.shape
             self.Y_order=Y.order
         else:
@@ -194,13 +193,13 @@ class Operator():
         ----------
         x : one-dimensional numpy.array
         """
-        X=Tensor(val=self.revec(x), order=self.X_order)
+        X=Tensor(val=self.revec(x), order=self.X_order, N=self.X_N)
         AX=self.__call__(X)
         return AX.vec()
 
     def vec(self, X):
         """
-        Reshape the operand (VecTri) into one-dimensional vector (column)
+        Reshape the operand (Tensor) into one-dimensional vector (column)
         version.
         """
         return np.reshape(X, self.shape[1])
@@ -383,7 +382,7 @@ def grad_tensor(N, Y=None, fft_form=fft_form_default):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
     hGrad = hGrad*2*np.pi*1j
-    return Tensor(name='hgrad', val=hGrad, order=1, multype='grad',
+    return Tensor(name='hgrad', val=hGrad, order=1, N=N, multype='grad',
                   Fourier=True, fft_form=fft_form)
 
 def div_tensor(N, Y=None, fft_form=fft_form_default):

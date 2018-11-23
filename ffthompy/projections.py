@@ -91,9 +91,9 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
             G2l[m][n] = G2l[n][m]
 
     if tensor:
-        G0l = Tensor(name='hG0', val=G0l, order=2, multype=21, Fourier=True, fft_form=fft_form)
-        G1l = Tensor(name='hG1', val=G1l, order=2, multype=21, Fourier=True, fft_form=fft_form)
-        G2l = Tensor(name='hG2', val=G2l, order=2, multype=21, Fourier=True, fft_form=fft_form)
+        G0l = Tensor(name='hG0', val=G0l, order=2, N=N, multype=21, Fourier=True, fft_form=fft_form)
+        G1l = Tensor(name='hG1', val=G1l, order=2, N=N, multype=21, Fourier=True, fft_form=fft_form)
+        G2l = Tensor(name='hG2', val=G2l, order=2, N=N, multype=21, Fourier=True, fft_form=fft_form)
     else:
         G0l = Matrix(name='hG0', val=G0l, Fourier=True)
         G1l = Matrix(name='hG1', val=G1l, Fourier=True)
@@ -240,11 +240,11 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     G2s = IS0 - G1h - G1s - G2h
 
     if tensor:
-        G0 = Tensor(name='hG0', val=mean, order=2, Fourier=True, multype=21, fft_form=fft_form)
-        G1h = Tensor(name='hG1h', val=G1h, order=2, Fourier=True, multype=21, fft_form=fft_form)
-        G1s = Tensor(name='hG1s', val=G1s, order=2, Fourier=True, multype=21, fft_form=fft_form)
-        G2h = Tensor(name='hG2h', val=G2h, order=2, Fourier=True, multype=21, fft_form=fft_form)
-        G2s = Tensor(name='hG2s', val=G2s, order=2, Fourier=True, multype=21, fft_form=fft_form)
+        G0 = Tensor(name='hG0', val=mean, order=2, N=N, Fourier=True, multype=21, fft_form=fft_form)
+        G1h = Tensor(name='hG1h', val=G1h, order=2, N=N, Fourier=True, multype=21, fft_form=fft_form)
+        G1s = Tensor(name='hG1s', val=G1s, order=2, N=N, Fourier=True, multype=21, fft_form=fft_form)
+        G2h = Tensor(name='hG2h', val=G2h, order=2, N=N, Fourier=True, multype=21, fft_form=fft_form)
+        G2s = Tensor(name='hG2s', val=G2s, order=2, N=N, Fourier=True, multype=21, fft_form=fft_form)
     else:
         G0 = Matrix(name='hG0', val=mean, Fourier=True)
         G1h = Matrix(name='hG1h', val=G1h, Fourier=True)

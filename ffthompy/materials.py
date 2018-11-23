@@ -110,7 +110,7 @@ class Material():
 
             name = 'A_Ga_o{0}_P{1}'.format(order, np.array(P).max())
 
-        return Tensor(name=name, val=val, order=2, Y=self.Y, multype=21,
+        return Tensor(name=name, val=val, N=Nbar, order=2, Y=self.Y, multype=21,
                       Fourier=False, origin='c').shift()
 
     def get_A_GaNi(self, N, primaldual='primal', tensor=True):
@@ -195,8 +195,8 @@ class Material():
             for ii in np.arange(len(self.conf['inclusions'])):
                 A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii], topos[ii])
         if tensor:
-            return Tensor(name='A_GaNi', val=A_val, order=2, Y=self.Y, multype=21, Fourier=False,
-                          origin='c')
+            return Tensor(name='A_GaNi', val=A_val, order=2, N=coord[0].shape,
+                          Y=self.Y, multype=21, Fourier=False, origin='c')
         else:
             return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 

@@ -24,9 +24,9 @@ def scalar(N, Y, fft_form=fft_form_default):
     for ii in range(dim): # diagonal components
         G0lval[ii, ii][ind_center] = 1
         Ival[ii, ii] = 1
-    G1l=Tensor(name='G1', val=kok/k2, order=2, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
-    G0l=Tensor(name='G1', val=G0lval, order=2, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
-    I = Tensor(name='I', val=Ival, order=2, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
+    G1l=Tensor(name='G1', val=kok/k2, order=2, N=N, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
+    G0l=Tensor(name='G1', val=G0lval, order=2, N=N, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
+    I = Tensor(name='I', val=Ival, order=2, N=N, Y=Y, multype=21, Fourier=True, fft_form=fft_form)
     G2l=I-G1l-G0l
     return G0l, G1l, G2l
 
@@ -47,7 +47,7 @@ def elasticity_small_strain(N, Y, fft_form=fft_form_default):
                     .5*(delta(i, k)*q[j]*q[l]+delta(i, l)*q[j]*q[k]+
                         delta(j, k)*q[i]*q[l]+delta(j, l)*q[i]*q[k])/(q.dot(q))
 
-    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, multype=42, Fourier=True, fft_form=fft_form)
+    Ghat_tensor = Tensor(name='Ghat', val=Ghat, N=N, order=4, multype=42, Fourier=True, fft_form=fft_form)
     return Ghat_tensor
 
 def elasticity_large_deformation(N, Y, fft_form=fft_form_default):
@@ -65,6 +65,6 @@ def elasticity_large_deformation(N, Y, fft_form=fft_form_default):
             if not q.dot(q) == 0:
                 Ghat[i,j,k,l,x,y,z] = delta(i,k)*q[j]*q[l] / (q.dot(q))
 
-    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, multype=42,
+    Ghat_tensor = Tensor(name='Ghat', val=Ghat, order=4, N=N, multype=42,
                          Fourier=True, fft_form=fft_form)
     return Ghat_tensor
