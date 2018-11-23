@@ -4,7 +4,6 @@ import numpy as np
 
 from ffthompy import Timer, Struct
 from ffthompy.materials import Material
-from ffthompy.tensors import matrix2tensor
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial

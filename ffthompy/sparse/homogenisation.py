@@ -64,7 +64,7 @@ def homog_Ga_full_potential(Aga, pars):
     def DFAFGfun(X):
         assert(X.Fourier)
         FAX=F2(Aga*iF2(grad(X).enlarge(Nbar)))
-        FAX=FAX.decrease(N)
+        FAX=FAX.project(N)
         return div(FAX)
 
     B=-div(F2(Aga(EN)).decrease(N))
@@ -80,7 +80,7 @@ def homog_Ga_full_potential(Aga, pars):
     print('norm of residuum={}'.format(info['norm_res']))
 
     Fu=P*iPU
-    X=iF2(grad(Fu).enlarge(Nbar))
+    X=iF2(grad(Fu).project(Nbar))
 
     AH=Aga(X+EN)*(X+EN)
 
@@ -126,7 +126,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     Nbar=2*np.array(N)-1
 
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
-    XEN=iF2(grad(Fu).enlarge(Nbar))+EN.enlarge(Nbar)
+    XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
     AH=Aga(XEN)*XEN
     return Struct(AH=AH, Fu=Fu, info=info)
 
