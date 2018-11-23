@@ -175,22 +175,17 @@ def enlarge(xN, M):
     M : array like
         number of grid points
     """
-    xM = np.zeros(M, dtype=xN.dtype)
     M = np.array(M, dtype=np.float)
     N = np.array(xN.shape, dtype=np.float)
     if np.allclose(M, N):
         return xN
-    dim = N.size
+
     ibeg = np.ceil((M-N)/2).astype(dtype=np.int)
     iend = np.ceil((M+N)/2).astype(dtype=np.int)
-    if dim == 3:
-        xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
-    elif dim == 2:
-        xM[ibeg[0]:iend[0], ibeg[1]:iend[1]] = xN
-    elif dim == 1:
-        xM[ibeg[0]:iend[0]] = xN
-    else:
-        raise NotImplementedError('Fun enlarge do not support dim (%d).' % dim)
+
+    slc=[slice(ibeg[i],iend[i],1) for i in range(N.size)]
+    xM = np.zeros(M.astype(dtype=np.int), dtype=xN.dtype)
+    xM[tuple(slc)]=xN
     return xM
 
 def decrease(xN, M):
@@ -212,17 +207,11 @@ def decrease(xN, M):
     """
     M = np.array(M, dtype=np.float)
     N = np.array(xN.shape, dtype=np.float)
-    dim = N.size
     ibeg = np.fix((N-M+(M % 2))/2).astype(dtype=np.int)
     iend = np.fix((N+M+(M % 2))/2).astype(dtype=np.int)
 
-    if dim == 3:
-        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]]
-    elif dim == 2:
-        xM = xN[ibeg[0]:iend[0], ibeg[1]:iend[1]]
-    elif dim == 1:
-        xM = xN[ibeg[0]:iend[0]]
-    return xM
+    slc=[slice(ibeg[i],iend[i],1) for i in range(N.size)]
+    return xN[tuple(slc)]
 
 def get_Nodd(N):
     Nodd = N - ((N + 1) % 2)

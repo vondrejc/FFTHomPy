@@ -438,7 +438,7 @@ class Tensor(TensorFuns):
 
             val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
             for di in np.ndindex(*self.shape):
-                val[di]=enlarge(self.val[di], M)
+                val[di]=decrease(self.val[di], M)
 
             R=self.copy(val=val, fft_form='c')
             return R.set_fft_form(fft_form=fft_form)
