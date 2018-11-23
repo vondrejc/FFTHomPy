@@ -154,7 +154,7 @@ class Tensor(TensorFuns):
 
     def shift(self, origin=None):
         """
-        shift the values to the format (format)
+        Shift the origin in the real domain.
         """
         assert(not self.Fourier)
 
@@ -550,7 +550,7 @@ def norm_fun(X, ntype):
     elif ntype=='inf':
         scal=np.max(np.abs(X.val))
     else:
-        msg="The norm ({}) of VecTri is not implemented!".format(ntype)
+        msg="This type ({}) of norm is not implemented!".format(ntype)
         raise NotImplementedError(msg)
     return scal
 
