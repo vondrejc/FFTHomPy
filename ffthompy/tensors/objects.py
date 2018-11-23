@@ -473,30 +473,38 @@ class Tensor(TensorFuns):
             Y=Y.fourier()
         return Y
 
-    def plot(self, ind=0, N=None, filen=None, ptype='surface'):
-        dim=self.N.__len__()
-        if dim!=2:
-            raise ValueError("The plotting is suited only for dim=2!")
+    def plot(self, ind=slice(None), N=None, filen=None, ptype='imshow'):
+        assert(not self.Fourier)
         if N is None:
-            N=self.N
+            N = self.N
 
         from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
         from ffthompy.trigpol import Grid
-        fig=plt.figure()
-        coord=Grid.get_coordinates(N, self.Y)
-        Z = self.project(N)
 
+        coord=Grid.get_coordinates(N, self.Y)
+
+        Z=self.project(N)
+        Z = Z.val[ind]
+
+        if Z.ndim != 2:
+            raise ValueError("The plotting is suited only for dim=2!")
+
+        fig = plt.figure()
         if ptype in ['wireframe']:
-            ax=fig.add_subplot(111, projection='3d')
-            ax.plot_wireframe(coord[0], coord[1], Z)
+            ax = fig.add_subplot(111, projection='3d')
+            ax.plot_wireframe(coord[-2], coord[-1], Z)
         elif ptype in ['surface']:
             from matplotlib import cm
-            ax=fig.gca(projection='3d')
-            surf=ax.plot_surface(coord[0], coord[1], Z.val[ind],
-                                 rstride=1, cstride=1, cmap=cm.coolwarm,
-                                 linewidth=0, antialiased=False)
+            ax = fig.gca(projection='3d')
+            surf = ax.plot_surface(coord[-2], coord[-1], Z,
+                                   rstride=1, cstride=1, cmap=cm.coolwarm,
+                                   linewidth=0, antialiased=False)
+
             fig.colorbar(surf, shrink=0.5, aspect=5)
+        elif ptype in ['imshow']:
+            ax = plt.imshow(Z)
+            plt.colorbar(ax)
 
         if filen is None:
             plt.show()
