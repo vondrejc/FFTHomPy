@@ -139,6 +139,8 @@ class Tensor(TensorFuns):
                 for ax in self.axes[:-1]:
                     N,F = np.split(nval, [1], axis=ax)
                     nval=np.concatenate((N, np.flip(F, axis=ax)), axis=ax)
+                if R.N[-1] % 2 == 0:
+                    nval=nval[...,1:]
                 val=np.concatenate((R.val,nval), axis=-1)
                 R.val=1./np.prod(R.N)*val # fft_form=0
                 if fft_form in ['c']:
