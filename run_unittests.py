@@ -77,6 +77,7 @@ class Test_main(unittest.TestCase):
 if __name__ == "__main__":
     from ffthompy.matvecs.unittest_matvec import Test_matvec
     from ffthompy.tensors.unittest_operators import Test_operators
+    from ffthompy.tensors.unittest_tensors import Test_tensors
     from ffthompy.mechanics.unittest_matcoef import Test_matcoef
     from ffthompy.general.unittest_solver import Test_solvers
     from ffthompy.unittest_materials import Test_materials
@@ -85,6 +86,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(Test_main))
     suite.addTest(unittest.makeSuite(Test_matvec))
     suite.addTest(unittest.makeSuite(Test_operators))
+    suite.addTest(unittest.makeSuite(Test_tensors))
     suite.addTest(unittest.makeSuite(Test_matcoef))
     suite.addTest(unittest.makeSuite(Test_solvers))
     suite.addTest(unittest.makeSuite(Test_materials))

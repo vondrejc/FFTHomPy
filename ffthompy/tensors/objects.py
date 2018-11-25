@@ -5,7 +5,7 @@ of trigonometric polynomials and relating operators.
 from __future__ import print_function, division
 import numpy as np
 from ffthompy.general.base import Representation
-from ffthompy.trigpol import mean_index, fft_form_default
+from ffthompy.trigpol import mean_index, fft_form_default, get_Nodd
 from ffthompy.mechanics.matcoef import ElasticTensor
 from ffthompy.trigpol import enlarge, decrease, get_inverse
 from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn, cfftnc, icfftnc
@@ -97,7 +97,7 @@ class Tensor(TensorFuns):
             self.val=val
             self.order=int(order)
             self.shape=self.val.shape[:order]
-            self.N=N
+            self.N=tuple(np.array(N, dtype=np.int))
             self._set_fft(fft_form)
 
         elif shape is not None and N is not None: # define: shape + N
@@ -422,11 +422,33 @@ class Tensor(TensorFuns):
             fft_form=self.fft_form
             self.set_fft_form(fft_form='c')
 
-            val=np.zeros(self.shape+tuple(M), dtype=self.val.dtype)
-            for di in np.ndindex(*self.shape):
-                val[di]=enlarge(self.val[di], M)
+            val = self.val
+            for ii,ax in enumerate(self.axes):
+                if self.N[ii]%2==0:
+                    N0,C=np.split(val, [1], axis=ax)
+                    N2=np.copy(N0)
+                    for jj, axc in enumerate(self.axes):
+                        if ax==axc:
+                            continue
+                        elif N2.shape[axc]%2==0:
+                            N20,N2C=np.split(N2, [1], axis=axc)
+                            N2=np.concatenate((N20, np.flip(N2C, axis=axc)), axis=axc)
+                        else:
+                            N2=np.flip(N2, axis=axc)
+                    val=np.concatenate((0.5*N0,C,0.5*N2.conj()), axis=ax)
 
-            R=self.copy(val=val, N=M, fft_form='c')
+            # enlarging the centered part with odd N
+            M = np.array(M, dtype=np.float)
+            N = np.array(val.shape[self.order:], dtype=np.float)
+
+            ibeg = np.ceil((M-N)/2).astype(np.int)
+            iend = np.ceil((M+N)/2).astype(np.int)
+
+            slc=self.order*[slice(None)]+[slice(ibeg[i],iend[i],1) for i in range(N.size)]
+            newval = np.zeros(self.shape+tuple(M.astype(np.int)), dtype=self.val.dtype)
+            newval[tuple(slc)]=val
+
+            R=self.copy(val=newval, N=M, fft_form='c')
             return R.set_fft_form(fft_form=fft_form)
 
     def decrease(self, M):
@@ -575,14 +597,18 @@ def scalar_product(y, x):
     return scal
 
 if __name__=='__main__':
-    N=np.array([3,3], dtype=np.int)
+    N=np.array([4,4], dtype=np.int)
     M=2*N
     u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
     u.randomize()
+
+    Fur=u.fourier(copy=True)
+    Fuc2=Fur.set_fft_form(fft_form='c', copy=True)
+    uc=u.set_fft_form(fft_form='c', copy=True)
+    Fuc=uc.fourier(copy=True)
     print(u)
-    Fu=u.fourier(copy=True)
-    print(Fu)
-    FuM=Fu.project(M)
-    print(FuM.norm(componentwise=True))
-    print(FuM)
+    print(Fur)
+    print(uc)
+    print(Fuc)
+
     print('end')
