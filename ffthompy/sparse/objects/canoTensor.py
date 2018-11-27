@@ -3,7 +3,7 @@ from numpy.linalg import norm
 from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
-from ffthompy.trigpol import fft_form_default
+from ffthompy.sparse.objects.tensors import fft_form_default
 import timeit
 
 class CanoTensor(SparseTensorFuns):
@@ -73,6 +73,8 @@ class CanoTensor(SparseTensorFuns):
             R._set_fft(fft_form)
             for i in range(R.order):
                 R.basis[i]= R.fft(R.basis[i], R.N[i])
+        else:
+            R._set_fft(fft_form)
 
         return R
 
@@ -142,7 +144,7 @@ class CanoTensor(SparseTensorFuns):
             # generate Tensor in real domain
             val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
             T=Tensor(name=res.name, val=val, order=0,
-                     Fourier=False, fft_form=self.fft_form)
+                     Fourier=False) # have the default fft_form for full tensor
 
             if self.Fourier:
                 T.fourier()

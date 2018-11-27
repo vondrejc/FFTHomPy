@@ -154,7 +154,7 @@ class Test_sparse(unittest.TestCase):
     def test_Fourier(self):
         print('\nChecking Fourier functions ...')
 
-        for opt in [0,'c','cc']:
+        for opt in [0]:
 
             a=SparseTensor(kind='cano', val=self.T2d, fft_form=opt)
             T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form=opt)
@@ -169,7 +169,7 @@ class Test_sparse(unittest.TestCase):
             self.assertAlmostEqual(norm(a.fourier().full()- T.fourier(copy=True).val), 0)
 
         sparse_opt='sr'
-        for full_opt in [0,'c','cc']:
+        for full_opt in [0]:
 
             a=SparseTensor(kind='cano', val=self.T2d, fft_form= sparse_opt)
             T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form= full_opt)
@@ -187,35 +187,41 @@ class Test_sparse(unittest.TestCase):
 
     def test_Fourier_truncation(self):
         print('\nChecking TT truncation in Fourier domain ...')
-        N = np.random.randint(40,60, size=3)
+        N = np.random.randint(20,50, size=3)
         a=np.arange(1,np.prod(N)+1).reshape(N)
         cases=[[None]*2,[None]*2]
         # first a random test case
         cases[0]=[np.random.random(N),np.random.random(N)]
         # this produces a "smooth", more realistic, tensor with modest rank
-        cases[1]=[np.sin(a)/a, np.exp(a/np.max(a))]
+        cases[1]=[np.sin(a)/a, np.exp(np.sin(a)/a)]
 
         for i in range(len(cases)):
-            a=cases[i][0]
-            b=cases[i][1]
-            ta=SparseTensor(kind='tt', val=a, fft_form='sr') # Fourier truncation works the best with option 'sr'
-            tb=SparseTensor(kind='tt', val=b, fft_form='sr')
-            tc=ta+tb
-            k=tc.r[1:-1].min()/2-5
-            tct=tc.truncate(rank=k)
+            for fft_form in [0,'c', 'sr']:
 
-            err_normal_truncate= (tct-tc).norm()
+                a=cases[i][0]
+                b=cases[i][1]
+                ta=SparseTensor(kind='tt', val=a, fft_form=fft_form) # Fourier truncation works the best with option 'sr'
+                tb=SparseTensor(kind='tt', val=b, fft_form=fft_form)
+                tc=ta+tb
+                k=tc.r[1:-1].max()/2-5
 
-            taf=ta.fourier()
-            tbf=tb.fourier()
-            tcf=taf+tbf
-            tcft=tcf.truncate(rank=k)
-            tcfti=tcft.fourier()
+                tct=tc.truncate(rank=k)
 
-            err_Fourier_truncate=(tcfti-tc).norm()
+                err_normal_truncate= (tct-tc).norm()
+#                print("loss in normal  domain truncation:",norm(tct.full().val-(a+b) ))
 
-            # assert the two truncations are in the same order
-            self.assertAlmostEqual(err_normal_truncate, err_Fourier_truncate, delta=err_normal_truncate*3)
+                taf=ta.fourier()
+                tbf=tb.fourier()
+                tcf=taf+tbf
+                tcft=tcf.truncate(rank=k)
+                tcfti=tcft.fourier()
+#                print("norm of imag part of F inverse tensor",norm(tcfti.full().val.imag))
+
+                err_Fourier_truncate=(tcfti-tc).norm()
+#                print("loss in Fourier domain truncation:",norm(tcfti.full().val-(a+b) ))
+
+                # assert the two truncation errors are in the same order
+                self.assertAlmostEqual(err_normal_truncate, err_Fourier_truncate, delta=err_normal_truncate*3)
 
         print('...ok')
 
@@ -332,7 +338,7 @@ class Test_sparse(unittest.TestCase):
 #        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
 #
 #        print('...ok')
-
+    #@unittest.skip("The testing is too slow.")
     def test_mean(self):
         print('\nChecking method mean() ...')
         a=SparseTensor(kind='cano', val=self.T2d)

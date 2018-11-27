@@ -4,6 +4,7 @@ import itertools
 from copy import deepcopy as copy
 from ffthompy.sparse.fft1 import fft, ifft, fftc, icfft, cfftc, icfftc, srfft,sirfft
 
+fft_form_default='sr' # scipy rfft
 
 def multiply(A, B, *args, **kwargs):
     """element-wise (Hadamard) product of A and B"""
@@ -20,6 +21,12 @@ def multiply(A, B, *args, **kwargs):
 
 
 class SparseTensorFuns(TensorFuns):
+
+    def mean_index(self):
+        if self.fft_form in [0, 'sr']:
+            return tuple(np.zeros_like(self.N, dtype=np.int))
+        elif self.fft_form in ['c']:
+            return tuple(np.array(np.fix(np.array(self.N)/2), dtype=np.int))
 
     def _set_fft(self, fft_form):
         assert(fft_form in ['cc','c', 'sr', 0]) # 'sr' for scipy.fftpack.rfft

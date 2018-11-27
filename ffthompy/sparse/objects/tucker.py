@@ -4,7 +4,7 @@ from ffthompy.sparse.objects.canoTensor import CanoTensor
 #from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
 from ffthompy.tensors import Tensor
-from ffthompy.trigpol import fft_form_default
+from ffthompy.sparse.objects.tensors import fft_form_default
 
 from numpy.linalg import norm
 from numpy import newaxis
@@ -179,7 +179,7 @@ class Tucker(CanoTensor):
             val=nModeProduct(val, res.basis[i].T, i)
 
         T=Tensor(name=res.name, val=val, order=0,
-                 Fourier=False, fft_form=self.fft_form)
+                 Fourier=False) # have the default fft_form for full tensor
 
         if self.Fourier:
             T.fourier()

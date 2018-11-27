@@ -173,7 +173,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         val= vector.full(res)
 
-        T=Tensor(name=res.name, val=val, order=0, Fourier=False, fft_form=self.fft_form)
+        T=Tensor(name=res.name, val=val, order=0, Fourier=False) # have the default fft_form for full tensor
 
         if self.Fourier:
             T.fourier()
@@ -250,49 +250,9 @@ class TensorTrain(vector,SparseTensorFuns):
             return self
         else:
             if tol is None:  tol=1e-14
-
-            #res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
-            #res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier)
-            res =self.my_round(rank=rank)
+            res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
+            res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier, fft_form=self.fft_form)
             return res
-
-    def my_round(self, rank=None):
-        """
-        An altered version of ttpy's round() function.
-        We do further qr decomposition to the "vt" factor out of the svd decomposition,
-        so that only real factors are communicated among cores of the train.
-        """
-        self=self.orthogonalise(direction='rl')
-
-        d=self.d
-        r=self.r.copy()
-        n=self.n.copy()
-        cr=self.to_list(self)
-        cr_new=[None]*d
-
-        if isinstance(rank, int) :
-            rank=rank*np.ones((d,), dtype=int)
-            rank=np.minimum(abs(rank), self.r[:d])
-
-        for i in range(d-1):
-            cr[i]=reshape(cr[i], (r[i]*n[i], r[i+1]))
-            cr_new[i], s, vt=svd(cr[i], full_matrices=False)
-
-#             vtq,vtr = qr( dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), 'reduced')
-            vtq, vtr=qr((s[:rank[i+1]]*vt[:rank[i+1], :].T).T, 'reduced')
-            cr_new[i]=dot(cr_new[i][:, :rank[i+1]], vtq)
-            cr[i+1]=dot(vtr.real, reshape(cr[i+1], (r[i+1], n[i+1]*r[i+2])))
-            r[i+1]=cr_new[i].shape[1]
-#            cr[i+1]= dot(dot(np.diag(s[:rank[i+1]]),vt[:rank[i+1],:]), reshape(cr[i+1],(r[i+1],n[i+1]*r[i+2]) ))
-#            r[i+1] = cr_new[i].shape[1]
-            cr_new[i]=reshape(cr_new[i], (r[i], n[i], r[i+1]))
-
-        cr_new[d-1]=cr[d-1].reshape(r[d-1], n[d-1], r[d])
-
-        newObj=self.from_list(cr_new, fft_form=self.fft_form)
-        newObj.Fourier=self.Fourier
-
-        return newObj
 
     def orthogonalise(self, direction='lr', r_output=False):
         """Orthogonalise the list of cores of a TT. If direction is 'lr' it does a left to right sweep of qr decompositions,
