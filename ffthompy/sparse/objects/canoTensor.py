@@ -356,19 +356,8 @@ class CanoTensor(SparseTensorFuns):
             return F.fourier() # inverse Fourier
 
     def __repr__(self, full=False, detailed=False):
-        keys=['name', 'Fourier', 'orthogonal', 'N', 'r']
-        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.order)
-        skip=4*' '
-        nstr=np.array([key.__len__() for key in keys]).max()
-
-        for key in keys:
-            attr=getattr(self, key)
-            if callable(attr):
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
-            else:
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
-
-        return ss
+        keys=['name', 'Fourier', 'fft_form', 'orthogonal', 'N', 'r']
+        return self._repr(keys)
 
     @property
     def size(self):

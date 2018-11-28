@@ -227,18 +227,8 @@ class TensorTrain(vector,SparseTensorFuns):
         return self.core.shape[0]+self.ps.shape[0]
 
     def __repr__(self): # print statement
-        keys=['name', 'Fourier', 'n', 'r']
-        ss="Class : {0}({1}) \n".format(self.__class__.__name__, self.d)
-        skip=4*' '
-        nstr=np.array([key.__len__() for key in keys]).max()
-
-        for key in keys:
-            attr=getattr(self, key)
-            if callable(attr):
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
-            else:
-                ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
-
+        keys=['name', 'Fourier', 'fft_form', 'n', 'r']
+        ss=self._repr(keys)
         return ss+vector.__repr__(self)
 
     def truncate(self, tol=None, rank=None):
