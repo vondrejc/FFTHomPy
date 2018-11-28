@@ -1,7 +1,6 @@
 import numpy as np
 
 from ffthompy.sparse.objects.canoTensor import CanoTensor
-#from ffthompy.tensors.operators import DFT
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
@@ -139,7 +138,8 @@ class Tucker(CanoTensor):
                 newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
                 newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
-            return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,Fourier=self.Fourier).truncate(rank=self.N)
+            return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,
+                          Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=self.N)
 
     def orthogonalise(self):
         """re-orthogonalise the basis"""

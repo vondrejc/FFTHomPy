@@ -56,7 +56,7 @@ class CanoTensor(SparseTensorFuns):
 
         self._set_fft(fft_form)
 
-    def set_fft_form(self, fft_form, copy=False):
+    def set_fft_form(self, fft_form=fft_form_default, copy=False):
         if copy:
             R=self.copy()
         else:
@@ -100,7 +100,8 @@ class CanoTensor(SparseTensorFuns):
             newB=np.dot(vt, qb.T)
 
             newBasis=[newA.T, newB]
-            return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
+            return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True,
+                              Fourier=self.Fourier, fft_form=self.fft_form)
 
     def __add__(self, Y):
         X=self
@@ -108,7 +109,8 @@ class CanoTensor(SparseTensorFuns):
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).truncate(rank=np.min(self.N))
+        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier,
+                          fft_form=X.fft_form).truncate(rank=np.min(self.N))
         #return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalise()
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
@@ -130,7 +132,7 @@ class CanoTensor(SparseTensorFuns):
                 newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
-                              Fourier=self.Fourier).truncate(rank=np.min(self.N))
+                              Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=np.min(self.N))
 
     def full(self):
         "return a full tensor object"

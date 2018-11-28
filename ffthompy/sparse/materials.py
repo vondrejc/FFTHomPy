@@ -51,7 +51,8 @@ def tile(FAs, N):
         basis=[]
         for ii, n in enumerate(N):
             basis.append(np.tile(FAs.basis[ii], (1, n)))
-        return SparseTensor(kind=kind, name=FAs.name+'_tiled', core=FAs.core, basis=basis, Fourier=FAs.Fourier)
+        return SparseTensor(kind=kind, name=FAs.name+'_tiled', core=FAs.core, basis=basis,
+                            Fourier=FAs.Fourier, fft_form=FAs.fft_form)
     elif kind.lower() in ['tt', 'tensortrain']:
         cl=FAs.to_list(FAs)
         cl_new=[None]*FAs.d

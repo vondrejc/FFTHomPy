@@ -166,12 +166,13 @@ def homog_Ga_sparse(Agas, pars):
     else:
         need_project=False
 
-    hGrad=grad_tensor(N, pars.Y)
+    hGrad=grad_tensor(N, pars.Y, fft_form='c')
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N)]=1.
+    k2[mean_index(N, fft_form='c')]=1.
     Prank=np.min([8, N[0]-1])
 
-    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True)
+    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
+    Ps.set_fft_form()
 
     if need_project:
         Ps=Ps.project(N_ori) # approximation
@@ -223,7 +224,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         return -GFAFGFx
 
     # R.H.S.
-    Es=SparseTensor(kind=pars.kind, val=np.ones(N), rank=1)
+    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(N), rank=1)
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
     # preconditioner
@@ -237,12 +238,13 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     else:
         need_project=False
 
-    hGrad=grad_tensor(N, pars.Y)
+    hGrad=grad_tensor(N, pars.Y, fft_form='c')
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N)]=1.
+    k2[mean_index(N, fft_form='c')]=1.
     Prank=np.min([8, N[0]-1])
 
-    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True)
+    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
+    Ps.set_fft_form()
 
     if need_project:
         Ps=Ps.project(N_ori) # approximation

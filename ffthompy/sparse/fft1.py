@@ -5,7 +5,6 @@ collection of 1-D FFTs for Fourier transform of basis, all done on the 2nd dimen
 from scipy import fftpack
 import numpy.fft as npfft
 
-fft_form_default='sr' # real input data
 
 def cfftc(x, N):
     """

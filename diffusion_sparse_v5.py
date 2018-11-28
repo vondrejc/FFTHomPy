@@ -19,7 +19,7 @@ N=5
 # N=45
 # N=135
 material=0
-kind=1
+kind=2
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
@@ -135,12 +135,12 @@ pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
-print('mean of solution={}'.format(resP_GaNi.Fu.fourier().mean()))
+print('mean of solution={}'.format(resP_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
 
 print('\n== Full solution with potential by CG (Ga) ===========')
 resP_Ga=homog_Ga_full_potential(Aga, pars)
-print('mean of solution={}'.format(resP_Ga.Fu.fourier().mean()))
+print('mean of solution={}'.format(resP_Ga.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
 
 print('\n== SPARSE Richardson solver with preconditioner (Ga) =======================')
@@ -149,20 +149,20 @@ print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
 print(resS_Ga.Fu)
 print('iterations={}'.format(resS_Ga.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.val-resS_Ga.Fu.full())))
+    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.val-resS_Ga.Fu.full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
-print('mean of solution={}'.format(np.mean(resS_Ga.Fu.fourier().full())))
+print('mean of solution={}'.format(resS_Ga.Fu.mean()))
 print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
 
 print('\n== SPARSE Richardson solver with preconditioner (GaNi) =======================')
 resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-print('mean of solution={}'.format(np.mean(resS_GaNi.Fu.fourier().full())))
+print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
 
 print(resS_GaNi.Fu)
 print('iterations={}'.format(resS_GaNi.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.val-resS_GaNi.Fu.full())))
+    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
 print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
 

@@ -3,7 +3,7 @@ from tt.core.vector import vector
 from ffthompy.sparse.objects.tucker import Tucker
 from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.sparse.objects.tensorTrain import TensorTrain
-from ffthompy.sparse.fft1 import fft_form_default
+from ffthompy.sparse.objects.tensors import fft_form_default
 
 
 def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None,
