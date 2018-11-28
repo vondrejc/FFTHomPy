@@ -89,8 +89,10 @@ class TensorTrain(vector,SparseTensorFuns):
             for i in range(R.d):
                 cl[i]= R.fft(cl[i], R.N[i])
 
-        return R.from_list(cl, name=R.name, Fourier=R.Fourier, fft_form=fft_form)
-
+            return R.from_list(cl, name=R.name, Fourier=R.Fourier, fft_form=fft_form)
+        else:
+            R._set_fft(fft_form)
+            return R
 
     def enlarge(self, M):
         assert(self.Fourier is True)

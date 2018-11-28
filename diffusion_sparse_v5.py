@@ -118,21 +118,19 @@ Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matra
 Agas.set_fft_form()
 
 if np.array_equal(pars.N, pars_sparse.N):
-    print(np.linalg.norm(Agani.val[0, 0]-Aganis.full()))
-    print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
+    print(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
+    print(np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
 
 if pars.recover_sparse:
     print('recovering full material tensors...')
-    Agani.val=np.einsum('ij,...->ij...', np.eye(dim), Aganis.full())
-    Aga.val=np.einsum('ij,...->ij...', np.eye(dim), Agas.full())
+    Agani.val=np.einsum('ij,...->ij...', np.eye(dim), Aganis.full().val)
+    Aga.val=np.einsum('ij,...->ij...', np.eye(dim), Agas.full().val)
 
 if np.array_equal(pars.N, pars_sparse.N):
-    print(np.linalg.norm(Agani.val[0, 0]-Aganis.full()))
-    print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
+    print(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
+    print(np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
 
 pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
-
-sys.exit()
 
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')
