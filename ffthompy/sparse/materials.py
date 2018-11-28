@@ -17,6 +17,7 @@ class SparseMaterial(Material):
         if P is None and 'P' in self.conf:
             P=self.conf['P']
         As=self.get_A_GaNi(N=P, primaldual=primaldual, k=k, tol=tol)
+        As.set_fft_form(fft_form='c')
         FAs=As.fourier()
 
         h=self.Y/P
@@ -57,7 +58,8 @@ def tile(FAs, N):
         for i in range(FAs.d):
             cl_new[i]=np.tile(cl[i], (1, N[i], 1))
 
-        return SparseTensor(kind=kind, core=cl_new, name=FAs.name+'_tiled', Fourier=FAs.Fourier)
+        return SparseTensor(kind=kind, core=cl_new, name=FAs.name+'_tiled',
+                            Fourier=FAs.Fourier, fft_form=FAs.fft_form)
 
 def get_weights_con(h, Nbar, Y, kind):
     """
@@ -76,7 +78,7 @@ def get_weights_con(h, Nbar, Y, kind):
     """
     dim=np.size(Y)
     meas_puc=np.prod(Y)
-    ZN2l=Grid.get_ZNl(Nbar)
+    ZN2l=Grid.get_ZNl(Nbar, fft_form='c')
     Wphi=[]
     for ii in np.arange(dim):
         Nshape=np.ones(dim, dtype=np.int)
@@ -87,10 +89,10 @@ def get_weights_con(h, Nbar, Y, kind):
         Wphi.append(np.atleast_2d(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii])))
 
     if kind.lower() in ['cano', 'canotensor', 'tucker']:
-        return SparseTensor(kind=kind, core=np.array([1.]), basis=Wphi, Fourier=True)
+        return SparseTensor(kind=kind, core=np.array([1.]), basis=Wphi, Fourier=True, fft_form='c')
     elif kind.lower() in ['tt', 'tensortrain']:
         cl=[cr.reshape((1,-1, 1)) for cr in Wphi]
-        return SparseTensor(kind=kind, core=cl, Fourier=True)
+        return SparseTensor(kind=kind, core=cl, Fourier=True, fft_form='c')
 
 
 def get_weights_lin(h, Nbar, Y, kind):
@@ -111,7 +113,7 @@ def get_weights_lin(h, Nbar, Y, kind):
     """
     d=np.size(Y)
     meas_puc=np.prod(Y)
-    ZN2l=Grid.get_ZNl(Nbar)
+    ZN2l=Grid.get_ZNl(Nbar, fft_form='c')
     Wphi=[]
     for ii in np.arange(d):
         Nshape=np.ones(d, dtype=np.int)
@@ -121,7 +123,7 @@ def get_weights_lin(h, Nbar, Y, kind):
         Wphi.append(np.atleast_2d(h[ii]/meas_puc*np.sinc(h[ii]*ZN2l[ii]/Y[ii])**2))
 
     if kind.lower() in ['cano', 'canotensor', 'tucker']:
-        return SparseTensor(kind=kind, core=np.array([1.]), basis=Wphi, Fourier=True)
+        return SparseTensor(kind=kind, core=np.array([1.]), basis=Wphi, Fourier=True, fft_form='c')
     elif kind.lower() in ['tt', 'tensortrain']:
         cl=[cr.reshape((1,-1, 1)) for cr in Wphi]
-        return SparseTensor(kind=kind, core=cl, Fourier=True)
+        return SparseTensor(kind=kind, core=cl, Fourier=True, fft_form='c')

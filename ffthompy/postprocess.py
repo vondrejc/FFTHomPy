@@ -19,7 +19,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
 
         elif pp['kind'] in ['Ga', 'ga']:
             if 'order' in pp:
-                Nbarpp = 2*pb.solve['N'] - 1
+                Nbarpp = tuple(2*np.array(pb.solve['N']) - 1)
                 if pp['order'] is None:
                     Nname = ''
                     order_name = ''

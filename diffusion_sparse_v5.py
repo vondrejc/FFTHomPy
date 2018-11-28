@@ -14,8 +14,8 @@ import sys
 os.nice(19)
 
 # PARAMETERS ##############################################################
-dim=3
-N=15
+dim=2
+N=5
 # N=45
 # N=135
 material=0
@@ -110,11 +110,12 @@ else:
 mat=Material(mat_conf)
 mats=SparseMaterial(mat_conf, pars_sparse.kind)
 
-Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
-Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
+Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
+Aga=mat.get_A_Ga(Nbar(pars.N), primaldual='primal')
 
-Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
+Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
 Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
+Agas.set_fft_form()
 
 if np.array_equal(pars.N, pars_sparse.N):
     print(np.linalg.norm(Agani.val[0, 0]-Aganis.full()))
@@ -130,6 +131,8 @@ if np.array_equal(pars.N, pars_sparse.N):
     print(np.linalg.norm(Aga.val[0, 0]-Agas.full()))
 
 pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
+
+sys.exit()
 
 #######OPERATORS ###############################################################
 print('\n== Full solution with potential by CG (GaNi)===========')

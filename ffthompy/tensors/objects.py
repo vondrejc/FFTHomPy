@@ -127,7 +127,7 @@ class Tensor(TensorFuns):
         # definition of __mul__ operation
         self.multype=multype
 
-    def set_fft_form(self, fft_form, copy=False):
+    def set_fft_form(self, fft_form=fft_form_default, copy=False):
         if copy:
             R=self.copy()
         else:

@@ -6,11 +6,9 @@ from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
-#from ffthompy.tensors.operators import DFT
 from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
-from ffthompy.trigpol import fft_form_default
-
+from ffthompy.sparse.fft1 import fft_form_default
 
 np.set_printoptions(precision=2)
 np.set_printoptions(linewidth=999999)
@@ -73,7 +71,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return res
 
-    def set_fft_form(self, fft_form, copy=False):
+    def set_fft_form(self, fft_form=fft_form_default, copy=False):
         if copy:
             R=self.copy()
         else:
@@ -188,9 +186,9 @@ class TensorTrain(vector,SparseTensorFuns):
 
     def __mul__(self, other):
         res_vec=vector.__mul__(self, other)
-        res=TensorTrain(vectorObj=res_vec,
-                          name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier, fft_form=self.fft_form)
+        name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name)
+        res=TensorTrain(vectorObj=res_vec, name=name,
+                        Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __add__(self, other):

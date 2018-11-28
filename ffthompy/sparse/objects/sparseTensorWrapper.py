@@ -3,7 +3,8 @@ from tt.core.vector import vector
 from ffthompy.sparse.objects.tucker import Tucker
 from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.sparse.objects.tensorTrain import TensorTrain
-from ffthompy.trigpol import fft_form_default
+from ffthompy.sparse.fft1 import fft_form_default
+
 
 def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None,
                  Fourier=False, name='unnamed', vectorObj=None, fft_form=fft_form_default):
@@ -65,7 +66,7 @@ if __name__=='__main__':
     print(cano2)
 
     cano3=SparseTensor(kind='cano', core=np.array([1.]), basis=[np.atleast_2d(np.ones(5)) for ii in range(2)], Fourier=False)
-    print cano3
+    print(cano3)
 
     v1=np.random.rand(20, 30, 40)
 
