@@ -12,6 +12,7 @@ from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn, cfft
 import itertools
 from copy import copy
 
+full_fft_form_default='c'
 
 class TensorFuns(Representation):
 

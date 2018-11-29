@@ -5,6 +5,7 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 import timeit
+from ffthompy.tensors.objects import full_fft_form_default
 
 class CanoTensor(SparseTensorFuns):
 
@@ -65,7 +66,6 @@ class CanoTensor(SparseTensorFuns):
         if self.fft_form==fft_form:
             return R
 
-#        fft_form_orig = self.fft_form
         if R.Fourier:
             for i in range(R.order):
                 R.basis[i]= R.ifft(R.basis[i], R.N[i])
@@ -134,7 +134,7 @@ class CanoTensor(SparseTensorFuns):
             return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
                               Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=np.min(self.N))
 
-    def full(self):
+    def full(self, fft_form=full_fft_form_default):
         "return a full tensor object"
 
         if self.order==2:
@@ -146,7 +146,7 @@ class CanoTensor(SparseTensorFuns):
             # generate Tensor in real domain
             val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
             T=Tensor(name=res.name, val=val, order=0,
-                     Fourier=False) # have the default fft_form for full tensor
+                     Fourier=False,fft_form=fft_form)
 
             if self.Fourier:
                 T.fourier()
@@ -154,17 +154,6 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def full2(self):
-        "return a full tensor object"
-
-        if self.order==2:
-            # generate Tensor in real domain
-            val=np.einsum('i,ik,il->kl', self.core, self.basis[0], self.basis[1])
-            T=Tensor(name=self.name, val=val, order=0,
-                     Fourier=self.Fourier, fft_form=self.fft_form)
-            return T
-        else:
-            raise NotImplementedError()
     def truncate(self, rank=None, tol=None):
         "return truncated tensor"
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
@@ -494,6 +483,14 @@ if __name__=='__main__':
     print (np.mean(c.full().val) - c.fourier().mean())
 
 
+    cf=c.set_fft_form('c').fourier().set_fft_form('sr')
+
+    cf2=c.set_fft_form('sr').fourier()
+
+    print( (cf-cf2).norm())
+
+
+
 #    ### test enlarge#####
 #    n=3
 # #    T1= np.zeros((n,n, n))
@@ -513,17 +510,16 @@ if __name__=='__main__':
 
 ### test Fourier #####
 
-    af=a.fourier()
-    print ( np.linalg.norm(af.full().val - T1) )
 
     ### test full ###
 
 
-    print (np.linalg.norm(c.full()-T1*T2))
-    print (np.linalg.norm(c.full2()-T1*T2))
+#    print (np.linalg.norm(c.full()-T1*T2))
+##    print (np.linalg.norm(c.full2()-T1*T2))
+#
+#    T=Tensor(val=T1*T2, order=0, Fourier=False)
+#
+#    print (np.linalg.norm(c.fourier().full(fft_form=full_fft_form_default).val- T.set_fft_form(fft_form=full_fft_form_default).fourier().val ))
 
-    T=Tensor(val=T1*T2, order=0, Fourier=False)
-
-    print (np.linalg.norm(c.fourier().full().val- T.fourier().val ))
 
     print('END')

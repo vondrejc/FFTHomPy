@@ -9,6 +9,7 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
 from ffthompy.sparse.objects.tensors import fft_form_default
+from ffthompy.tensors.objects import full_fft_form_default
 
 np.set_printoptions(precision=2)
 np.set_printoptions(linewidth=999999)
@@ -161,7 +162,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return np.sum(cl_mean_prod)
 
-    def full(self):
+    def full(self, fft_form=full_fft_form_default):
         """
         convert TT to a full tensor object
         """
@@ -173,7 +174,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         val= vector.full(res)
 
-        T=Tensor(name=res.name, val=val, order=0, Fourier=False) # have the default fft_form for full tensor
+        T=Tensor(name=res.name, val=val, order=0, Fourier=False, fft_form= fft_form) # have the default fft_form for full tensor
 
         if self.Fourier:
             T.fourier()
