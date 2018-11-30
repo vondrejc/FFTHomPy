@@ -131,13 +131,32 @@ class Tucker(CanoTensor):
             return R
         else:
             assert((self.N==Y.N).any())
-
             newCore=np.kron(self.core, Y.core)
             newBasis=[None]*self.order
-            for d in range(0, self.order):
-                # newBasis[d]= np.zeros((new_r[d], X.N[d]))
-                newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
-                newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
+            if self.Fourier and self.fft_form=='sr': #product of scipy rfft tensors need a special multiplication
+                for d in range(0, self.order):
+                    B=np.empty((self.r[d]*Y.r[d], self.N[d]))
+                    B[:,0]=np.kron(self.basis[d][:,0],Y.basis[d][:,0])
+                    if self.N[d]%2 != 0:
+                        ar=self.basis[d][:,1::2]
+                        ai=self.basis[d][:,2::2]
+                        br=Y.basis[d][:,1::2]
+                        bi=Y.basis[d][:,2::2]
+                        B[:,1::2]=(ar[:, newaxis, :]*br[newaxis, :, :]-ai[:, newaxis, :]*bi[newaxis, :, :]).reshape(self.r[d]*Y.r[d],-1)
+                        B[:,2::2]=(ar[:, newaxis, :]*bi[newaxis, :, :]+ai[:, newaxis, :]*br[newaxis, :, :]).reshape(self.r[d]*Y.r[d],-1)
+                    else:
+                        B[:,-1]=np.kron(self.basis[d][:,-1],Y.basis[d][:,-1])
+                        ar=self.basis[d][:,1:-1:2]
+                        ai=self.basis[d][:,2:-1:2]
+                        br=Y.basis[d][:,1:-1:2]
+                        bi=Y.basis[d][:,2:-1:2]
+                        B[:,1:-1:2]=(ar[:, newaxis, :]*br[newaxis, :, :]-ai[:, newaxis, :]*bi[newaxis, :, :]).reshape(self.r[d]*Y.r[d],-1)
+                        B[:,2:-1:2]=(ar[:, newaxis, :]*bi[newaxis, :, :]+ai[:, newaxis, :]*br[newaxis, :, :]).reshape(self.r[d]*Y.r[d],-1)
+                    newBasis[d]=B
+            else:
+                for d in range(0, self.order):
+                    newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
+                    newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,
                           Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=self.N)
@@ -159,7 +178,7 @@ class Tucker(CanoTensor):
             for i in range(0, self.order):
                 newBasis[i]=np.dot(U[i].T, newBasis[i])
 
-            return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier)
+            return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier, fft_form=self.fft_form)
 
     def full(self, fft_form=full_fft_form_default):
         """convert a tucker representation to a full tensor object
@@ -229,7 +248,7 @@ class Tucker(CanoTensor):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank[ii], :]
 
-        return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True, Fourier=self.Fourier)
+        return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True, Fourier=self.Fourier,fft_form=self.fft_form)
 
     def norm(self, ord='core'):
 
@@ -574,9 +593,9 @@ if __name__=='__main__':
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
 
-    N1=10
+    N1=13
     N2=20
-    N3=30
+    N3=12
     T1=np.random.rand(N1,N2,N3)
     T2=np.random.rand(N1,N2,N3)
 
@@ -587,6 +606,19 @@ if __name__=='__main__':
 
     print (np.mean(c.full().val) - c.mean())
     print (np.mean(c.full().val) - c.fourier().mean())
+
+    ### test Fourier Hadamard product #####
+    af=a.set_fft_form('c').fourier()
+    bf=b.set_fft_form('c').fourier()
+
+    afbf=af*bf
+
+    af2=a.set_fft_form('sr').fourier()
+    bf2=b.set_fft_form('sr').fourier()
+
+    afbf2=af2*bf2
+
+    print( (afbf.fourier()-afbf2.fourier()).norm())
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)
 #

@@ -1,11 +1,14 @@
 import numpy as np
-from numpy.linalg import norm
+#from numpy.linalg import norm
 from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 import timeit
 from ffthompy.tensors.objects import full_fft_form_default
+
+np.set_printoptions(precision=2)
+np.set_printoptions(linewidth=999999)
 
 class CanoTensor(SparseTensorFuns):
 
@@ -125,11 +128,31 @@ class CanoTensor(SparseTensorFuns):
             return R
         else:
             coeff=np.kron(self.core, Y.core)
-
             newBasis=[None]*self.order
-            for d in range(0, self.order):
-                newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
-                newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
+            if self.Fourier and self.fft_form=='sr': #product of scipy rfft tensors need a special multiplication
+                for d in range(0, self.order):
+                    B=np.empty((self.r*Y.r, self.N[d]))
+                    B[:,0]=np.kron(self.basis[d][:,0],Y.basis[d][:,0])
+                    if self.N[d]%2 != 0:
+                        ar=self.basis[d][:,1::2]
+                        ai=self.basis[d][:,2::2]
+                        br=Y.basis[d][:,1::2]
+                        bi=Y.basis[d][:,2::2]
+                        B[:,1::2]=(ar[:, newaxis, :]*br[newaxis, :, :]-ai[:, newaxis, :]*bi[newaxis, :, :]).reshape(self.r*Y.r,-1)
+                        B[:,2::2]=(ar[:, newaxis, :]*bi[newaxis, :, :]+ai[:, newaxis, :]*br[newaxis, :, :]).reshape(self.r*Y.r,-1)
+                    else:
+                        B[:,-1]=np.kron(self.basis[d][:,-1],Y.basis[d][:,-1])
+                        ar=self.basis[d][:,1:-1:2]
+                        ai=self.basis[d][:,2:-1:2]
+                        br=Y.basis[d][:,1:-1:2]
+                        bi=Y.basis[d][:,2:-1:2]
+                        B[:,1:-1:2]=(ar[:, newaxis, :]*br[newaxis, :, :]-ai[:, newaxis, :]*bi[newaxis, :, :]).reshape(self.r*Y.r,-1)
+                        B[:,2:-1:2]=(ar[:, newaxis, :]*bi[newaxis, :, :]+ai[:, newaxis, :]*br[newaxis, :, :]).reshape(self.r*Y.r,-1)
+                    newBasis[d]=B
+            else:
+                for d in range(0, self.order):
+                    newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
+                    newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
                               Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=np.min(self.N))
@@ -179,7 +202,7 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,Fourier=self.Fourier)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,Fourier=self.Fourier, fft_form=self.fft_form)
 
     def norm(self, ord='core'):
         if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.
@@ -196,7 +219,7 @@ class CanoTensor(SparseTensorFuns):
         elif ord=='inf':
             pass
         elif ord=='core':
-            self.orthogonalise()
+            self=self.orthogonalise()
             return np.linalg.norm(self.core)
         else:
             raise NotImplementedError()
@@ -227,9 +250,12 @@ class CanoTensor(SparseTensorFuns):
         r=self.r
         if isinstance(r, int) :
             r=r*np.ones((self.order,), dtype=int)
-        # dim = N.size
-        ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+        if self.fft_form in ['c']:
+            ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+            iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+        elif self.fft_form in ['sr']:
+            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            iend=N
 
         basis=[]
         for ii, m in enumerate(M):
@@ -243,6 +269,31 @@ class CanoTensor(SparseTensorFuns):
             newOne.N[i]=newOne.basis[i].shape[1]
         # return CanoTensor(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
         return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
+
+    def decrease(self, M):
+        assert(self.Fourier is True)
+
+        M=np.array(M, dtype=np.int)
+        N=np.array(self.N)
+        assert(np.all(np.less(M, N)))
+        if self.fft_form in ['c']:
+            ibeg=np.fix(np.array(N-M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
+            iend=np.fix(np.array(N+M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
+        elif self.fft_form in ['sr']:
+            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            iend=M
+
+        basis=[]
+        for ii in range(N.size):
+            basis.append(self.basis[ii][:, ibeg[ii]:iend[ii]])
+
+        newOne=self.copy()
+        newOne.basis=basis
+        newOne.N=np.zeros((newOne.order,), dtype=int)
+        for i in range(newOne.order):
+            newOne.N[i]=newOne.basis[i].shape[1]
+        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
+        # return Tucker(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
 
     def __neg__(self):
         newOne=self.copy()
@@ -269,28 +320,6 @@ class CanoTensor(SparseTensorFuns):
         res=self.copy()
         res.basis=basis
         return res
-
-    def decrease(self, M):
-        assert(self.Fourier is True)
-
-        M=np.array(M, dtype=np.int)
-        N=np.array(self.N)
-        assert(np.all(np.less(M, N)))
-
-        ibeg=np.fix(np.array(N-M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.fix(np.array(N+M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
-
-        basis=[]
-        for ii in range(N.size):
-            basis.append(self.basis[ii][:, ibeg[ii]:iend[ii]])
-
-        newOne=self.copy()
-        newOne.basis=basis
-        newOne.N=np.zeros((newOne.order,), dtype=int)
-        for i in range(newOne.order):
-            newOne.N[i]=newOne.basis[i].shape[1]
-        return newOne # this avoid using specific class name, e.g. canoTensor, so that can be shared by tucker and canoTensor
-        # return Tucker(name=self.name, core=self.core, basis=basis, Fourier=self.Fourier)
 
     def add(self, Y, tol=None, rank=None):
         return (self+Y).truncate(tol=tol, rank=rank)
@@ -489,10 +518,21 @@ if __name__=='__main__':
 
     print( (cf-cf2).norm())
 
+    ### test Fourier Hadamard product #####
+    af=a.set_fft_form('c').fourier()
+    bf=b.set_fft_form('c').fourier()
 
+    afbf=af*bf
+
+    af2=a.set_fft_form('sr').fourier()
+    bf2=b.set_fft_form('sr').fourier()
+
+    afbf2=af2*bf2
+
+    print( (afbf.fourier()-afbf2.fourier()).norm())
 
 #    ### test enlarge#####
-#    n=3
+#    n=5
 # #    T1= np.zeros((n,n, n))
 # #    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
 #
@@ -503,10 +543,25 @@ if __name__=='__main__':
 #
 #    t=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
 #    tf=t.fourier()
-#    tfl=tf.enlarge([3,5])
+#    tfl=tf.enlarge([7,7])
 #    tfli= tfl.fourier()
 #
-#    print(tfli.full().real)
+#    tfd=tf.decrease([3,3])
+#    tfdi= tfd.fourier()
+#
+#    print(tfli.full().val)
+#    print
+#    print(tfdi.full().val)
+#    print
+#    t=t.set_fft_form('c')
+#    tf=t.fourier()
+#    tfl=tf.enlarge([7,7])
+#    tfli= tfl.fourier()
+#
+#    print(tfli.full().val.real)
+
+
+
 
 ### test Fourier #####
 
