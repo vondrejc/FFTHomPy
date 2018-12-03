@@ -12,11 +12,14 @@ def cfftc(x, N):
     """
     return npfft.fftshift(npfft.fft(npfft.ifftshift(x, axes=1), axis=1), axes=1)/N
 
-def icfftc(Fx, N):
+def icfftc(Fx, N,real_output=False):
     """
     centered 1-dimensional inverse FFT algorithm
     """
-    return npfft.fftshift(npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
+    if real_output:
+        return npfft.fftshift(npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1), axes=1).real*N
+    else:
+        return npfft.fftshift(npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1), axes=1)*N
 
 def fftc(x, N):
     """
@@ -24,26 +27,38 @@ def fftc(x, N):
     """
     return npfft.fftshift(npfft.fft(x, axis=1),axes=1)/N
 
-def icfft(Fx, N):
+def icfft(Fx, N,real_output=False):
     """
     centered 1-dimensional inverse FFT algorithm
     """
-    return npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1)*N
+    if real_output:
+        return npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1).real*N
+    else:
+        return npfft.ifft(npfft.ifftshift(Fx, axes=1), axis=1)*N
 
 def fft(x, N):
     return npfft.fft(x, axis=1)/N # numpy.fft.fft
 
-def ifft(x, N):
-    return npfft.ifft(x, axis=1)*N # numpy.fft.fft
+def ifft(x, N,real_output=False):
+    if real_output:
+        return npfft.ifft(x, axis=1).real*N # numpy.fft.fft
+    else:
+        return npfft.ifft(x, axis=1)*N # numpy.fft.fft
 
 def rfft(x, N):
     return npfft.rfft(x.real, axis=1)/N # real version of numpy.fft.fft
 
-def irfft(x, N):
-    return npfft.irfft(x, axis=1)*N # real version of numpy.fft.fft
+def irfft(x, N,real_output=False):
+    if real_output:
+        return npfft.irfft(x, axis=1).real*N # real version of numpy.fft.fft
+    else:
+        return npfft.irfft(x, axis=1)*N # real version of numpy.fft.fft
 
 def srfft(x, N):
     return fftpack.rfft(x.real, axis=1)/N  # 1-D real fft from scipy.fftpack.rfft
 
-def sirfft(x, N):
-    return fftpack.irfft(x, axis=1)*N  # 1-D real inverse fft from scipy.fftpack.irfft
+def sirfft(x, N,real_output=False):
+    if real_output:
+        return fftpack.irfft(x.real, axis=1).real*N  # 1-D real inverse fft from scipy.fftpack.irfft
+    else:
+        return fftpack.irfft(x.real, axis=1)*N  # 1-D real inverse fft from scipy.fftpack.irfft

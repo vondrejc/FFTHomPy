@@ -32,7 +32,7 @@ class CanoTensor(SparseTensorFuns):
                 for ii in range(self.order):
                     self.N[ii]=self.basis[ii].shape[1]
             else:
-                raise ValueError("Canonical format not applicable to tensors higher than 2 dimensional.")
+                raise ValueError("Canonical format not yet applicable to tensors higher than 2 dimensional.")
 
         elif core is not None and basis is not None:
             self.order=basis.__len__()

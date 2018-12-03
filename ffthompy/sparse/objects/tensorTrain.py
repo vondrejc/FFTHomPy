@@ -6,7 +6,7 @@ from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
-from ffthompy.trigpol import mean_index
+#from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
 from ffthompy.sparse.objects.tensors import fft_form_default
 from ffthompy.tensors.objects import full_fft_form_default
@@ -53,20 +53,20 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return ttObj
 
-    def fourier(self):
+    def fourier(self, real_output=False):
         "(inverse) discrete Fourier transform"
 
         if self.Fourier:
-            fftfun=lambda Fx, N: self.ifft(Fx, N)
+            fftfun=lambda Fx, N,real_output: self.ifft(Fx, N,real_output)
             name='Fi({})'.format(self.name)
         else:
-            fftfun=lambda x, N:  self.fft(x, N)
+            fftfun=lambda x, N,real_output:  self.fft(x, N)
             name='F({})'.format(self.name)
 
         cl=self.to_list(self)
         clf=[None]*self.d
         for i in range(self.d):
-            clf[i]=fftfun(cl[i], self.n[i])
+            clf[i]=fftfun(cl[i], self.n[i],real_output)
 
         res=self.from_list(clf, name=name, Fourier=not self.Fourier, fft_form=self.fft_form)
 
@@ -103,9 +103,12 @@ class TensorTrain(vector,SparseTensorFuns):
 
         if np.allclose(M, N):
             return self
-
-        ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+        if self.fft_form in ['c']:
+            ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
+            iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+        elif self.fft_form in ['sr']:
+            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            iend=N
 
         cl=self.to_list(self)
         dtype=cl[0].dtype
@@ -127,9 +130,12 @@ class TensorTrain(vector,SparseTensorFuns):
         M=np.array(M, dtype=np.int)
         N=np.array(self.n)
         assert(np.any(np.less(M, N)))
-
-        ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-        iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+        if self.fft_form in ['c']:
+            ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+            iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+        elif self.fft_form in ['sr']:
+            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            iend=M
 
         cl=self.to_list(self)
 
@@ -154,7 +160,7 @@ class TensorTrain(vector,SparseTensorFuns):
             shape=np.ones((self.d+1), dtype=np.int32)
             shape[i:i+2]=self.r[i:i+2]
             if self.Fourier:
-                cl_mean[i]=(cl[i][:, mean_index(self.N)[i],:]).reshape(tuple(shape)).real
+                cl_mean[i]=(cl[i][:, self.mean_index()[i],:]).reshape(tuple(shape)).real
             else:
                 cl_mean[i]=np.mean(cl[i], axis=1).reshape(tuple(shape))
 
@@ -188,10 +194,17 @@ class TensorTrain(vector,SparseTensorFuns):
         return XY.mean()
 
     def __mul__(self, other):
-        res_vec=vector.__mul__(self, other)
+
         name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name)
-        res=TensorTrain(vectorObj=res_vec, name=name,
-                        Fourier=self.Fourier, fft_form=self.fft_form)
+
+        if self.fft_form=='sr' and not isinstance(other, (int, long, float, complex)):
+            res_vec=vector.__mul__(self.set_fft_form('c',copy=True), other.set_fft_form('c',copy=True))
+            res=TensorTrain(vectorObj=res_vec, name=name,
+                            Fourier=self.Fourier, fft_form='c').set_fft_form('sr')
+        else:
+            res_vec=vector.__mul__(self, other)
+            res=TensorTrain(vectorObj=res_vec, name=name,
+                            Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __add__(self, other):
@@ -279,7 +292,7 @@ class TensorTrain(vector,SparseTensorFuns):
                 return self.from_list(cr_new), ru
             else:
                 cr_new[d-1]=cr[d-1].reshape(r[d-1], n[d-1], r[d])
-                newObj=self.from_list(cr_new)
+                newObj=self.from_list(cr_new, fft_form=self.fft_form)
                 newObj.Fourier=self.Fourier
                 newObj.fft_form=self.fft_form
                 return newObj
@@ -375,7 +388,17 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return y
 
+    def copy(self, name=None):
+        if name is None:
+            name = 'copy({})'.format(self.name)
+        cl=self.to_list(self)
+        return TensorTrain(name=name, core=cl, Fourier=self.Fourier, fft_form=self.fft_form)
 
+    def norm(self):
+        if self.Fourier and self.fft_form=='sr':
+            return vector.norm(self.set_fft_form('c',copy=True))
+        else:
+            return vector.norm(self)
 if __name__=='__main__':
 
     print
@@ -415,14 +438,14 @@ if __name__=='__main__':
 #
 #    print(np.linalg.norm(vfft_shift-tf2.full()))
 
-    tf2i=tf2.fourier()
-    print(np.linalg.norm(v-tf2i.full()))
-
-    ### test mean()#####
-    print
-    print np.linalg.norm(t.mean()-np.sum(t.full()))
-
-    print t
+#    tf2i=tf2.fourier()
+#    print(np.linalg.norm(v-tf2i.full()))
+#
+#    ### test mean()#####
+#    print
+#    print np.linalg.norm(t.mean()-np.sum(t.full()))
+#
+#    print t
 #
     # ## test casting a vector obj to tensortrain obj
     ty=vector(v)
@@ -494,8 +517,22 @@ if __name__=='__main__':
     print(np.linalg.norm(t3.full()-t5.full()))
 
     print
-    print (np.mean(t1.full()) - t1.mean())
-    print (np.mean(t1.full()) - t1.fourier().mean())
+    print (np.mean(t1.full().val) - t1.mean())
+
+
+    ### test Fourier Hadamard product #####
+    af=t1.set_fft_form('c').fourier()
+    bf=t2.set_fft_form('c').fourier()
+
+    afbf=af*bf
+
+    af2=t1.set_fft_form('sr').fourier()
+    bf2=t2.set_fft_form('sr').fourier()
+
+    afbf2=af2*bf2
+
+    print( (afbf.fourier()-afbf2.fourier()).norm())
+    print(t1.norm())
 
 #    v1=np.array([[1,0]])
 #    t1=TensorTrain(val=v1)
