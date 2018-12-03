@@ -149,7 +149,7 @@ print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
 print(resS_Ga.Fu)
 print('iterations={}'.format(resS_Ga.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.val-resS_Ga.Fu.full().val)))
+    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
 print('mean of solution={}'.format(resS_Ga.Fu.mean()))
 print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))

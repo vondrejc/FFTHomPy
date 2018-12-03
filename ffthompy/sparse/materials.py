@@ -38,7 +38,7 @@ class SparseMaterial(Material):
             hAM0per=tile(FAs, 2*np.array(factor, dtype=np.int)-1)
             hAM=hAM0per.decrease(Nbar)
 
-        WFAs=(Wraw*hAM).fourier()
+        WFAs=(Wraw*hAM).fourier(real_output=True)
         WFAs.name='Agas'
         return WFAs
 
