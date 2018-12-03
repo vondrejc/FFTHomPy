@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import svd, norm
-from numpy import dot, kron,newaxis, argsort, tensordot, rollaxis
+from numpy import tensordot
 
 def dCA_matrix_input(M, k, tol=1e-16):
     """

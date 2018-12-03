@@ -1,15 +1,13 @@
 import numpy as np
-import scipy.sparse.linalg as sp
 from ffthompy import Timer, Struct
 import ffthompy.tensors.projection as proj
-from ffthompy.general.solver import linear_solver, richardson, CG
+from ffthompy.general.solver import linear_solver
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
-from ffthompy.trigpol import mean_index, Grid
+from ffthompy.trigpol import mean_index
 from ffthompy.sparse.solver import richardson as richardson_s
-# from ffthompy.sparse.solver import richardson_debug as richardson_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
-import copy
+
 
 def homog_Ga_full(Aga, pars):
     Nbar=Aga.N

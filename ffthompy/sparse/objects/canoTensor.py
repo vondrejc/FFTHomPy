@@ -4,7 +4,6 @@ from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
-import timeit
 from ffthompy.tensors.objects import full_fft_form_default
 
 np.set_printoptions(precision=2)
@@ -12,8 +11,8 @@ np.set_printoptions(linewidth=999999)
 
 class CanoTensor(SparseTensorFuns):
 
-    def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False, Fourier=False,
-                 r=None, N=None, randomise=False, fft_form=fft_form_default ):
+    def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False,
+                 Fourier=False, r=None, N=None, randomise=False, fft_form=fft_form_default):
 
         self.name=name
         self.Fourier=Fourier # TODO: dtype instead of Fourier
