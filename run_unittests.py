@@ -91,7 +91,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(Test_matcoef))
     suite.addTest(unittest.makeSuite(Test_solvers))
     suite.addTest(unittest.makeSuite(Test_materials))
-#     suite.addTest(unittest.makeSuite(Test_sparse))
+    suite.addTest(unittest.makeSuite(Test_sparse))
 
     runner=unittest.TextTestRunner()
     runner.run(suite)

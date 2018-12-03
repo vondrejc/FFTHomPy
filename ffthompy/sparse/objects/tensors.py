@@ -53,7 +53,7 @@ class SparseTensorFuns(TensorFuns):
         "(inverse) discrete Fourier transform"
 
         if self.Fourier:
-            fftfun=lambda Fx, N,real_output: self.ifft(Fx, N, real_output)
+            fftfun=lambda Fx, N, real_output: self.ifft(Fx, N, real_output)
             name='Fi({})'.format(self.name)
         else:
             fftfun=lambda x, N, real_output:  self.fft(x, N)
