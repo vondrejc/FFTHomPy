@@ -90,10 +90,14 @@ class TensorTrain(vector,SparseTensorFuns):
             for i in range(R.d):
                 cl[i]= R.fft(cl[i], R.N[i])
 
-            return R.from_list(cl, name=R.name, Fourier=R.Fourier, fft_form=fft_form)
+            tt=R.from_list(cl, name=R.name, Fourier=True, fft_form=fft_form)
+            for attr_name in tt.__dict__:
+                setattr(R, attr_name, getattr(tt, attr_name))
+            R.Fourier=True
         else:
             R._set_fft(fft_form)
-            return R
+
+        return R
 
     def enlarge(self, M):
         assert(self.Fourier is True)
