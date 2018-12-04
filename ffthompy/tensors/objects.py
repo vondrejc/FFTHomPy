@@ -33,6 +33,14 @@ class TensorFuns(Representation):
     def sub(self, ii):
         self.val[ii]
 
+    def update(self, **kwargs):
+        return self.__dict__.update(**kwargs)
+
+    def _copy(self, keys, **kwargs):
+        data={k:copy(self.__dict__[k]) for k in keys}
+        data.update(kwargs)
+        return self.__class__(**data)
+
     def _set_fft(self, fft_form):
         assert(fft_form in ['c', 'r', 0])
 
@@ -334,12 +342,7 @@ class Tensor(TensorFuns):
 
     def copy(self, **kwargs):
         keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin')
-        data={k:copy(self.__dict__[k]) for k in keys}
-        data.update(kwargs)
-        return Tensor(**data)
-
-    def update(self, **kwargs):
-        return self.__dict__.update(**kwargs)
+        return self._copy(keys, **kwargs)
 
     def zeros_like(self, name=None):
         if name is None:
