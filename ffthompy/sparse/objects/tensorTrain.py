@@ -15,7 +15,8 @@ np.set_printoptions(precision=2)
 np.set_printoptions(linewidth=999999)
 
 class TensorTrain(vector,SparseTensorFuns):
-    def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed', vectorObj=None,fft_form=fft_form_default):
+    def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',
+                 vectorObj=None, fft_form=fft_form_default):
 
         if eps is None:  eps = 1e-14
         if rmax is None: rmax=999999
@@ -52,6 +53,10 @@ class TensorTrain(vector,SparseTensorFuns):
         ttObj=TensorTrain(vectorObj=vectorObj, name=name, Fourier=Fourier,fft_form=fft_form)
 
         return ttObj
+
+    @property
+    def dim(self):
+        return self.d
 
     def fourier(self, real_output=False):
         "(inverse) discrete Fourier transform"
@@ -184,7 +189,8 @@ class TensorTrain(vector,SparseTensorFuns):
 
         val= vector.full(res)
 
-        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form=fft_form) # have the default fft_form for full tensor
+        # Tensor with the default fft_form for full tensor
+        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form=fft_form)
 
         if self.Fourier:
             T.fourier()
@@ -214,15 +220,15 @@ class TensorTrain(vector,SparseTensorFuns):
     def __add__(self, other):
         res_vec=vector.__add__(self, other)
         res=TensorTrain(vectorObj=res_vec,
-                          name=self.name+'+'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier, fft_form=self.fft_form)
+                        name=self.name+'+'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                        Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __kron__(self, other):
         res_vec=vector.__kron__(self, other)
         res=TensorTrain(vectorObj=res_vec,
-                          name=self.name+' glued with '+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
-                          Fourier=self.Fourier, fft_form=self.fft_form)
+                        name=self.name+' glued with '+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                        Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __sub__(self, other):
@@ -247,9 +253,8 @@ class TensorTrain(vector,SparseTensorFuns):
         return self.core.shape[0]+self.ps.shape[0]
 
     def __repr__(self): # print statement
-        keys=['name', 'Fourier', 'fft_form', 'n', 'r']
-        ss=self._repr(keys)
-        return ss+vector.__repr__(self)
+        keys=['name', 'Fourier', 'fft_form', 'dim', 'N', 'r']
+        return self._repr(keys)
 
     def truncate(self, tol=None, rank=None):
         if np.any(tol) is None and np.any(rank) is None:
@@ -258,8 +263,10 @@ class TensorTrain(vector,SparseTensorFuns):
             return self
         else:
             if tol is None:  tol=1e-14
+            if rank is None: rank=int(1e6)
             res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
-            res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier, fft_form=self.fft_form)
+            res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier,
+                            fft_form=self.fft_form)
             return res
 
     def orthogonalise(self, direction='lr', r_output=False):
@@ -403,6 +410,7 @@ class TensorTrain(vector,SparseTensorFuns):
             return vector.norm(self.set_fft_form('c',copy=True))
         else:
             return vector.norm(self)
+
 if __name__=='__main__':
 
     print

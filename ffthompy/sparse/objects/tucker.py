@@ -114,9 +114,8 @@ class Tucker(CanoTensor):
 
         newBasis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(X.order)]
 
-        result=Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis, orthogonal=False, Fourier=self.Fourier)
-
-        return result.truncate(rank=self.N)
+        return Tucker(name=self.name+'+'+Y.name, core=core, basis=newBasis, orthogonal=False,
+                      Fourier=self.Fourier)
 
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
@@ -159,7 +158,7 @@ class Tucker(CanoTensor):
                     newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return Tucker(name=self.name+'*'+Y.name, core=newCore, basis=newBasis,
-                          Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=self.N)
+                          Fourier=self.Fourier, fft_form=self.fft_form)
 
     def orthogonalise(self):
         """re-orthogonalise the basis"""
@@ -234,9 +233,8 @@ class Tucker(CanoTensor):
             sorted_norm=[]
             ind=range(self.order)
             for i in ind:
-                sorted_norm.append(np.sum(abs(core), axis= tuple(np.setdiff1d(ind, i))  ))
+                sorted_norm.append(np.sum(abs(core), axis=tuple(np.setdiff1d(ind, i))))
                 rank[i]=np.searchsorted(np.cumsum(sorted_norm[i])/np.sum(sorted_norm[i]), 1.0-tol[i])+1
-
 
         L=[None]*self.order
         for d in range(self.order):

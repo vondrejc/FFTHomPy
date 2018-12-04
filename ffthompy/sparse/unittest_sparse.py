@@ -258,7 +258,7 @@ class Test_sparse(unittest.TestCase):
 
         vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')
 
-        print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft) )
+        print("discrepancy:  ", norm(vqf_full.T -v1fft)/norm(v1fft))
         print ("maximum rank of the qtt is:",np.max(vqtt.r))
 
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)

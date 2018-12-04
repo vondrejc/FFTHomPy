@@ -15,11 +15,9 @@ os.nice(19)
 
 # PARAMETERS ##############################################################
 dim=2
-N=5
-# N=45
-# N=135
-material=0
-kind=2
+N=15
+material=2
+kind=0
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
@@ -32,7 +30,7 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
 pars_sparse=pars.copy()
 kind_list=['cano','tucker','tt']
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=10, # rank of solution vector
+                          rank=5, # rank of solution vector
                           tol=None,
                           solver=dict(tol=1e-4,
                                       maxiter=10), # no. of iterations for a solver
@@ -46,8 +44,8 @@ if dim==2:
 elif dim==3:
     pars_sparse.update(Struct(N=dim*(1*N,),))
 
-if pars_sparse.kind in ['tt']:
-    pars_sparse.update(Struct(tol=1e-14))
+# if pars_sparse.kind in ['tt']:
+#     pars_sparse.update(Struct(tol=1e-14))
 
 # auxiliary operator
 Nbar=lambda N: 2*np.array(N)-1
@@ -145,13 +143,14 @@ print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
 
 print('\n== SPARSE Richardson solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
+print('mean of solution={}'.format(resS_Ga.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
 print(resS_Ga.Fu)
 print('iterations={}'.format(resS_Ga.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
     print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
-print('mean of solution={}'.format(resS_Ga.Fu.mean()))
+
 print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
 
 print('\n== SPARSE Richardson solver with preconditioner (GaNi) =======================')

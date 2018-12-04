@@ -112,8 +112,8 @@ class CanoTensor(SparseTensorFuns):
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
         return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier,
-                          fft_form=X.fft_form).truncate(rank=np.min(self.N))
-        #return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier).orthogonalise()
+                          fft_form=X.fft_form)
+
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
 
@@ -154,7 +154,7 @@ class CanoTensor(SparseTensorFuns):
                     newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
             return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
-                              Fourier=self.Fourier, fft_form=self.fft_form).truncate(rank=np.min(self.N))
+                              Fourier=self.Fourier, fft_form=self.fft_form)
 
     def full(self, fft_form=full_fft_form_default):
         "return a full tensor object"
@@ -201,7 +201,8 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,Fourier=self.Fourier, fft_form=self.fft_form)
+        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,
+                          Fourier=self.Fourier, fft_form=self.fft_form)
 
     def norm(self, ord='core'):
         if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.

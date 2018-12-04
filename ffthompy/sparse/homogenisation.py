@@ -154,16 +154,6 @@ def homog_Ga_sparse(Agas, pars):
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
 
     # preconditioner
-    N_ori=N
-    reduce_factor=3.0 # this can be adjusted
-
-    if np.prod(N_ori)>1e8: # this threshold can be adjusted
-        N=np.ceil(N/reduce_factor).astype(int) #
-        N[N % 2==0]+=1 # make them odd numbers
-        need_project=True
-    else:
-        need_project=False
-
     hGrad=grad_tensor(N, pars.Y, fft_form='c')
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N, fft_form='c')]=1.
@@ -171,10 +161,6 @@ def homog_Ga_sparse(Agas, pars):
 
     Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
     Ps.set_fft_form()
-
-    if need_project:
-        Ps=Ps.project(N_ori) # approximation
-        N=N_ori
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -188,6 +174,10 @@ def homog_Ga_sparse(Agas, pars):
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
+    PBs2=PBs.truncate(tol=1e-10)
+    print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
+    print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
+    PBs=PBs2
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                           rank=pars.rank, tol=pars.tol)
     tic.measure()
@@ -226,16 +216,6 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
     # preconditioner
-    N_ori=N
-    reduce_factor=3.0 # this can be adjusted
-
-    if np.prod(N_ori)>1e8: # this threshold can be adjusted
-        N=np.ceil(N/reduce_factor).astype(int) #
-        N[N % 2==0]+=1 # make them odd numbers
-        need_project=True
-    else:
-        need_project=False
-
     hGrad=grad_tensor(N, pars.Y, fft_form='c')
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N, fft_form='c')]=1.
@@ -243,10 +223,6 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
     Ps.set_fft_form()
-
-    if need_project:
-        Ps=Ps.project(N_ori) # approximation
-        N=N_ori
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -260,6 +236,10 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
+    PBs2=PBs.truncate(tol=1e-10)
+    print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
+    print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
+    PBs=PBs2
     Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                           rank=pars.rank, tol=pars.tol)
     tic.measure()
