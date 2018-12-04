@@ -184,7 +184,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         val= vector.full(res)
 
-        T=Tensor(name=res.name, val=val, order=0, Fourier=False, fft_form= fft_form) # have the default fft_form for full tensor
+        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form=fft_form) # have the default fft_form for full tensor
 
         if self.Fourier:
             T.fourier()

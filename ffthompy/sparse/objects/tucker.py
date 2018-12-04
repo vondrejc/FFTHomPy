@@ -198,7 +198,7 @@ class Tucker(CanoTensor):
         for i in range(self.order):
             val=nModeProduct(val, res.basis[i].T, i)
 
-        T=Tensor(name=res.name, val=val, order=0,Fourier=False, fft_form=fft_form)
+        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form=fft_form)
 
         if self.Fourier:
             T.fourier()

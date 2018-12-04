@@ -157,17 +157,18 @@ class Test_sparse(unittest.TestCase):
         for opt in [0,'c']:
 
             a=SparseTensor(kind='cano', val=self.T2d, fft_form=opt)
-            T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form=opt)
+            T = Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form=opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt).val- T.fourier(copy=True).val), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
 
+
             a=SparseTensor(kind='tucker', val=self.T3d, fft_form=opt)
-            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form=opt)
+            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)- T.fourier(copy=True)), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
 
             a=SparseTensor(kind='tt', val=self.T3d, fft_form=opt)
-            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form=opt)
+            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)- T.fourier(copy=True).val), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
         # checking shifting fft_forms
@@ -175,17 +176,17 @@ class Test_sparse(unittest.TestCase):
         for full_opt in [0,'c']:
 
             a=SparseTensor(kind='cano', val=self.T2d, fft_form= sparse_opt)
-            T = Tensor(val=self.T2d, order=0, Fourier=False, fft_form= full_opt)
+            T = Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form= full_opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
             self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
 
             a=SparseTensor(kind='tucker', val=self.T3d, fft_form= sparse_opt)
-            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form= full_opt)
+            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form= full_opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
             self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
 
             a=SparseTensor(kind='tt', val=self.T3d, fft_form= sparse_opt)
-            T = Tensor(val=self.T3d, order=0, Fourier=False, fft_form= full_opt)
+            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form= full_opt)
             self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
             self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
 

@@ -53,7 +53,7 @@ def homog_Ga_full_potential(Aga, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     # inverse of preconditioner
-    P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
+    P=Tensor(name='P', val=1./k2**0.5, order=0, N=N, Fourier=True, multype=00)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
@@ -97,7 +97,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N)]=1.
     # inverse of preconditioner
-    P=Tensor(name='P', val=1./k2**0.5, order=0, Fourier=True, multype=00)
+    P=Tensor(name='P', val=1./k2**0.5, order=0, N=N, Fourier=True, multype=00)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=N, shape=(dim,), Fourier=False) # constant trig. pol.

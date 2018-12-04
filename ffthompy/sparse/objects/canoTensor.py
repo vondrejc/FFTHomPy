@@ -167,7 +167,7 @@ class CanoTensor(SparseTensorFuns):
 
             # generate Tensor in real domain
             val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
-            T=Tensor(name=res.name, val=val, order=0,
+            T=Tensor(name=res.name, val=val, order=0, N=val.shape,
                      Fourier=False,fft_form=fft_form)
 
             if self.Fourier:
