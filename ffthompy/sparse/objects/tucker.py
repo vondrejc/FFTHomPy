@@ -216,7 +216,6 @@ class Tucker(CanoTensor):
 
         if isinstance(rank, int) :
             rank=rank*np.ones((self.order,), dtype=int)
-            rank=np.minimum(rank, self.r)
 
         if isinstance(tol, float) :
             tol=tol*np.ones((self.order,))
@@ -225,6 +224,7 @@ class Tucker(CanoTensor):
 
         basis=list(self.basis)
         core=self.core
+        rank=np.minimum(rank, self.r)
 
         # to determine the rank of truncation
         if np.any(tol) is not None:
@@ -283,26 +283,20 @@ class Tucker(CanoTensor):
         return val
 
     def mean(self):
-        val=0.
 
-        L=[None]*self.order
-        for d in range(self.order):
-            L[d]=range(self.r[d])
+        basis_mean=[None]*self.order
+        mean_kronecker=1
 
-        ind=np.meshgrid(*L)
-        ind=np.array(ind)
-        ind=np.reshape(ind, (self.order,-1))
+        for k in range(self.order):
+            if self.Fourier:
+                basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
+            else:
+                basis_mean[k]=np.mean(self.basis[k], axis=1)
+        for k in range(self.order):
+            mean_kronecker = np.kron(mean_kronecker,basis_mean[k] )
 
-        for i in range(ind.shape[1]):
-            val_piece=self.core[tuple(ind[:, i])]
-            for k in range(self.order):
-                if self.Fourier:
-                    val_piece*=self.basis[k][ind[k, i],self.mean_index()[k]].real
-                else:
-                    val_piece*=np.mean(self.basis[k][ind[k, i]])
-
-            val+=val_piece
-        return val
+        res=np.sum(mean_kronecker*self.core.ravel())
+        return res
 
     @property
     def memory(self):
@@ -544,7 +538,10 @@ if __name__=='__main__':
     a = Tucker(val=T1,name='a' )
     b = Tucker(val=T2,name='b' )
 
+    #a=a.truncate(rank=a.r/2)
 
+    print(np.mean(T1) -a.mean() )
+    print(np.mean(T1) -a.fourier().mean() )
 
     c=a+b
     print(c)
@@ -554,6 +551,9 @@ if __name__=='__main__':
     print "((a+b).full - (a.full+b.full))/|(a.full+b.full)| = ", norm(c.full()-a.full()-b.full())/norm(a.full()+b.full())
     print "max((a+b).full - (a.full+b.full))/mean(a.full+b.full) = ", np.max(c.full().val-a.full().val-b.full().val)/np.mean(a.full().val+b.full().val)
 #
+    print(np.mean(T1+T2) -c.mean() )
+
+
     c=a*b
     print(c)
 
