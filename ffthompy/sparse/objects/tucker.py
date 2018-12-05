@@ -4,13 +4,9 @@ from ffthompy.sparse.objects.canoTensor import CanoTensor
 from ffthompy.sparse.decompositions import HOSVD, nModeProduct
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
-from ffthompy.tensors.objects import full_fft_form_default
-
 from numpy.linalg import norm
 from numpy import newaxis
 
-#np.set_printoptions(precision=3)
-#np.set_printoptions(linewidth=999999)
 
 class Tucker(CanoTensor):
 
@@ -179,7 +175,7 @@ class Tucker(CanoTensor):
 
             return Tucker(name=self.name, core=S, basis=newBasis, orthogonal=True, Fourier=self.Fourier, fft_form=self.fft_form)
 
-    def full(self, fft_form=full_fft_form_default):
+    def full(self, **kwargs):
         """convert a tucker representation to a full tensor object
         A = CORE (*1) Basis1 (*2) Basis2 (*3) Basis3 ..., with (*n)  means n-mode product.
         from paper "A MULTILINEAR SINGULAR VALUE DECOMPOSITION" by LIEVEN DE LATHAUWER , BART DE MOOR , AND JOOS VANDEWALLE
@@ -197,7 +193,7 @@ class Tucker(CanoTensor):
         for i in range(self.order):
             val=nModeProduct(val, res.basis[i].T, i)
 
-        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form=fft_form)
+        T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, **kwargs)
 
         if self.Fourier:
             T.fourier()

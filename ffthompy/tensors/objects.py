@@ -8,11 +8,10 @@ from ffthompy.general.base import Representation
 from ffthompy.trigpol import mean_index, fft_form_default, get_Nodd
 from ffthompy.mechanics.matcoef import ElasticTensor
 from ffthompy.trigpol import enlarge, decrease, get_inverse
-from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn, cfftnc, icfftnc
+from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn
 import itertools
 from copy import copy
 
-full_fft_form_default='c'
 
 class TensorFuns(Representation):
 

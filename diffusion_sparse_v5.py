@@ -44,9 +44,6 @@ if dim==2:
 elif dim==3:
     pars_sparse.update(Struct(N=dim*(1*N,),))
 
-# if pars_sparse.kind in ['tt']:
-#     pars_sparse.update(Struct(tol=1e-14))
-
 # auxiliary operator
 Nbar=lambda N: 2*np.array(N)-1
 

@@ -4,10 +4,7 @@ from numpy import  newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
-from ffthompy.tensors.objects import full_fft_form_default
 
-np.set_printoptions(precision=2)
-np.set_printoptions(linewidth=999999)
 
 class CanoTensor(SparseTensorFuns):
 
@@ -156,7 +153,7 @@ class CanoTensor(SparseTensorFuns):
             return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
                               Fourier=self.Fourier, fft_form=self.fft_form)
 
-    def full(self, fft_form=full_fft_form_default):
+    def full(self, **kwargs):
         "return a full tensor object"
 
         if self.order==2:
@@ -167,8 +164,7 @@ class CanoTensor(SparseTensorFuns):
 
             # generate Tensor in real domain
             val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
-            T=Tensor(name=res.name, val=val, order=0, N=val.shape,
-                     Fourier=False,fft_form=fft_form)
+            T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, **kwargs)
 
             if self.Fourier:
                 T.fourier()

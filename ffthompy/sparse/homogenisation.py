@@ -187,11 +187,10 @@ def homog_Ga_sparse(Agas, pars):
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
 #     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu)).full())))
 
-
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     FGX[0]+=Es # adding mean
 
-    AH = calculate_AH_sparse(Agas, FGX,  pars.rank, pars.tol )
+    AH = calculate_AH_sparse(Agas, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
@@ -255,13 +254,22 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
     FGX[0]+=Es # adding mean
 
-    AH = calculate_AH_sparse(Agas, FGX, pars.rank, pars.tol )
+    AH = calculate_AH_sparse(Agas, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
 
-def calculate_AH_sparse(Agas, FGX, rank, tol):
+def calculate_AH_sparse(Agas, FGX, method='full', rank=None, tol=None):
     tic=Timer(name='AH')
     AH=0.
-    for ii in range(FGX.__len__()):
-        AH+=(Agas*FGX[ii]).truncate(rank=rank, tol=tol).scal(FGX[ii])
+    if method in ['full']:
+        Aga=Agas.full(multype=00)
+        FGXf=[T.full() for T in FGX]
+        for ii in range(FGX.__len__()):
+            AH+=(Aga*FGXf[ii])*FGXf[ii]
+    elif method in ['sparse']:
+        for ii in range(FGX.__len__()):
+            AH+=(Agas*FGX[ii]).truncate(rank=rank, tol=tol).scal(FGX[ii])
+    else:
+        raise NotImplementedError()
+
     tic.measure()
     return AH
