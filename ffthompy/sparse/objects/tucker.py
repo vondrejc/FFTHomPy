@@ -279,7 +279,6 @@ class Tucker(CanoTensor):
         return val
 
     def mean(self):
-
         basis_mean=[None]*self.order
         mean_kronecker=1
 
@@ -288,11 +287,10 @@ class Tucker(CanoTensor):
                 basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
             else:
                 basis_mean[k]=np.mean(self.basis[k], axis=1)
-        for k in range(self.order):
+
             mean_kronecker = np.kron(mean_kronecker,basis_mean[k] )
 
-        res=np.sum(mean_kronecker*self.core.ravel())
-        return res
+        return np.sum(mean_kronecker*self.core.ravel())
 
     @property
     def memory(self):

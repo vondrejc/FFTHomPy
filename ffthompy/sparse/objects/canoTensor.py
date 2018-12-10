@@ -222,16 +222,20 @@ class CanoTensor(SparseTensorFuns):
         return val
 
     def mean(self):
-        val=0.
-        for ii in range(self.r):
-            valii=self.core[ii]
-            for jj in range(self.order):
-                if self.Fourier:
-                    valii*=self.basis[jj][ii, self.mean_index()[jj]].real
-                else:
-                    valii*=np.mean(self.basis[jj][ii]).real
-            val+=valii
-        return val
+
+        basis_mean=[None]*self.order
+        val=self.core.copy()
+
+        for k in range(self.order):
+            if self.Fourier:
+                basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
+            else:
+                basis_mean[k]=np.mean(self.basis[k], axis=1)
+
+        for k in range(self.order):
+            val *=  basis_mean[k]
+
+        return np.sum(val)
 
     def enlarge(self, M):
         dtype=self.basis[0].dtype
@@ -384,6 +388,10 @@ class CanoTensor(SparseTensorFuns):
     def memory(self):
         "return the number of floating point numbers that consist of the canonical tensor"
         return self.r +self.r*sum(self.N)
+
+    def copy(self, **kwargs):
+        keys=('name','core','basis','orthogonal','Fourier','r', 'N','fft_form')
+        return self._copy(keys, **kwargs)
 
 if __name__=='__main__':
 #    N=[10,20]
