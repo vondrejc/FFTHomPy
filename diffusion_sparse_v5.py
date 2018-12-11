@@ -14,10 +14,10 @@ import sys
 os.nice(19)
 
 # PARAMETERS ##############################################################
-dim=2
-N=15
-material=2
-kind=0
+dim=3
+N=5
+material=0
+kind=1
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
@@ -30,10 +30,11 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
 pars_sparse=pars.copy()
 kind_list=['cano','tucker','tt']
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=5, # rank of solution vector
+                          rank=10, # rank of solution vector
                           tol=None,
                           solver=dict(tol=1e-4,
-                                      maxiter=10), # no. of iterations for a solver
+                                      maxiter=10,# no. of iterations for a solver
+                                      divcrit=True),
                           ))
 
 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,

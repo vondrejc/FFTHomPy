@@ -170,7 +170,8 @@ def homog_Ga_sparse(Agas, pars):
 
     parP={'alpha': pars.alpha,
           'maxiter': pars.solver['maxiter'],
-          'tol': pars.solver['tol']}
+          'tol': pars.solver['tol'],
+          'divcrit': pars.solver['divcrit']}
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs
@@ -178,7 +179,7 @@ def homog_Ga_sparse(Agas, pars):
     print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
     print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
     PBs=PBs2
-    Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+    Fu, ress = richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                           rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
@@ -232,7 +233,8 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     parP={'alpha': pars.alpha,
           'maxiter': pars.solver['maxiter'],
-          'tol': pars.solver['tol']}
+          'tol': pars.solver['tol'],
+          'divcrit': pars.solver['divcrit']}
 
     tic=Timer(name='Richardson (sparse)')
     PBs=Ps*Bs

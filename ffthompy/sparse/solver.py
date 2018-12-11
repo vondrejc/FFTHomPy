@@ -15,14 +15,19 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
     if norm is None:
         norm=lambda X: X.norm()
 
+    res['norm_res'].append(norm(B))
+
     norm_res=1e15
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
         residuum=B-Afun(x)
         x=(x+residuum*omega).truncate(rank=rank, tol=tol)
-        norm_res=norm(residuum)
+        norm_res = norm(residuum)
+
+        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+            break
         res['norm_res'].append(norm_res)
-    res['norm_res'].append(norm(B-Afun(x)))
+
     return x, res
 
 def richardson_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
@@ -37,6 +42,7 @@ def richardson_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
     else:
         x=x0
     x=x.truncate(rank=rank, tol=tol)
+
 
     if norm is None:
         norm=lambda X: X.norm()
@@ -57,5 +63,6 @@ def richardson_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         norm_res=norm(residuum)
         tic.measure()
         res['norm_res'].append(norm_res)
+
     res['norm_res'].append(norm(B-Afun(x)))
     return x, res
