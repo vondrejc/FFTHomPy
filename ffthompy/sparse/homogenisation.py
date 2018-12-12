@@ -180,7 +180,7 @@ def homog_Ga_sparse(Agas, pars):
     print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
     PBs=PBs2
     Fu, ress = richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                          rank=pars.rank, tol=pars.tol)
+                            rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))

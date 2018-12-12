@@ -9,6 +9,7 @@ from numpy import newaxis
 
 
 class Tucker(CanoTensor):
+    kind='tucker'
 
     def __init__(self, name='unnamed', val=None, core=None, basis=None, Fourier=False, orthogonal=False,
                  r=None, N=None, randomise=False, fft_form=fft_form_default):

@@ -12,6 +12,8 @@ from ffthompy.sparse.objects.tensors import fft_form_default
 
 
 class TensorTrain(vector,SparseTensorFuns):
+    kind='tt'
+
     def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',
                  vectorObj=None, fft_form=fft_form_default):
 

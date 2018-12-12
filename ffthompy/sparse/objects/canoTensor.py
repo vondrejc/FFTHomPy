@@ -7,6 +7,7 @@ from ffthompy.sparse.objects.tensors import fft_form_default
 
 
 class CanoTensor(SparseTensorFuns):
+    kind='cano'
 
     def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False,
                  Fourier=False, r=None, N=None, randomise=False, fft_form=fft_form_default):
