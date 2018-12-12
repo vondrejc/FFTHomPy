@@ -150,7 +150,8 @@ def homog_Ga_sparse(Agas, pars):
         return -GFAFGFx
 
     # R.H.S.
-    Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
+    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
+    Es=Es.fourier().enlarge(Nbar).fourier()
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
 
     # preconditioner
@@ -213,7 +214,8 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         return -GFAFGFx
 
     # R.H.S.
-    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(N), rank=1)
+    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
+    Es=Es=Es.fourier().enlarge(N).fourier()
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
     # preconditioner
