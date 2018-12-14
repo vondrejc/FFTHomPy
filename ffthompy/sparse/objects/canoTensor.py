@@ -216,8 +216,18 @@ class CanoTensor(SparseTensorFuns):
         elif ord=='inf':
             pass
         elif ord=='core':
-            self=self.orthogonalise()
-            return np.linalg.norm(self.core)
+            if self.Fourier:
+                newObj=self.set_fft_form('c',copy=True)
+            else:
+                newObj=self
+
+            if not newObj.orthogonal:
+                newObj=newObj.orthogonalise()
+
+            if newObj.Fourier:
+                return np.linalg.norm(newObj.core)
+            else:
+                return np.linalg.norm(newObj.core)/np.sqrt(np.prod(newObj.N)) # this normalized 2-norm is to keep consistance to the full tensor norm()
         else:
             raise NotImplementedError()
         return val
@@ -377,7 +387,7 @@ class CanoTensor(SparseTensorFuns):
             return F.fourier() # inverse Fourier
 
     def __repr__(self, full=False, detailed=False):
-        keys=['name', 'Fourier', 'fft_form', 'orthogonal', 'N', 'r']
+        keys=['name', 'Fourier', 'fft_form', 'orthogonal', 'N', 'r','norm','mean']
         return self._repr(keys)
 
     @property
@@ -493,8 +503,8 @@ if __name__=='__main__':
 #    print "n-D FFT costs         : %f"%t2
 
 
-    N1=3
-    N2=4
+    N1=6
+    N2=8
 
     T1=np.random.rand(N1,N2)
     T2=np.random.rand(N1,N2)
@@ -535,6 +545,9 @@ if __name__=='__main__':
     afbf2=af2*bf2
 
     print( (afbf.fourier()-afbf2.fourier()).norm())
+
+    print(a)
+    print(a.fourier())
 
 #    ### test enlarge#####
 #    n=5

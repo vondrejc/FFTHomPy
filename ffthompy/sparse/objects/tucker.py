@@ -271,9 +271,18 @@ class Tucker(CanoTensor):
         elif ord=='inf':
             pass
         elif ord=='core':
-            if not self.orthogonal:
-                self=self.orthogonalise()
-            return np.linalg.norm(self.core)
+            if self.Fourier:
+                newObj=self.set_fft_form('c',copy=True)
+            else:
+                newObj=self
+
+            if not newObj.orthogonal:
+                newObj=newObj.orthogonalise()
+
+            if newObj.Fourier:
+                return np.linalg.norm(newObj.core)
+            else:
+                return np.linalg.norm(newObj.core)/np.sqrt(np.prod(newObj.N)) # this normalized 2-norm is to keep consistance to the full tensor norm()
         else:
             raise NotImplementedError()
 
@@ -612,6 +621,10 @@ if __name__=='__main__':
     afbf2=af2*bf2
 
     print( (afbf.fourier()-afbf2.fourier()).norm())
+
+    print(a)
+    print(a.fourier())
+
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)
 #
