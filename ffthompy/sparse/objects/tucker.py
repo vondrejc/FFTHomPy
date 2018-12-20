@@ -58,12 +58,12 @@ class Tucker(CanoTensor):
                 else:
                     self.core=core
         else:
-            if N.any()==None:
+            if N.any() is None:
                 self.N=np.array([5,5,5])
             else:
                 self.N=N
 
-            if r.any()==None:
+            if r.any() is None:
                 self.r =np.array([3,3,3])
             else:
                 self.r=r
@@ -207,7 +207,7 @@ class Tucker(CanoTensor):
         if np.any(tol) is None and np.any(rank) is None:
             # print ("Warning: No truncation criteria input, truncation aborted!")
             return self
-        elif np.any(tol) is None and np.all(rank>=self.r)==True :
+        elif np.any(tol) is None and np.all(rank>=self.r) is True :
             # print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self
 

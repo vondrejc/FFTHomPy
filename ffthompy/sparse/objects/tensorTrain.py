@@ -17,7 +17,7 @@ class TensorTrain(vector,SparseTensorFuns):
     def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',
                  vectorObj=None, fft_form=fft_form_default):
 
-        if eps is None:  eps = 1e-14
+        if eps is None: eps=1e-14
         if rmax is None: rmax=999999
 
         if val is not None:
@@ -64,7 +64,7 @@ class TensorTrain(vector,SparseTensorFuns):
             fftfun=lambda Fx, N,real_output: self.ifft(Fx, N,real_output)
             name='Fi({})'.format(self.name)
         else:
-            fftfun=lambda x, N,real_output:  self.fft(x, N)
+            fftfun=lambda x, N,real_output: self.fft(x, N)
             name='F({})'.format(self.name)
 
         cl=self.to_list(self)
@@ -261,7 +261,7 @@ class TensorTrain(vector,SparseTensorFuns):
         elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
             return self
         else:
-            if tol is None:  tol=1e-14
+            if tol is None: tol=1e-14
             if rank is None: rank=int(1e6)
             res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
             res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier,

@@ -1,6 +1,5 @@
 import numpy as np
-#from numpy.linalg import norm
-from numpy import  newaxis
+from numpy import newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
