@@ -74,8 +74,8 @@ class CanoTensor(SparseTensorFuns):
             R._set_fft(fft_form)
             for i in range(R.order):
                 R.basis[i]= R.fft(R.basis[i], R.N[i])
-            R.orthogonal=False #shift between FFT modes makes the basis no longer orthonormal
-                               # since FFTs differ in dividing by sqrt(2) or not.
+            R.orthogonal=False # FFT modes makes the basis no longer orthonormal
+
         else:
             R._set_fft(fft_form)
 
