@@ -158,13 +158,15 @@ class CanoTensor(SparseTensorFuns):
 
         if self.order==2:
             if self.Fourier:
-                res=self.fourier()
+                res=self.fourier(copy=True)
             else:
                 res=self
 
             # generate Tensor in real domain
             val=np.einsum('i,ik,il->kl', res.core, res.basis[0], res.basis[1])
-            T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, **kwargs)
+            kwargsT=dict(name=res.name, val=val, order=0, N=val.shape, Fourier=False, fft_form='c')
+            kwargsT.update(kwargs)
+            T=Tensor(**kwargsT)
 
             if self.Fourier:
                 T.fourier()
@@ -197,8 +199,7 @@ class CanoTensor(SparseTensorFuns):
         for ii in range(self.order):
             basis[ii]=basis[ii][:rank, :]
 
-        return CanoTensor(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True,
-                          Fourier=self.Fourier, fft_form=self.fft_form)
+        return self.copy(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True)
 
     def norm(self, ord='core'):
         if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.
@@ -243,7 +244,7 @@ class CanoTensor(SparseTensorFuns):
                 basis_mean[k]=np.mean(self.basis[k], axis=1)
 
         for k in range(self.order):
-            val *=  basis_mean[k]
+            val *= basis_mean[k]
 
         return np.sum(val)
 
@@ -386,7 +387,7 @@ class CanoTensor(SparseTensorFuns):
             return F.fourier() # inverse Fourier
 
     def __repr__(self, full=False, detailed=False):
-        keys=['name', 'Fourier', 'fft_form', 'orthogonal', 'N', 'r','norm','mean']
+        keys=['name', 'N', 'Fourier', 'fft_form', 'orthogonal', 'r','norm','mean']
         return self._repr(keys)
 
     @property
