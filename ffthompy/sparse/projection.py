@@ -18,7 +18,7 @@ def grad_tensor(N, Y, kind='TensorTrain'):
                 basis.append(np.atleast_2d(np.ones(N[jj])))
 
         if kind.lower() in ['cano', 'canotensor','tucker']:
-            hGrad_s.append(SparseTensor(kind=kind, name='hGrad({})'.format(ii), core=np.array([1]),
+            hGrad_s.append(SparseTensor(kind=kind, name='hGrad({})'.format(ii), core=np.array([1.]),
                                         basis=basis, Fourier=True, fft_form='c').set_fft_form())
         elif kind.lower() in ['tt','tensortrain']:
             cl = [bas.reshape((1,-1,1)) for bas in basis]
