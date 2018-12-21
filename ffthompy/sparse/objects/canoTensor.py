@@ -4,6 +4,8 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 
+np.set_printoptions(precision=2)
+np.set_printoptions(linewidth=999999)
 
 class CanoTensor(SparseTensorFuns):
     kind='cano'
@@ -72,6 +74,8 @@ class CanoTensor(SparseTensorFuns):
             R._set_fft(fft_form)
             for i in range(R.order):
                 R.basis[i]= R.fft(R.basis[i], R.N[i])
+            R.orthogonal=False #shift between FFT modes makes the basis no longer orthonormal
+                               # since FFTs differ in dividing by sqrt(2) or not.
         else:
             R._set_fft(fft_form)
 
@@ -546,8 +550,14 @@ if __name__=='__main__':
 
     print( (afbf.fourier()-afbf2.fourier()).norm())
 
-    print(a)
-    print(a.fourier())
+    print(c)
+    print(c.fourier())
+
+    cf=c.fourier().truncate(rank=5)
+    print(cf)
+    print(cf.fourier())
+
+
 
 #    ### test enlarge#####
 #    n=5

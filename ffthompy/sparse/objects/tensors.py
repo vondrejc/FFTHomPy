@@ -64,10 +64,11 @@ class SparseTensorFuns(TensorFuns):
             basis.append(fftfun(self.basis[ii], self.N[ii], real_output))
 
         if copy:
-            return self.copy(name=name, basis=basis, Fourier=not self.Fourier)
+            return self.copy(name=name, basis=basis, Fourier=not self.Fourier, orthogonal=False)
         else:
             self.basis=basis
             self.Fourier=not self.Fourier
+            self.orthogonal=False
             return self
 
 
