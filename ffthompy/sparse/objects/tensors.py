@@ -49,31 +49,26 @@ class SparseTensorFuns(TensorFuns):
         self.fft_form=fft_form
         return self
 
-    def fourier(self, real_output=False):
+    def fourier(self, real_output=False, copy=True):
         "(inverse) discrete Fourier transform"
 
         if self.Fourier:
             fftfun=lambda Fx, N, real_output: self.ifft(Fx, N, real_output)
             name='Fi({})'.format(self.name)
         else:
-            fftfun=lambda x, N, real_output:  self.fft(x, N)
+            fftfun=lambda x, N, real_output: self.fft(x, N)
             name='F({})'.format(self.name)
 
         basis=[]
         for ii in range(self.order):
             basis.append(fftfun(self.basis[ii], self.N[ii], real_output))
 
-        res = self.copy(name=name)
-        res.basis=basis
-        res.Fourier=not res.Fourier
-        return res
-
-    def copy(self, name=None):
-        if name is None:
-            name = 'copy({})'.format(self.name)
-        Cls = self.__class__
-        return Cls(name=name, core=np.copy(self.core), basis=copy(self.basis),
-                   Fourier=self.Fourier, fft_form=self.fft_form)
+        if copy:
+            return self.copy(name=name, basis=basis, Fourier=not self.Fourier)
+        else:
+            self.basis=basis
+            self.Fourier=not self.Fourier
+            return self
 
 
 if __name__=='__main__':
