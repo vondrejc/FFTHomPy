@@ -48,17 +48,11 @@ def ifft(x, N,real_output=False):
 def rfft(x, N):
     return npfft.rfft(x.real, axis=1)/N # real version of numpy.fft.fft
 
-def irfft(x, N,real_output=False):
-    if real_output:
-        return npfft.irfft(x, axis=1).real*N # real version of numpy.fft.fft
-    else:
-        return npfft.irfft(x, axis=1)*N # real version of numpy.fft.fft
+def irfft(x, N, real_output=True):
+    return npfft.irfft(x, axis=1)*N # real version of numpy.fft.fft
 
 def srfft(x, N):
     return fftpack.rfft(x.real, axis=1)/N  # 1-D real fft from scipy.fftpack.rfft
 
-def sirfft(x, N,real_output=False):
-    if real_output:
-        return fftpack.irfft(x.real, axis=1).real*N  # 1-D real inverse fft from scipy.fftpack.irfft
-    else:
-        return fftpack.irfft(x.real, axis=1)*N  # 1-D real inverse fft from scipy.fftpack.irfft
+def sirfft(x, N, real_output=True):
+    return fftpack.irfft(x.real, axis=1)*N  # 1-D real inverse fft from scipy.fftpack.irfft
