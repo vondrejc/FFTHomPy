@@ -154,14 +154,7 @@ def homog_Ga_sparse(Agas, pars):
     Es=Es.fourier().enlarge(Nbar).fourier()
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
 
-    # preconditioner
-    hGrad=grad_tensor(N, pars.Y, fft_form='c')
-    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N, fft_form='c')]=1.
-    Prank=np.min([8, N[0]-1])
-
-    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
-    Ps.set_fft_form()
+    Ps=get_preconditioner(N, pars)
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -215,17 +208,10 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     # R.H.S.
     Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
-    Es=Es=Es.fourier().enlarge(N).fourier()
+    Es=Es.fourier().enlarge(N).fourier()
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
-    # preconditioner
-    hGrad=grad_tensor(N, pars.Y, fft_form='c')
-    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N, fft_form='c')]=1.
-    Prank=np.min([8, N[0]-1])
-
-    Ps=SparseTensor(kind=pars.kind, val=1./k2, rank=Prank, Fourier=True, fft_form='c')
-    Ps.set_fft_form()
+    Ps=get_preconditioner(N, pars)
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -260,6 +246,17 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     AH = calculate_AH_sparse(Agas, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
+
+def get_preconditioner(N, pars):
+    hGrad=grad_tensor(N, pars.Y, fft_form='c')
+    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
+    k2[mean_index(N, fft_form='c')]=1.
+    Prank=np.min([10, N[0]-1])
+    val=1./k2
+    P=Tensor(name='P', val=val, N=N, order=0, Fourier=True, fft_form='c')
+    Ps=SparseTensor(name='Ps', kind=pars.kind, val=val, rank=Prank, Fourier=True, fft_form='c')
+    Ps.set_fft_form()
+    return Ps
 
 def calculate_AH_sparse(Agas, FGX, method='full', rank=None, tol=None):
     tic=Timer(name='AH')
