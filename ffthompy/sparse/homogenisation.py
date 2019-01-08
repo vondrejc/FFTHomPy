@@ -48,12 +48,7 @@ def homog_Ga_full_potential(Aga, pars):
     F2=DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
 
-    hGrad=grad_tensor(N, Y)
-
-    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N)]=1.
-    # inverse of preconditioner
-    P=Tensor(name='P', val=1./k2**0.5, order=0, N=N, Fourier=True, multype=00)
+    P = get_preconditioner(N, pars)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=Nbar, shape=(dim,), Fourier=False) # constant trig. pol.
@@ -93,11 +88,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     F=DFT(name='FN', inverse=False, N=N) # discrete Fourier transform (DFT)
     iF=DFT(name='FiN', inverse=True, N=N) # inverse DFT
 
-    hGrad=grad_tensor(N, Y)
-    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
-    k2[mean_index(N)]=1.
-    # inverse of preconditioner
-    P=Tensor(name='P', val=1./k2**0.5, order=0, N=N, Fourier=True, multype=00)
+    P = get_preconditioner(N, pars)
 
     E=np.zeros(dim); E[0]=1 # macroscopic load
     EN=Tensor(name='EN', N=N, shape=(dim,), Fourier=False) # constant trig. pol.
@@ -250,6 +241,12 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
 
 def get_preconditioner(N, pars):
+    hGrad=grad_tensor(N, pars.Y)
+    k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
+    k2[mean_index(N)]=1.
+    return Tensor(name='P', val=1./k2**0.5, order=0, N=N, Fourier=True, multype=00)
+
+def get_preconditioner_sparse(N, pars):
     hGrad=grad_tensor(N, pars.Y, fft_form='c')
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N, fft_form='c')]=1.
