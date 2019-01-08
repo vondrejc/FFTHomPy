@@ -112,8 +112,7 @@ class CanoTensor(SparseTensorFuns):
         core=np.hstack([X.core, Y.core])
         basis=[np.vstack([X.basis[ii], Y.basis[ii]]) for ii in range(self.order)]
 
-        return CanoTensor(name=X.name+'+'+Y.name, core=core, basis=basis, Fourier=self.Fourier,
-                          fft_form=X.fft_form)
+        return self.copy(name=X.name+'+'+Y.name, core=core, basis=basis)
 
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
@@ -154,8 +153,7 @@ class CanoTensor(SparseTensorFuns):
                     newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
                     newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
 
-            return CanoTensor(name=self.name+'*'+Y.name, core=coeff, basis=newBasis,
-                              Fourier=self.Fourier, fft_form=self.fft_form)
+            return self.copy(name=self.name+'*'+Y.name, core=coeff, basis=newBasis)
 
     def full(self, **kwargs):
         "return a full tensor object"
