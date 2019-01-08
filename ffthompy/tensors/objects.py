@@ -496,7 +496,6 @@ class Tensor(TensorFuns):
         return Y
 
     def plot(self, ind=slice(None), N=None, filen=None, ptype='imshow'):
-        assert(not self.Fourier)
         if N is None:
             N = self.N
 
@@ -508,6 +507,8 @@ class Tensor(TensorFuns):
 
         Z=self.project(N)
         Z = Z.val[ind]
+        if self.Fourier:
+            Z=np.abs(Z)
 
         if Z.ndim != 2:
             raise ValueError("The plotting is suited only for dim=2!")
