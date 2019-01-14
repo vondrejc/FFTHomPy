@@ -14,27 +14,30 @@ import sys
 os.nice(19)
 
 # PARAMETERS ##############################################################
-dim=3
-N=5
+dim=2
+N=1215
 material=0
-kind=1
+kind=0
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim), # size of periodic cell
             recover_sparse=1, # recalculate full material coefficients from sparse one
-            solver=dict(tol=1e-4,
-                        maxiter=10),
+            solver=dict(tol=1e-10,
+                        maxiter=50),
             )
 
 pars_sparse=pars.copy()
 kind_list=['cano','tucker','tt']
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=10, # rank of solution vector
+                          rank=50, # rank of solution vector
                           tol=None,
-                          solver=dict(tol=1e-4,
-                                      maxiter=10,# no. of iterations for a solver
-                                      divcrit=True),
+                          solver=dict(method='r', #  method could be 'Richardson' or 'Chebyshev'
+                                      adap_omega=True, # whether adapt omega in Richardson solver
+                                      eigrange = [30,1], # for Chebyshev solver
+                                      tol=1e-10,
+                                      maxiter=50,# no. of iterations for a solver
+                                      divcrit=False),
                           ))
 
 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
@@ -133,24 +136,24 @@ resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
 print('mean of solution={}'.format(resP_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
 
-print('\n== Full solution with potential by CG (Ga) ===========')
-resP_Ga=homog_Ga_full_potential(Aga, pars)
-print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+#print('\n== Full solution with potential by CG (Ga) ===========')
+#resP_Ga=homog_Ga_full_potential(Aga, pars)
+#print('mean of solution={}'.format(resP_Ga.Fu.mean()))
+#print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
 
-print('\n== SPARSE Richardson solver with preconditioner (Ga) =======================')
+print('\n== SPARSE solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
 print('mean of solution={}'.format(resS_Ga.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
 print(resS_Ga.Fu)
 print('iterations={}'.format(resS_Ga.solver['kit']))
-if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
+#if np.array_equal(pars.N, pars_sparse.N):
+#    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
 
-print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
+#print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
 
-print('\n== SPARSE Richardson solver with preconditioner (GaNi) =======================')
+print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
 resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
 print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
@@ -160,6 +163,6 @@ print('iterations={}'.format(resS_GaNi.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
     print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
-print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
+#print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
 
 print('END')

@@ -5,6 +5,7 @@ from ffthompy.general.solver import linear_solver
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index
 from ffthompy.sparse.solver import richardson as richardson_s
+from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
 
@@ -145,7 +146,7 @@ def homog_Ga_sparse(Agas, pars):
     Es=Es.fourier().enlarge(Nbar).fourier()
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
 
-    Ps=get_preconditioner(N, pars)
+    Ps=get_preconditioner_sparse(N, pars)
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -156,16 +157,23 @@ def homog_Ga_sparse(Agas, pars):
     parP={'alpha': pars.alpha,
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
-          'divcrit': pars.solver['divcrit']}
+          'divcrit': pars.solver['divcrit'],
+          'adap_omega':pars.solver['adap_omega'],
+          'eigrange':pars.solver['eigrange']
+          }
 
-    tic=Timer(name='Richardson (sparse)')
+    tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=1e-10)
     print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
     print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
     PBs=PBs2
-    Fu, ress = richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                            rank=pars.rank, tol=pars.tol)
+    if pars.solver['method'] in ['Richardson','richardson','r','R']:
+        Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
+    elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
+        Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
@@ -203,7 +211,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Es=Es.fourier().enlarge(N).fourier()
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
-    Ps=get_preconditioner(N, pars)
+    Ps=get_preconditioner_sparse(N, pars)
 
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol)
@@ -214,16 +222,24 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     parP={'alpha': pars.alpha,
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
-          'divcrit': pars.solver['divcrit']}
+          'divcrit': pars.solver['divcrit'],
+          'adap_omega':pars.solver['adap_omega'],
+          'eigrange':pars.solver['eigrange']
+          }
 
-    tic=Timer(name='Richardson (sparse)')
+    tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=1e-10)
     print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
     print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
     PBs=PBs2
-    Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                          rank=pars.rank, tol=pars.tol)
+
+    if pars.solver['method'] in ['Richardson','richardson','r','R']:
+        Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
+    elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
+        Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
