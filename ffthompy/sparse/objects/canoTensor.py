@@ -4,8 +4,6 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 
-np.set_printoptions(precision=2)
-np.set_printoptions(linewidth=999999)
 
 class CanoTensor(SparseTensorFuns):
     kind='cano'

@@ -11,7 +11,7 @@ from uq.decomposition import KL_Fourier
 
 import os
 import sys
-os.nice(19)
+
 
 # PARAMETERS ##############################################################
 dim=2
@@ -30,7 +30,8 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
 pars_sparse=pars.copy()
 kind_list=['cano','tucker','tt']
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=50, # rank of solution vector
+                          rank=10, # rank of solution vector
+                          precond_rank=10,
                           tol=None,
                           solver=dict(method='r', #  method could be 'Richardson' or 'Chebyshev'
                                       adap_omega=True, # whether adapt omega in Richardson solver
