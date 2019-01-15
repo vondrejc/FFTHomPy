@@ -59,9 +59,9 @@ def homog_Ga_full_potential(Aga, pars):
         assert(X.Fourier)
         FAX=F2(Aga*iF2(grad(X).enlarge(Nbar)))
         FAX=FAX.project(N)
-        return div(FAX)
+        return -div(FAX)
 
-    B=-div(F2(Aga(EN)).decrease(N))
+    B=div(F2(Aga(EN)).decrease(N))
     x0=Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
 
     PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
@@ -98,9 +98,9 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     def DFAFGfun(X):
         assert(X.Fourier)
         FAX=F(Agani*iF(grad(X)))
-        return div(FAX)
+        return -div(FAX)
 
-    B=-div(F(Agani(EN)))
+    B=div(F(Agani(EN)))
     x0=Tensor(N=N, shape=(), Fourier=True) # initial approximation to solvers
 
     PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
