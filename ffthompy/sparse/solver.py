@@ -71,7 +71,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         else:
             p = -(c*c/4)*w*w
             w = 1/(d-c*c*w/4)
-        v = r - p*v
+        v = (r - p*v).truncate(rank=rank, tol=tol)
         x = (x_prev + w*v)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
         r = B - Afun(x)
