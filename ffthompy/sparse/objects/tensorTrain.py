@@ -157,7 +157,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
         return res
 
-    def mean(self):
+    def mean(self, normal_domain=True):
         """
         compute the mean of all elements of the tensor
         """
@@ -167,7 +167,7 @@ class TensorTrain(vector,SparseTensorFuns):
         for i in range(self.d):
             shape=np.ones((self.d+1), dtype=np.int32)
             shape[i:i+2]=self.r[i:i+2]
-            if self.Fourier:
+            if self.Fourier and normal_domain:
                 cl_mean[i]=(cl[i][:, self.mean_index()[i],:]).reshape(tuple(shape)).real
             else:
                 cl_mean[i]=np.mean(cl[i], axis=1).reshape(tuple(shape))
@@ -201,6 +201,12 @@ class TensorTrain(vector,SparseTensorFuns):
         assert(X.Fourier==Y.Fourier)
         XY=X*Y
         return XY.mean()
+
+    def inner(self, Y):
+        X=self
+        assert(X.Fourier==Y.Fourier)
+        XY=X*Y
+        return XY.mean(normal_domain=False)*np.prod(XY.N)
 
     def __mul__(self, other):
 
@@ -404,7 +410,7 @@ class TensorTrain(vector,SparseTensorFuns):
         cl=self.to_list(self)
         return TensorTrain(name=name, core=cl, Fourier=self.Fourier, fft_form=self.fft_form)
 
-    def norm(self):
+    def norm(self, normal_domain=True):
         if self.Fourier and self.fft_form=='sr':
             return vector.norm(self.set_fft_form('c',copy=True))
         else:

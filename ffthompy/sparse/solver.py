@@ -119,12 +119,16 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
 
-        omega= beta.inner(residuum)/norm(beta)**2
-        if abs(omega)<1e-1:
-        #beta and residuum could be orthogonal, in this case omega is very small
-        #and x is trapped, the convergence stopped.
-        #to escape from this pitfall, use another approximate of omega.
+        if par['approx_omega']:
             omega=norm_res/norm(beta)
+        else:
+            omega= beta.inner(residuum)/norm(beta)**2
+
+            if abs(omega)<1e-1:
+            #beta and residuum could be orthogonal, in this case omega is very small
+            #and x is trapped, the convergence stopped.
+            #to escape from this pitfall, use another approximate of omega.
+                omega=norm_res/norm(beta)
 
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
@@ -140,10 +144,10 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
             break
         res['norm_res'].append(norm_res)
 
-#        print(res['kit'])
-#        print("omega is  :",omega)
-#        print(res['norm_res'][res['kit']])
-#        print
+        print(res['kit'])
+        print("omega is  :",omega)
+        print(res['norm_res'][res['kit']])
+        print
 
         beta=Afun(residuum)
 

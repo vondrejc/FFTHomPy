@@ -245,7 +245,7 @@ class Tucker(CanoTensor):
 
         return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True, Fourier=self.Fourier,fft_form=self.fft_form)
 
-    def norm(self, ord='core'):
+    def norm(self, ord='core', normal_domain=True):
 
         if ord=='fro':
             R=self*self.conj()
@@ -271,8 +271,16 @@ class Tucker(CanoTensor):
         elif ord=='inf':
             pass
         elif ord=='core':
-            if self.Fourier:
+            if self.Fourier and normal_domain:
+                # this is to keep norm the same as in the normal domain.
+                # sometime, e.g. for "sr" type FFT tensor, to keep
+                # aligned with its inner product definition for iterative solver,
+                # its norm is not kept the same as its normal domain counterpart.
                 newObj=self.set_fft_form('c',copy=True)
+            elif self.Fourier and not normal_domain:
+                newObj=self
+                #The Fourier basis is not orthogonal
+                newObj.orthogonal=False
             else:
                 newObj=self
 
@@ -288,12 +296,12 @@ class Tucker(CanoTensor):
 
         return val
 
-    def mean(self):
+    def mean(self, normal_domain=True):
         basis_mean=[None]*self.order
         mean_kronecker=1
 
         for k in range(self.order):
-            if self.Fourier:
+            if self.Fourier and normal_domain: #want the mean in normal domain
                 basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
             else:
                 basis_mean[k]=np.mean(self.basis[k], axis=1)

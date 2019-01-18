@@ -158,6 +158,7 @@ def homog_Ga_sparse(Agas, pars):
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
           'divcrit': pars.solver['divcrit'],
+          'approx_omega': pars.solver['approx_omega'],
           'eigrange':pars.solver['eigrange']
           }
 
@@ -222,6 +223,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
           'divcrit': pars.solver['divcrit'],
+          'approx_omega': pars.solver['approx_omega'],
           'eigrange':pars.solver['eigrange']
           }
 
