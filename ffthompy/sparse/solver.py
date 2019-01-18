@@ -144,10 +144,10 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
             break
         res['norm_res'].append(norm_res)
 
-        print(res['kit'])
-        print("omega is  :",omega)
-        print(res['norm_res'][res['kit']])
-        print
+#        print(res['kit'])
+#        print("omega is  :",omega)
+#        print(res['norm_res'][res['kit']])
+#        print
 
         beta=Afun(residuum)
 
