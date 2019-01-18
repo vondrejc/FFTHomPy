@@ -158,7 +158,6 @@ def homog_Ga_sparse(Agas, pars):
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
           'divcrit': pars.solver['divcrit'],
-          'adap_omega':pars.solver['adap_omega'],
           'eigrange':pars.solver['eigrange']
           }
 
@@ -177,7 +176,7 @@ def homog_Ga_sparse(Agas, pars):
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
-    print('norm of residuum={}'.format(ress['norm_res']))
+#    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
 #     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu)).full())))
@@ -223,7 +222,6 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
           'maxiter': pars.solver['maxiter'],
           'tol': pars.solver['tol'],
           'divcrit': pars.solver['divcrit'],
-          'adap_omega':pars.solver['adap_omega'],
           'eigrange':pars.solver['eigrange']
           }
 
@@ -243,7 +241,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
-    print('norm of residuum={}'.format(ress['norm_res']))
+#    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
     print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
 #     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))

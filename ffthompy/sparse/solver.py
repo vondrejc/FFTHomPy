@@ -1,7 +1,6 @@
 import numpy as np
 from ffthompy import Timer
 from ffthompy.sparse.objects import SparseTensor
-from scipy.optimize import minimize_scalar
 
 def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
     """
@@ -105,40 +104,49 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
         x=B*omega
     else:
         x=x0
-
     if norm is None:
-        norm=lambda X: X.norm()
+        norm=lambda X: X.norm(normal_domain=False)
 
-    res['norm_res'].append(norm(B))
+    residuum= B-Afun(x)
+    res['norm_res'].append(norm(residuum))
+    beta=Afun(residuum)
 
     M=SparseTensor(kind=x.kind, val=np.ones(x.N.size*[3,]), rank=1) # constant field
     FM=M.fourier().enlarge(x.N)
 
-    norm_res=1e15
+    norm_res= res['norm_res'][res['kit']]
 
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
-        residuum= B-Afun(x)
-        norm_res = norm(residuum)
-        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
-            break
 
-        if par['adap_omega'] and norm_res >= res['norm_res'][res['kit']-1]:
-            beta=Afun(residuum)
-            ratio= norm_res/beta.norm()  # for bounds of omega search
-            def objFunc(omega):
-                return (residuum - beta*omega).norm()
-
-            omega = minimize_scalar(objFunc,method='Bounded',bounds=[-ratio,ratio]).x
+        omega= beta.inner(residuum)/norm(beta)**2
+        if abs(omega)<1e-1:
+        #beta and residuum could be orthogonal, in this case omega is very small
+        #and x is trapped, the convergence stopped.
+        #to escape from this pitfall, use another approximate of omega.
+            omega=norm_res/norm(beta)
 
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
 
+
+        if res['kit']%10==0:
+            residuum= B-Afun(x)
+        else:
+            residuum = (residuum - beta*omega).truncate(rank=rank, tol=tol)
+
+        norm_res = norm(residuum)
+        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+            break
         res['norm_res'].append(norm_res)
+
 #        print(res['kit'])
 #        print("omega is  :",omega)
 #        print(res['norm_res'][res['kit']])
 #        print
+
+        beta=Afun(residuum)
+
     return x, res
 
 def richardson_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):

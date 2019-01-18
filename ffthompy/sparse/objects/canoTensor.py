@@ -4,7 +4,6 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 
-
 class CanoTensor(SparseTensorFuns):
     kind='cano'
 
@@ -73,7 +72,6 @@ class CanoTensor(SparseTensorFuns):
             for i in range(R.order):
                 R.basis[i]= R.fft(R.basis[i], R.N[i])
             R.orthogonal=False # FFT modes makes the basis no longer orthonormal
-
         else:
             R._set_fft(fft_form)
 
@@ -201,7 +199,7 @@ class CanoTensor(SparseTensorFuns):
 
         return self.copy(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True)
 
-    def norm(self, ord='core'):
+    def norm(self, ord='core', normal_domain=True):
         if ord=='fro':   # this is the same as using the 'core' option if the tensor is orthogonalised.
             R=self*self.conj()
             val=0.
@@ -216,8 +214,16 @@ class CanoTensor(SparseTensorFuns):
         elif ord=='inf':
             pass
         elif ord=='core':
-            if self.Fourier:
+            if self.Fourier and normal_domain:
+                # this is to keep norm the same as in the normal domain.
+                # sometime, e.g. for "sr" type FFT tensor, to keep
+                # aligned with its inner product definition for iterative solver,
+                # its norm is not kept the same as its normal domain counterpart.
                 newObj=self.set_fft_form('c',copy=True)
+            elif self.Fourier and not normal_domain:
+                newObj=self
+                #The Fourier basis is not orthogonal
+                newObj.orthogonal=False
             else:
                 newObj=self
 
@@ -232,19 +238,19 @@ class CanoTensor(SparseTensorFuns):
             raise NotImplementedError()
         return val
 
-    def mean(self):
+    def mean(self, normal_domain=True):
 
         basis_mean=[None]*self.order
         val=self.core.copy()
 
         for k in range(self.order):
-            if self.Fourier:
+            if self.Fourier and normal_domain: #want the mean in normal domain
                 basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
             else:
                 basis_mean[k]=np.mean(self.basis[k], axis=1)
 
         for k in range(self.order):
-            val *= basis_mean[k]
+            val *= basis_mean[k].real
 
         return np.sum(val)
 
@@ -327,7 +333,12 @@ class CanoTensor(SparseTensorFuns):
         """Element-wise complex conjugate"""
         basis=[]
         for ii in range(self.order):
-            basis.append(self.basis[ii].conj())
+            if self.Fourier and self.fft_form=='sr':
+                conj_basis=np.copy(self.basis[ii])
+                conj_basis[:,2::2]= -conj_basis[:,2::2] # reverse the sign of its img part.
+                basis.append(conj_basis)
+            else:
+                basis.append(self.basis[ii].conj())
         res=self.copy()
         res.basis=basis
         return res
@@ -344,6 +355,25 @@ class CanoTensor(SparseTensorFuns):
         assert(X.Fourier==Y.Fourier)
         XY = X*Y
         return XY.mean()
+
+    def inner(self, Y):
+        # the difference of this function and scal() is that this function
+        # computes inner product in the domain where "self" and "Y" are in, rather than
+        # always go back to the normal domain as scal() does.
+        # and Hadamard product of 'sr' FFT tensor is doned as common tensor.
+        # these two functions could be combined later.
+        assert(self.Fourier==Y.Fourier)
+        #product = self*Y ## cannot use this because normal mul() treat 'sr' type differently
+
+        core=np.kron(self.core, Y.core)
+        newBasis=[None]*self.order
+        for d in range(0, self.order):
+            newBasis[d]=np.multiply(self.basis[d][:, newaxis, :], Y.basis[d][newaxis, :, :])
+            newBasis[d]=np.reshape(newBasis[d], (-1, self.N[d]))
+
+        product=self.copy(name=self.name+'*'+Y.name, core=core, basis=newBasis,orthogonal=False).truncate(rank=min(self.N))
+
+        return product.mean(normal_domain=False)*np.prod(self.N)
 
     def repeat(self, M):
         """
@@ -553,6 +583,38 @@ if __name__=='__main__':
     print(cf)
     print(cf.fourier())
 
+## test inner product
+    N1=200
+    N2=500
+
+    T1=np.random.rand(N1,N2)
+    T2=np.random.rand(N1,N2)
+
+    a = CanoTensor(val=T1,name='a' )
+    b = CanoTensor(val=T2,name='b' )
+
+    M1=np.sum((T1*T2))
+    M2=a.inner(b)
+
+    print("inner product error is:",M1-M2)
+
+### test accuracy of scalor product
+#    N1=1000
+#    N2=500
+#
+#    T1=np.random.rand(N1,N2)
+#    T2=np.random.rand(N1,N2)
+#
+#    a = CanoTensor(val=T1,name='a' )
+#    b = CanoTensor(val=T2,name='b' )
+#
+#    M1=np.mean((T1*T2))
+#
+#    c=(a*b).truncate(rank=500)
+#
+#    M2=c.mean()
+#
+#    print(M1-M2)
 
 
 #    ### test enlarge#####
