@@ -6,6 +6,7 @@ from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index
 from ffthompy.sparse.solver import richardson as richardson_s
 from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
+from ffthompy.sparse.solver import minimal_residual as minimal_residual_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
 
@@ -174,6 +175,9 @@ def homog_Ga_sparse(Agas, pars):
     elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
         Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                               rank=pars.rank, tol=pars.tol)
+    elif pars.solver['method'] in ['minimal_residual','mr','m','M']:
+        Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
@@ -239,6 +243,9 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
                               rank=pars.rank, tol=pars.tol)
     elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
         Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
+                              rank=pars.rank, tol=pars.tol)
+    elif pars.solver['method'] in ['minimal_residual','mr','m','M']:
+        Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                               rank=pars.rank, tol=pars.tol)
     tic.measure()
     print('iterations of solver={}'.format(ress['kit']))

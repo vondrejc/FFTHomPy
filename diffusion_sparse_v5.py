@@ -14,10 +14,10 @@ import sys
 
 
 # PARAMETERS ##############################################################
-dim=3
-N=3*3**2
+dim=2
+N=25*3**2
 material=0
-kind=1
+kind=0
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
@@ -30,11 +30,12 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
 pars_sparse=pars.copy()
 kind_list=['cano','tucker','tt']
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=20, # rank of solution vector
-                          precond_rank=10,
+                          rank=25, # rank of solution vector
+                          precond_rank=25,
                           tol=None,
-                          solver=dict(method='r', #  method could be 'Richardson' or 'Chebyshev'
-                                      approx_omega=False, #inner product of tuckers could be slow
+                          solver=dict(method='mr', #  method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
+                                      approx_omega=False, # inner product of tuckers could be so slow
+                                                          # that using an approximate omega could gain.
                                       eigrange = [0.6,50], # for Chebyshev solver
                                       tol=1e-10,
                                       maxiter=50,# no. of iterations for a solver
@@ -152,18 +153,18 @@ print('iterations={}'.format(resS_Ga.solver['kit']))
 #    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
 
-print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
-
-print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
-resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
-
-print(resS_GaNi.Fu)
-print('iterations={}'.format(resS_GaNi.solver['kit']))
-if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
-print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
-#print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
+##print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
+#
+#print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
+#resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+#print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
+#print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
+#
+#print(resS_GaNi.Fu)
+#print('iterations={}'.format(resS_GaNi.solver['kit']))
+#if np.array_equal(pars.N, pars_sparse.N):
+#    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
+#print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
+##print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
 
 print('END')

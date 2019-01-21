@@ -93,15 +93,12 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         res['norm_res'] = 0
     return x, res
 
-def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
-    if isinstance(par['alpha'], float):
-        omega=1./par['alpha']
-    else:
-        raise ValueError()
+def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+
     res={'norm_res': [],
            'kit': 0}
     if x0 is None:
-        x=B*omega
+        x=B
     else:
         x=x0
     if norm is None:
@@ -120,9 +117,9 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
         res['kit']+=1
 
         if par['approx_omega']:
-            omega=norm_res/norm(beta)
+            omega=norm_res/norm(beta) # approximate omega
         else:
-            omega= beta.inner(residuum)/norm(beta)**2
+            omega= beta.inner(residuum)/norm(beta)**2 #exact formula
 
             if abs(omega)<1e-1:
             #beta and residuum could be orthogonal, in this case omega is very small
@@ -133,8 +130,7 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
 
-
-        if res['kit']%10==0:
+        if res['kit']%10==0: #every 10 iteration compute once the true residuum
             residuum= B-Afun(x)
         else:
             residuum = (residuum - beta*omega).truncate(rank=rank, tol=tol)
@@ -150,6 +146,41 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
 #        print
 
         beta=Afun(residuum)
+
+    return x, res
+
+def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+    if isinstance(par['alpha'], float):
+        omega=1./par['alpha']
+    else:
+        raise ValueError()
+    res={'norm_res': [],
+           'kit': 0}
+    if x0 is None:
+        x=B*omega
+    else:
+        x=x0
+
+    if norm is None:
+        norm=lambda X: X.norm()
+
+    res['norm_res'].append(norm(B))
+
+    M=SparseTensor(kind=x.kind, val=np.ones(x.N.size*[3,]), rank=1) # constant field
+    FM=M.fourier().enlarge(x.N)
+
+    norm_res=1e15
+    while (norm_res>par['tol'] and res['kit']<par['maxiter']):
+        res['kit']+=1
+        residuum= B-Afun(x)
+        norm_res = norm(residuum)
+        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+            break
+
+        x=(x+residuum*omega)
+        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+
+        res['norm_res'].append(norm_res)
 
     return x, res
 
