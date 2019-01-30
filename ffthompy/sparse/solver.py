@@ -121,12 +121,6 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         else:
             omega= beta.inner(residuum)/norm(beta)**2 #exact formula
 
-            if abs(omega)<1e-1:
-            #beta and residuum could be orthogonal, in this case omega is very small
-            #and x is trapped, the convergence stopped.
-            #to escape from this pitfall, use another approximate of omega.
-                omega=norm_res/norm(beta)
-
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
 
