@@ -9,6 +9,7 @@ from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
 from ffthompy.sparse.solver import minimal_residual as minimal_residual_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
+#import time
 
 
 def homog_Ga_full(Aga, pars):
@@ -37,7 +38,7 @@ def homog_Ga_full(Aga, pars):
     tic.measure()
 
     AH=Aga(X+EN)*(X+EN)
-    return Struct(AH=AH, X=X)
+    return Struct(AH=AH, X=X, time=tic.vals[0][1])
 
 def homog_Ga_full_potential(Aga, pars):
 
@@ -67,10 +68,12 @@ def homog_Ga_full_potential(Aga, pars):
 
     PDFAFGPfun=lambda Fx: P*DFAFGfun(P*Fx)
     PB=P*B
+
     tic=Timer(name='CG (potential)')
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
+
     print('iterations of CG={}'.format(info['kit']))
     print('norm of residuum={}'.format(info['norm_res']))
 
@@ -79,7 +82,7 @@ def homog_Ga_full_potential(Aga, pars):
 
     AH=Aga(X+EN)*(X+EN)
 
-    return Struct(AH=AH, e=X, Fu=Fu, info=info)
+    return Struct(AH=AH, e=X, Fu=Fu, info=info,  time=tic.vals[0][1])
 
 def homog_GaNi_full_potential(Agani, Aga, pars):
 
@@ -119,7 +122,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
     XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
     AH=Aga(XEN)*XEN
-    return Struct(AH=AH, Fu=Fu, info=info)
+    return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][1])
 
 def homog_Ga_sparse(Agas, pars):
     Nbar=Agas.N
@@ -179,6 +182,7 @@ def homog_Ga_sparse(Agas, pars):
         Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                               rank=pars.rank, tol=pars.tol)
     tic.measure()
+
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
 #    print('norm of residuum={}'.format(ress['norm_res']))
@@ -190,7 +194,7 @@ def homog_Ga_sparse(Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX, method='full')
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][1])
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
     N=Aganis.N
@@ -261,7 +265,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX, method='full')
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals)
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][1])
 
 def get_preconditioner(N, pars):
     hGrad=grad_tensor(N, pars.Y)
@@ -274,8 +278,9 @@ def get_preconditioner_sparse(N, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N, fft_form='c')]=1.
     Prank=np.min([10, N[0]-1])
+#    Prank=pars.rank
     val=1./k2
-    P=Tensor(name='P', val=val, N=N, order=0, Fourier=True, fft_form='c')
+#    P=Tensor(name='P', val=val, N=N, order=0, Fourier=True, fft_form='c')
     Ps=SparseTensor(name='Ps', kind=pars.kind, val=val, rank=Prank, Fourier=True, fft_form='c')
     Ps.set_fft_form()
     return Ps
