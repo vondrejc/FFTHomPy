@@ -3,15 +3,21 @@ from ffthompy.materials import Material
 from ffthompy.sparse.objects import SparseTensor
 from ffthompy.trigpol import Grid
 
+
 class SparseMaterial(Material):
+
     def __init__(self, material_conf, kind='tt'):
         Material.__init__(self, material_conf)
         self.mat=Material(material_conf)
         self.kind=kind
 
-    def get_A_GaNi(self, N, primaldual='primal', k=None, tol=None):
-        A_GaNi=self.mat.get_A_GaNi(N, primaldual='primal')
-        return SparseTensor(kind=self.kind, val=A_GaNi.val[0, 0], rank=k, name='A_GaNi')
+    def get_A_GaNi(self, N, P=None, primaldual='primal', k=None, tol=None):
+        if P is None:
+            P=self.conf['P']
+
+        A_GaNi=self.mat.get_A_GaNi(P, primaldual='primal')
+        A_GaNis=SparseTensor(kind=self.kind, val=A_GaNi.val[0, 0], rank=k, name='A_GaNi')
+        return A_GaNis.repeat(N)
 
     def get_A_Ga(self, Nbar, primaldual='primal', P=None, tol=None, k=None):
         if P is None and 'P' in self.conf:
@@ -42,6 +48,7 @@ class SparseMaterial(Material):
         WFAs.name='Agas'
         return WFAs
 
+
 def tile(FAs, N):
     assert(FAs.Fourier is True)
 
@@ -61,6 +68,7 @@ def tile(FAs, N):
 
         return SparseTensor(kind=kind, core=cl_new, name=FAs.name+'_tiled',
                             Fourier=FAs.Fourier, fft_form=FAs.fft_form)
+
 
 def get_weights_con(h, Nbar, Y, kind):
     """

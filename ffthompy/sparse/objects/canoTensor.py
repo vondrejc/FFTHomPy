@@ -387,6 +387,7 @@ class CanoTensor(SparseTensorFuns):
         if isinstance(M, int):
             M=M*np.ones((self.order,), dtype=int)
 
+        M = np.array(M)
         if ((M.astype(float)/self.N)%1).any()!=0 :
             raise NotImplementedError("M is not a multiple of the old size N")
 

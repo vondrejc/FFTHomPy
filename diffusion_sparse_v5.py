@@ -15,7 +15,7 @@ import sys
 
 # PARAMETERS ##############################################################
 dim=2
-N=25*3**2
+N=5*3*1
 material=0
 kind=0
 
@@ -60,7 +60,7 @@ if material in [0]:
               'params': [0.6*np.ones(dim), ''], # size of sides
               'vals': [10*np.eye(dim), 1.*np.eye(dim)],
               'Y': np.ones(dim),
-              'P': pars.N,
+              'P': dim*(5,),
               'order': 0, }
     pars_sparse.update(Struct(matrank=2))
 
