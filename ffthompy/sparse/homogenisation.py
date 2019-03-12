@@ -76,6 +76,8 @@ def homog_Ga_full_potential(Aga, pars):
 
     print('iterations of CG={}'.format(info['kit']))
     print('norm of residuum={}'.format(info['norm_res']))
+    R=PB-PDFAFGPfun(iPU)
+    print('norm of residuum={} (from definition)'.format(R.norm()))
 
     Fu=P*iPU
     X=iF2(grad(Fu).project(Nbar))
