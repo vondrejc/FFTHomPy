@@ -70,7 +70,6 @@ def set_labels():
                         }
     return lines, labels
 
-
 def copy_files(src, dest, files='all'):
     import os
     from shutil import copy

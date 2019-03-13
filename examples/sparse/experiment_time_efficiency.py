@@ -7,10 +7,9 @@ from ffthompy.materials import Material
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
-from uq.decomposition import KL_Fourier
+
 from material_setting import getMat_conf,recover_Aga,recover_Agani
 
-#import matplotlib
 import matplotlib.pylab as plt
 import os
 

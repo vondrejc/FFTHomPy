@@ -4,7 +4,7 @@ import numpy as np
 import os
 import pickle
 
-from ffthompy import Timer, Struct
+from ffthompy import Struct
 from ffthompy.materials import Material
 
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
@@ -14,17 +14,11 @@ from ffthompy.sparse.materials import SparseMaterial
 from material_setting import getMat_conf,recover_Aga,recover_Agani
 from plots import plot_error, plot_memory, plot_residuals
 
-
-
 os.nice(19)
-
-
-
 #######################################################
 Ns = {'2': [81,243,729,1215],#[45,81,243,729,2187]
       '3': [27,45,81,135]}
-Ns = {'2': [81,243],
-      '3': [9,15]}
+
 pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
 
 kinds = {'2': [0,2],

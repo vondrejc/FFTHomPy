@@ -34,7 +34,7 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                           tol=None,
                           N=dim*(1*N,),
                           solver=dict(method='mr', #  method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                      approx_omega=False, # inner product of tuckers could be so slow
+                                      approx_omega=True, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
                                       eigrange=[0.6,50], # for Chebyshev solver
                                       tol=1e-10,

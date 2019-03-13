@@ -1,9 +1,6 @@
-
 from __future__ import division, print_function
 import numpy as np
-from ffthompy import Timer, Struct
-from ffthompy.materials import Material
-from ffthompy.sparse.materials import SparseMaterial
+from ffthompy import Struct
 from uq.decomposition import KL_Fourier
 
 
@@ -89,8 +86,6 @@ def getMat_conf(material, pars, pars_sparse):
     return pars, pars_sparse, mat_conf
 
 
-    ########### generating material coefficients
-
 def recover_Aga(Aga,Agas):
 
     print('recovering full material tensors for Ga...')
@@ -106,9 +101,6 @@ def recover_Agani(Agani,Aganis):
 
     print('Norm of difference in mat properties: {}'.format(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val)))
     return Agani.val
-
-
-
 
 
 def getGaData(mat,mats, pars, pars_sparse):
