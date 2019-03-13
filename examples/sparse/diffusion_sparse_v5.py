@@ -7,17 +7,17 @@ from ffthompy.materials import Material
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
-from material_setting import getMat_conf,recover_Aga,recover_Agani
+from .material_setting import getMat_conf,recover_Aga,recover_Agani
 
 import os
 import sys
 
 
 # PARAMETERS ##############################################################
-dim=3
+dim=2
 N=5*3**1
 material=0
-kind=2
+kind=0
 kind_list=['cano','tucker','tt']
 
 pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
@@ -36,7 +36,7 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                           solver=dict(method='mr', #  method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
                                       approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
-                                      eigrange = [0.6,50], # for Chebyshev solver
+                                      eigrange=[0.6,50], # for Chebyshev solver
                                       tol=1e-10,
                                       maxiter=50,# no. of iterations for a solver
                                       divcrit=False),
@@ -70,10 +70,10 @@ resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
 print('mean of solution={}'.format(resP_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
 
-#print('\n== Full solution with potential by CG (Ga) ===========')
-#resP_Ga=homog_Ga_full_potential(Aga, pars)
-#print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-#print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+print('\n== Full solution with potential by CG (Ga) ===========')
+resP_Ga=homog_Ga_full_potential(Aga, pars)
+print('mean of solution={}'.format(resP_Ga.Fu.mean()))
+print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
 
 print('\n== SPARSE solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
@@ -85,18 +85,18 @@ print('iterations={}'.format(resS_Ga.solver['kit']))
 #    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
 
-##print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
-#
-#print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
-#resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-#print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
-#print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
-#
-#print(resS_GaNi.Fu)
-#print('iterations={}'.format(resS_GaNi.solver['kit']))
-#if np.array_equal(pars.N, pars_sparse.N):
-#    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
-#print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
-##print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
+#print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
+
+print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
+resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
+print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
+
+print(resS_GaNi.Fu)
+print('iterations={}'.format(resS_GaNi.solver['kit']))
+if np.array_equal(pars.N, pars_sparse.N):
+    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
+print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
+#print('memory efficiency = {0}/{1} = {2}'.format(resS_GaNi.Fu.memory, resP_GaNi.Fu.val.size, resS_GaNi.Fu.memory/resP_GaNi.Fu.val.size))
 
 print('END')
