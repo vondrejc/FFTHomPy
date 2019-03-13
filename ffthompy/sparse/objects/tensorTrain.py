@@ -226,7 +226,11 @@ class TensorTrain(vector,SparseTensorFuns):
     def inner(self, Y):
         X=self
         assert(X.Fourier==Y.Fourier)
-        XY=X*Y
+#        XY=X*Y
+        res_vec=vector.__mul__(X, Y)
+        XY=TensorTrain(vectorObj=res_vec,
+                        Fourier=self.Fourier, fft_form=self.fft_form)
+
         return XY.mean(normal_domain=False)*np.prod(XY.N)
 
     def __mul__(self, other):
