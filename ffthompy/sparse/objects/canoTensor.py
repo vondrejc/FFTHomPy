@@ -377,7 +377,7 @@ class CanoTensor(SparseTensorFuns):
 
     def repeat(self, M):
         """
-        Enhance the tensor size from to N to M, by repeating all elements by M/N times.
+        Enhance the tensor size from N to M, by repeating all elements by M/N times.
 
         :param M: the new size .
         :type A: integer or list of integers

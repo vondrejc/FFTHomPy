@@ -54,6 +54,21 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
 if __name__=='__main__':
 
     print
+    print('----testing "Repeat" function ----')
+    print
+
+    v1 = np.random.rand(3, 3,3)
+
+    tt = SparseTensor(kind='tt', val=v1)
+   # tt.fourier()
+    print(tt.full())
+    tt.repeat(6)
+
+    print(tt.full())
+
+
+
+    print
     print('----testing wrapper function ----')
     print
 

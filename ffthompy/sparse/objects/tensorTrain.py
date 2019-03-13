@@ -57,6 +57,7 @@ class TensorTrain(vector,SparseTensorFuns):
     def dim(self):
         return self.d
 
+
     def fourier(self, real_output=False):
         "(inverse) discrete Fourier transform"
 
@@ -102,6 +103,26 @@ class TensorTrain(vector,SparseTensorFuns):
             R._set_fft(fft_form)
 
         return R
+
+    def repeat(self, M):
+        """
+        Enhance the tensor size from N to M, by repeating all elements by M/N times.
+        """
+        #if isinstance(M, int):
+         #   M=M*np.ones((self.order,), dtype=int)
+        M = np.array(M)
+        if M is self.N:
+            return self
+
+        res=self.copy()
+        cl = res.to_list(res)
+        clf = [None] * self.d
+        for i in range(self.d):
+            clf[i] =np.repeat(cl[i], M[i]/self.n[i], axis=1)
+
+        res=res.from_list(clf)
+
+        return res
 
     def enlarge(self, M):
         assert(self.Fourier is True)
@@ -417,6 +438,9 @@ class TensorTrain(vector,SparseTensorFuns):
             return vector.norm(self)
 
 if __name__=='__main__':
+
+
+
 
     print
     print('----testing "Fourier" function ----')

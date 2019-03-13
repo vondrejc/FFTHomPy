@@ -27,8 +27,8 @@ Ns = {'2': [81,243],
       '3': [9,15]}
 pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
 
-kinds = {'2': [0],
-         '3': [1],}
+kinds = {'2': [0,2],
+         '3': [1,2],}
 pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
 
 material_list = [0,2]
@@ -50,7 +50,7 @@ if not os.path.exists('data_for_plot'):
 pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
 
 
-for dim in [3]:
+for dim in [2]:
     for grid in range(len(Ns['{}'.format(dim)])):
         N = Ns['{}'.format(dim)][grid]
 

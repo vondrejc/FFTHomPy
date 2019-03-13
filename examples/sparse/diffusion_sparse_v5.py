@@ -15,7 +15,7 @@ import sys
 
 # PARAMETERS ##############################################################
 dim=3
-N=9#5*3*1
+N=5*3**1
 material=0
 kind=2
 kind_list=['cano','tucker','tt']
