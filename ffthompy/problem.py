@@ -91,7 +91,7 @@ class Problem(object):
         if self.physics in ['scalar', 'elasticity']:
             print('\nHomogenized matrices')
             for primaldual in self.solve['primaldual']:
-                for key, val in output['mat_'+primaldual].items():
+                for key, val in list(output['mat_'+primaldual].items()):
                     print(key)
                     print(val)
 
@@ -132,10 +132,10 @@ class Problem(object):
         ss += '    dim = {} (dimension)\n'.format(self.dim)
         ss += '    Y = {} (PUC size)\n'.format(self.Y)
         ss += '    material:\n'
-        for key, val in self.material.items():
+        for key, val in list(self.material.items()):
             ss += '        {0} : {1}\n'.format(key, str(val))
         ss += '    solve:\n'
-        for key, val in self.solve.items():
+        for key, val in list(self.solve.items()):
             ss += '        {0} : {1}\n'.format(key, str(val))
         return ss
 

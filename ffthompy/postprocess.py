@@ -36,7 +36,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             ValueError()
 
         name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
-        print('calculating: ' + name)
+        print(('calculating: ' + name))
 
         AH = assembly_matrix(A, solutions)
 
@@ -65,7 +65,7 @@ def assembly_matrix(Afun, solutions):
         sol = solutions
 
     AH = np.zeros([dim, dim])
-    for ii, jj in itertools.product(range(dim), repeat=2):
+    for ii, jj in itertools.product(list(range(dim)), repeat=2):
         AH[ii, jj] = Afun(sol[ii]) * sol[jj]
     return AH
 

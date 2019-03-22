@@ -1,6 +1,6 @@
 """Basic methods for trigonometric polynomials."""
 
-from __future__ import division
+
 import numpy as np
 
 fft_form_default='r' # real input data

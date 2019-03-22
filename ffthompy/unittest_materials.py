@@ -20,7 +20,7 @@ class Test_materials(unittest.TestCase):
         for dim in [2,3]: #[2, 3]:
             for mat in ['square','pyramid']: #,'square'
                 N = dim*(5,)
-                print('...checking dim={}; material="{}"'.format(dim,mat))
+                print(('...checking dim={}; material="{}"'.format(dim,mat)))
                 materials=dict(
                     square0={'inclusions': ['square', 'otherwise'],
                               'positions': [np.zeros(dim), ''],

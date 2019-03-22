@@ -90,7 +90,7 @@ class Material():
                 Wraw = get_weights_lin(h, Nbar, self.Y)
 
             val = np.zeros(vals.shape+tuple(Nbar))
-            for m,n in itertools.product(*(range(d) for d in vals.shape)):
+            for m,n in itertools.product(*(list(range(d)) for d in vals.shape)):
                 hAM0 = np.prod(P)*cfftnc(vals[m, n], P)
                 if np.allclose(P, Nbar):
                     hAM = hAM0
