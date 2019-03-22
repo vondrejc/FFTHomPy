@@ -100,8 +100,8 @@ class Tucker(CanoTensor):
         L1=[None]*self.order
         L2=[None]*self.order
         for d in range(self.order):
-            L1[d]=range(X.r[d])
-            L2[d]=range(X.r[d],r_new[d])
+            L1[d]=list(range(X.r[d]))
+            L2[d]=list(range(X.r[d],r_new[d]))
 
         X_locations=np.ix_(*L1)
         Y_locations=np.ix_(*L2)
@@ -228,14 +228,14 @@ class Tucker(CanoTensor):
             rank=np.zeros((self.order), dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
             sorted_norm=[]
-            ind=range(self.order)
+            ind=list(range(self.order))
             for i in ind:
                 sorted_norm.append(np.sum(abs(core), axis=tuple(np.setdiff1d(ind, i))))
                 rank[i]=np.searchsorted(np.cumsum(sorted_norm[i])/np.sum(sorted_norm[i]), 1.0-tol[i])+1
 
         L=[None]*self.order
         for d in range(self.order):
-            L[d]=range(rank[d])
+            L[d]=list(range(rank[d]))
 
         part_taken_ind=np.ix_(*L)
         core=core[part_taken_ind] # truncate the core
@@ -252,7 +252,7 @@ class Tucker(CanoTensor):
             val=0.
             L=[None]*R.order
             for d in range(R.order):
-                L[d]=range(R.r[d])
+                L[d]=list(range(R.r[d]))
 
             ind=np.meshgrid(*L)
             ind=np.array(ind)
@@ -317,9 +317,9 @@ class Tucker(CanoTensor):
 
 if __name__=='__main__':
 
-    print
+    print()
     print('----testing "repeat" function ----')
-    print
+    print()
 #    n=6
 #    T1= np.zeros((n,n))
 #    T1[n/3:2*n/3, n/3:2*n/3]=1
@@ -355,8 +355,8 @@ if __name__=='__main__':
     c2=T1*T2
 
     print('testing multiplication...')
-    print(np.linalg.norm(c.full()-c2))
-    print(np.linalg.norm(c.full()-c2)/np.linalg.norm(c2))
+    print((np.linalg.norm(c.full()-c2)))
+    print((np.linalg.norm(c.full()-c2)/np.linalg.norm(c2)))
 
     b=a.repeat(np.array([8, 10]))
     print (b)
@@ -367,9 +367,9 @@ if __name__=='__main__':
 
     a3=a.project([5, 7])
 
-    print
+    print()
     print('----testing tucker basic operations ----')
-    print
+    print()
     N=np.array([3, 4])
     a=Tucker(name='a', r=np.array([3, 4]), N=N, randomise=True)
     b=Tucker(name='b', r=np.array([5, 6]), N=N, randomise=True)
@@ -382,20 +382,20 @@ if __name__=='__main__':
 
     c2=a.full()+b.full()
     print('testing addition...')
-    print(np.linalg.norm(c.full()-c2)/np.linalg.norm(c2))
+    print((np.linalg.norm(c.full()-c2)/np.linalg.norm(c2)))
 
     c_ortho=c.orthogonalise()
     print('testing addition and then orthogonalise ...')
-    print(np.linalg.norm(c.full()-c_ortho.full())/np.linalg.norm(c_ortho.full()))
-    print
+    print((np.linalg.norm(c.full()-c_ortho.full())/np.linalg.norm(c_ortho.full())))
+    print()
 
     # multiplication
     c=a*b
 
     c2=a.full()*b.full()
-    print c
+    print(c)
     print('testing multiplication...')
-    print(np.linalg.norm(c.full()-c2)/np.linalg.norm(c2))
+    print((np.linalg.norm(c.full()-c2)/np.linalg.norm(c2)))
 
 #    # DFT
 #    print('testing DFT...')
@@ -407,9 +407,9 @@ if __name__=='__main__':
 
 ######### 3-d tenssor test #########
 
-    print
+    print()
     print('----testing 3d tucker ----')
-    print
+    print()
 
     N1=10 # warning: in 3d multiplication too large N number could kill the machine.
     N2=12
@@ -466,7 +466,7 @@ if __name__=='__main__':
 
 
     print('testing nd tucker representation error...')
-    print "a.full - T = ", norm(a.full()-T)
+    print("a.full - T = ", norm(a.full()-T))
 #
 
 #    S3,U3 = HOSVD3(T)
@@ -552,34 +552,34 @@ if __name__=='__main__':
 
     #a=a.truncate(rank=a.r/2)
 
-    print(np.mean(T1) -a.mean() )
-    print(np.mean(T1) -a.fourier().mean() )
+    print((np.mean(T1) -a.mean() ))
+    print((np.mean(T1) -a.fourier().mean() ))
 
     c=a+b
     print(c)
 
     print('testing 3d addtion ...')
-    print "(a+b).full - (a.full+b.full) = ", norm(c.full()-a.full()-b.full())
-    print "((a+b).full - (a.full+b.full))/|(a.full+b.full)| = ", norm(c.full()-a.full()-b.full())/norm(a.full()+b.full())
-    print "max((a+b).full - (a.full+b.full))/mean(a.full+b.full) = ", np.max(c.full().val-a.full().val-b.full().val)/np.mean(a.full().val+b.full().val)
+    print("(a+b).full - (a.full+b.full) = ", norm(c.full()-a.full()-b.full()))
+    print("((a+b).full - (a.full+b.full))/|(a.full+b.full)| = ", norm(c.full()-a.full()-b.full())/norm(a.full()+b.full()))
+    print("max((a+b).full - (a.full+b.full))/mean(a.full+b.full) = ", np.max(c.full().val-a.full().val-b.full().val)/np.mean(a.full().val+b.full().val))
 #
-    print(np.mean(T1+T2) -c.mean() )
+    print((np.mean(T1+T2) -c.mean() ))
 
 
     c=a*b
     print(c)
 
     print('testing 3d multiplication and re-orthogonalization...')
-    print "(a*b).full - (a.full*b.full) = ", norm(c.full()-a.full()*b.full())
-    print "((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ", norm(c.full()-a.full()*b.full())/norm(a.full()*b.full())
-    print "max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ", np.max(c.full().val-a.full().val*b.full().val)/np.mean(a.full()*b.full())
+    print("(a*b).full - (a.full*b.full) = ", norm(c.full()-a.full()*b.full()))
+    print("((a*b).full - (a.full*b.full))/|(a.full*b.full)| = ", norm(c.full()-a.full()*b.full())/norm(a.full()*b.full()))
+    print("max((a*b).full - (a.full*b.full))/mean(a.full*b.full) = ", np.max(c.full().val-a.full().val*b.full().val)/np.mean(a.full()*b.full()))
 #
     c_trunc=c.truncate(rank=8)
     print(c_trunc)
 
     print('testing 3d tucker rank-based truncation ...')
-    print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
-    print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
+    print("c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1))
+    print("norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1))
 
 
 #    c_trunc=c.truncate(rank=-5)
@@ -593,9 +593,9 @@ if __name__=='__main__':
     print(c_trunc)
 
     print('testing 3d tucker tol-based truncation ...')
-    print "c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1)
-    print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
-    print
+    print("c_truncated.full - c.full = ", norm(c_trunc.full()-T2*T1))
+    print("norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1))
+    print()
 
 #    k=N2
 #    while k>2:
@@ -614,8 +614,8 @@ if __name__=='__main__':
 
     c=a+b
 
-    print (np.mean(c.full().val) - c.mean())
-    print (np.mean(c.full().val) - c.fourier().mean())
+    print((np.mean(c.full().val) - c.mean()))
+    print((np.mean(c.full().val) - c.fourier().mean()))
 
     ### test Fourier Hadamard product #####
     af=a.set_fft_form('c').fourier()
@@ -628,10 +628,10 @@ if __name__=='__main__':
 
     afbf2=af2*bf2
 
-    print( (afbf.fourier()-afbf2.fourier()).norm())
+    print(( (afbf.fourier()-afbf2.fourier()).norm()))
 
     print(a)
-    print(a.fourier())
+    print((a.fourier()))
 
 #    c_trunc2=c.truncate2(rank=13)
 #    print(c_trunc2)

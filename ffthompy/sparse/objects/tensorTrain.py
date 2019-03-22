@@ -9,6 +9,7 @@ from ffthompy.sparse.objects.tensors import SparseTensorFuns
 #from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
 from ffthompy.sparse.objects.tensors import fft_form_default
+from functools import reduce
 
 
 class TensorTrain(vector,SparseTensorFuns):
@@ -233,9 +234,9 @@ class TensorTrain(vector,SparseTensorFuns):
 
     def __mul__(self, other):
 
-        name=self.name+'*'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name)
+        name=self.name+'*'+(str(other) if isinstance(other, (int, float, complex)) else other.name)
 
-        if self.fft_form=='sr' and not isinstance(other, (int, long, float, complex)):
+        if self.fft_form=='sr' and not isinstance(other, (int, float, complex)):
             res_vec=vector.__mul__(self.set_fft_form('c',copy=True), other.set_fft_form('c',copy=True))
             res=TensorTrain(vectorObj=res_vec, name=name,
                             Fourier=self.Fourier, fft_form='c').set_fft_form('sr')
@@ -248,21 +249,21 @@ class TensorTrain(vector,SparseTensorFuns):
     def __add__(self, other):
         res_vec=vector.__add__(self, other)
         res=TensorTrain(vectorObj=res_vec,
-                        name=self.name+'+'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                        name=self.name+'+'+(str(other) if isinstance(other, (int, float, complex)) else other.name),
                         Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __kron__(self, other):
         res_vec=vector.__kron__(self, other)
         res=TensorTrain(vectorObj=res_vec,
-                        name=self.name+' glued with '+(str(other) if isinstance(other, (int, long, float, complex)) else other.name),
+                        name=self.name+' glued with '+(str(other) if isinstance(other, (int, float, complex)) else other.name),
                         Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __sub__(self, other):
 
         res=self+(-other)
-        res.name=self.name+'-'+(str(other) if isinstance(other, (int, long, float, complex)) else other.name)
+        res.name=self.name+'-'+(str(other) if isinstance(other, (int, float, complex)) else other.name)
 
         return res
 
@@ -444,22 +445,22 @@ if __name__=='__main__':
 
 
 
-    print
+    print()
     print('----testing "Fourier" function ----')
-    print
+    print()
 
     v1=np.random.rand(120,)
 
     v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
     t=TensorTrain(val=v, rmax=3)
 
-    print t
+    print(t)
 
     cl=t.to_list(t)
 
     t2=TensorTrain(core=cl)
 
-    print t2
+    print(t2)
 
 #    vfft=np.fft.fftn(v)
 #
@@ -528,25 +529,25 @@ if __name__=='__main__':
     t2=TensorTrain(v2)
 
     t3=t1.__dot__(t2)
-    print t3
+    print(t3)
 
-    c1=t1.__getitem__([0, [range(t1.N[1])], [range(t1.N[2])]])
+    c1=t1.__getitem__([0, [list(range(t1.N[1]))], [list(range(t1.N[2]))]])
 
-    print c1
+    print(c1)
 
     t3=t1*t2
-    print t3
-    print(np.linalg.norm(t3.full()-v1*v2))
+    print(t3)
+    print((np.linalg.norm(t3.full()-v1*v2)))
 
     t4=t1+t2
-    print(np.linalg.norm(t4.full()-v1-v2))
+    print((np.linalg.norm(t4.full()-v1-v2)))
     # print t4
 
     t4o=t4.orthogonalise('lr')
-    print(np.linalg.norm(t4o.full()-t4.full()))
+    print((np.linalg.norm(t4o.full()-t4.full())))
 
     t4o=t4.orthogonalise('rl')
-    print(np.linalg.norm(t4o.full()-t4.full()))
+    print((np.linalg.norm(t4o.full()-t4.full())))
 
     # print t5.size
     v1=np.random.rand(1, 5)
@@ -554,13 +555,13 @@ if __name__=='__main__':
     v=np.reshape(v1, (1, 5), order='F') # use 'F' to keep v the same as in matlab
     t=TensorTrain(val=v, rmax=3)
 
-    print t3.r
+    print(t3.r)
 
     t5=t3.truncate(rank=3)
-    print(np.linalg.norm(t3.full()-t5.full()))
+    print((np.linalg.norm(t3.full()-t5.full())))
 
-    print
-    print (np.mean(t1.full().val) - t1.mean())
+    print()
+    print((np.mean(t1.full().val) - t1.mean()))
 
 
     ### test Fourier Hadamard product #####
@@ -574,8 +575,8 @@ if __name__=='__main__':
 
     afbf2=af2*bf2
 
-    print( (afbf.fourier()-afbf2.fourier()).norm())
-    print(t1.norm())
+    print(( (afbf.fourier()-afbf2.fourier()).norm()))
+    print((t1.norm()))
 
 #    v1=np.array([[1,0]])
 #    t1=TensorTrain(val=v1)

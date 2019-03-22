@@ -474,8 +474,8 @@ if __name__=='__main__':
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
     b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
 
-    print(a.norm(ord='fro'))
-    print(a.norm(ord='core'))
+    print((a.norm(ord='fro')))
+    print((a.norm(ord='core')))
 
 
 #     N=[100,101]
@@ -488,9 +488,9 @@ if __name__=='__main__':
     c2=c.truncate(tol=1e-5)
 
     c_add=a.full()+b.full()
-    print
-    print "(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add))
-    print "add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add))
+    print()
+    print("(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add)))
+    print("add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add)))
 
 
     # multiplication
@@ -499,20 +499,20 @@ if __name__=='__main__':
     c3=a.multiply(b, tol=0.001)
 
     c_mul=a.full()*b.full()
-    print
-    print  "                  (a*b).full - (a.full*b.full) = ", (np.linalg.norm(c.full()-c_mul))
-    print  "truncated multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul))
-    print
+    print()
+    print("                  (a*b).full - (a.full*b.full) = ", (np.linalg.norm(c.full()-c_mul)))
+    print("truncated multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul)))
+    print()
 
     print('rank control on tensor product:')
-    print "full product tensor rank=     ", c.r
-    print "truncated product tensor rank=", c3.r
-    print
+    print("full product tensor rank=     ", c.r)
+    print("truncated product tensor rank=", c3.r)
+    print()
     # truncation
     a_trunc=a.truncate(rank=4)
 
-    print  "a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full())
-    print
+    print("a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full()))
+    print()
 
 #    # DFT
 #    print('testing DFT...')
@@ -545,7 +545,7 @@ if __name__=='__main__':
     c=a*b
     print(c)
 
-    print
+    print()
 
     m=c.mean()
 #    k=N2
@@ -554,15 +554,15 @@ if __name__=='__main__':
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
 
-    print (np.mean(c.full().val) - c.mean())
-    print (np.mean(c.full().val) - c.fourier().mean())
+    print((np.mean(c.full().val) - c.mean()))
+    print((np.mean(c.full().val) - c.fourier().mean()))
 
 
     cf=c.set_fft_form('c').fourier().set_fft_form('sr')
 
     cf2=c.set_fft_form('sr').fourier()
 
-    print( (cf-cf2).norm())
+    print(( (cf-cf2).norm()))
 
     ### test Fourier Hadamard product #####
     af=a.set_fft_form('c').fourier()
@@ -575,14 +575,14 @@ if __name__=='__main__':
 
     afbf2=af2*bf2
 
-    print( (afbf.fourier()-afbf2.fourier()).norm())
+    print(( (afbf.fourier()-afbf2.fourier()).norm()))
 
     print(c)
-    print(c.fourier())
+    print((c.fourier()))
 
     cf=c.fourier().truncate(rank=5)
     print(cf)
-    print(cf.fourier())
+    print((cf.fourier()))
 
 ## test inner product
     N1=200
@@ -597,7 +597,7 @@ if __name__=='__main__':
     M1=np.sum((T1*T2))
     M2=a.inner(b)
 
-    print("inner product error is:",M1-M2)
+    print(("inner product error is:",M1-M2))
 
 ### test accuracy of scalor product
 #    N1=1000
