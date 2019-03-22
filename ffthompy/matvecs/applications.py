@@ -39,7 +39,7 @@ def scalar(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print('\nproblem: ' + primaldual)
+        print(('\nproblem: ' + primaldual))
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -61,7 +61,7 @@ def scalar(problem):
         for iL in np.arange(pb.dim): # iteration over unitary loads
             E = np.zeros(pb.dim)
             E[iL] = 1
-            print('macroscopic load E = ' + str(E))
+            print(('macroscopic load E = ' + str(E)))
             EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
             # initial approximation for solvers
             x0 = VecTri(name='x0', N=Nbar, Fourier=False)
@@ -76,7 +76,7 @@ def scalar(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print('solver : %s' % pb.solver['kind'])
+            print(('solver : %s' % pb.solver['kind']))
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
@@ -124,7 +124,7 @@ def elasticity(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print('\nproblem: ' + primaldual)
+        print(('\nproblem: ' + primaldual))
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -147,7 +147,7 @@ def elasticity(problem):
         for iL in range(D): # iteration over unitary loads
             E = np.zeros(D)
             E[iL] = 1
-            print('macroscopic load E = ' + str(E))
+            print(('macroscopic load E = ' + str(E)))
             EN = VecTri(name='EN', macroval=E, N=Nbar, Fourier=False)
             # initial approximation for solvers
             x0 = VecTri(N=Nbar, d=D, Fourier=False)
@@ -162,7 +162,7 @@ def elasticity(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print('solver : %s' % pb.solver['kind'])
+            print(('solver : %s' % pb.solver['kind']))
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
