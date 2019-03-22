@@ -10,7 +10,7 @@ def scalar(N, Y, fft_form=fft_form_default):
     xi = Grid.get_freq(N, Y, fft_form=fft_form)
     N_fft=tuple(xi[i].size for i in range(dim))
     hGrad = np.zeros((dim,)+N_fft) # zero initialize
-    for ind in itertools.product(*[range(n) for n in N_fft]):
+    for ind in itertools.product(*[list(range(n)) for n in N_fft]):
         for i in range(dim):
             hGrad[i][ind] = xi[i][ind[i]]
 
@@ -39,7 +39,7 @@ def elasticity_small_strain(N, Y, fft_form=fft_form_default):
     Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N_fft]))
     delta  = lambda i,j: np.float(i==j)
 
-    for i, j, k, l in itertools.product(range(dim), repeat=4):
+    for i, j, k, l in itertools.product(list(range(dim)), repeat=4):
         for x, y, z in np.ndindex(*N_fft):
             q = np.array([freq[0][x], freq[1][y], freq[2][z]])
             if not q.dot(q) == 0:
@@ -59,7 +59,7 @@ def elasticity_large_deformation(N, Y, fft_form=fft_form_default):
     Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N_fft]))
     delta  = lambda i,j: np.float(i==j)
 
-    for i, j, k, l in itertools.product(range(dim), repeat=4):
+    for i, j, k, l in itertools.product(list(range(dim)), repeat=4):
         for x, y, z in np.ndindex(*N_fft):
             q = np.array([freq[0][x], freq[1][y], freq[2][z]])
             if not q.dot(q) == 0:

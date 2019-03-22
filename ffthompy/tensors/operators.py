@@ -341,7 +341,7 @@ def potential(X, small_strain=False):
                            shape=FX.shape+(X.dim,), N=X.N, Fourier=True)
             grad_ep=grad(FX) # gradient of strain
             gomeg.val=np.einsum('ikj...->ijk...', grad_ep.val)-np.einsum('jki...->ijk...', grad_ep.val)
-            for ij in itertools.product(range(X.dim), repeat=2):
+            for ij in itertools.product(list(range(X.dim)), repeat=2):
                 omeg.val[ij]=potential_scalar(gomeg.val[ij], freq=freq, mean_index=FX.mean_index())
 
             gradu=FX+omeg
@@ -378,7 +378,7 @@ def grad_tensor(N, Y=None, fft_form=fft_form_default):
     freq = Grid.get_xil(N, Y, fft_form=fft_form)
     N_fft=tuple(freq[i].size for i in range(dim))
     hGrad = np.zeros((dim,)+ N_fft) # zero initialize
-    for ind in itertools.product(*[range(n) for n in N_fft]):
+    for ind in itertools.product(*[list(range(n)) for n in N_fft]):
         for i in range(dim):
             hGrad[i][ind] = freq[i][ind[i]]
     hGrad = hGrad*2*np.pi*1j

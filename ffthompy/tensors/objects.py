@@ -2,7 +2,7 @@
 This module contains classes and functions representing tensors
 of trigonometric polynomials and relating operators.
 """
-from __future__ import print_function, division
+
 import numpy as np
 from ffthompy.general.base import Representation
 from ffthompy.trigpol import mean_index, fft_form_default, get_Nodd
@@ -336,7 +336,7 @@ class Tensor(TensorFuns):
     def identity(self):
         self.val[:]=0.
         assert(self.order % 2 == 0)
-        for ii in itertools.product(*tuple([range(n) for n in self.shape[:int(self.order/2)]])):
+        for ii in itertools.product(*tuple([list(range(n)) for n in self.shape[:int(self.order/2)]])):
             self.val[ii+ii]=1.
 
     def vec(self):

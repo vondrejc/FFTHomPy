@@ -5,28 +5,28 @@ def cfftnc(x, N):
     """
     real and Fourier centered n-dimensional FFT algorithm
     """
-    ax=tuple(np.setdiff1d(range(x.ndim), range(x.ndim-N.__len__()), assume_unique=True))
+    ax=tuple(np.setdiff1d(list(range(x.ndim)), list(range(x.ndim-N.__len__())), assume_unique=True))
     return 1./np.prod(N)*fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)
 
 def icfftnc(Fx, N):
     """
     real and Fourier centered n-dimensional inverse FFT algorithm
     """
-    ax=tuple(np.setdiff1d(range(Fx.ndim), range(Fx.ndim-N.__len__()), assume_unique=True))
+    ax=tuple(np.setdiff1d(list(range(Fx.ndim)), list(range(Fx.ndim-N.__len__())), assume_unique=True))
     return fft.fftshift(fft.ifftn(fft.ifftshift(Fx, ax), N), ax).real*np.prod(N)
 
 def fftnc(x, N):
     """
     Fourier centered n-dimensional FFT algorithm
     """
-    ax=tuple(np.setdiff1d(range(x.ndim), range(x.ndim-N.__len__()), assume_unique=True))
+    ax=tuple(np.setdiff1d(list(range(x.ndim)), list(range(x.ndim-N.__len__())), assume_unique=True))
     return 1./np.prod(N)*fft.fftshift(fft.fftn(x, N), ax)
 
 def icfftn(Fx, N):
     """
     Fourier centered n-dimensional inverse FFT algorithm
     """
-    ax=tuple(np.setdiff1d(range(Fx.ndim), range(Fx.ndim-N.__len__()), assume_unique=True))
+    ax=tuple(np.setdiff1d(list(range(Fx.ndim)), list(range(Fx.ndim-N.__len__())), assume_unique=True))
     return fft.ifftn(fft.ifftshift(Fx, ax), N).real*np.prod(N)
 
 
