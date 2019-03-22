@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from copy import copy, deepcopy
+import collections
 
 
 def get_base_dir():
@@ -19,7 +20,7 @@ def run_file(filen=''):
 def print_dict(d):
     print('-- print dictionary -------------------')
     for key, vals in list(d.items()):
-        print(key + ' =', vals)
+        print((key + ' =', vals))
 
 def end():
     print('end')
@@ -32,7 +33,7 @@ class Representation():
 
         for key in keys:
             attr=getattr(self, key)
-            if callable(attr):
+            if isinstance(attr, collections.Callable):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
             else:
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
@@ -192,7 +193,7 @@ class Struct(object):
 
     def __add__(self, other):
         new = copy(self)
-        for key, val in other.__dict__.items():
+        for key, val in list(other.__dict__.items()):
             if hasattr(new, key):
                 sval = getattr(self, key)
                 if issubclass(sval.__class__, Struct) and \
@@ -209,7 +210,7 @@ class Struct(object):
 
     def str_all(self):
         ss = "%s\n" % self.__class__
-        for key, val in self.__dict__.items():
+        for key, val in list(self.__dict__.items()):
             if issubclass(self.__dict__[key].__class__, Struct):
                 ss += "  %s:\n" % key
                 aux = "\n" + self.__dict__[key].str_all()
@@ -261,7 +262,7 @@ class Struct(object):
 
     def to_array(self):
         log = deepcopy(self)
-        for key, val in log.__dict__.items():
+        for key, val in list(log.__dict__.items()):
             try:
                 log.__dict__.update({key: np.array(val)})
             except:
