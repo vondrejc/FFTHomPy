@@ -14,7 +14,7 @@ def multiply(A, B, *args, **kwargs):
     for ii in range(dim):
         shape=(A[ii].shape[0]*B[ii].shape[0], A[ii].shape[1])
         val=np.empty(shape)
-        for iimn, (mm, nn) in enumerate(itertools.product(range(A[ii].shape[0]), range(B[ii].shape[0]))):
+        for iimn, (mm, nn) in enumerate(itertools.product(list(range(A[ii].shape[0])), list(range(B[ii].shape[0])))):
             val[iimn] = A[ii][mm]*B[ii][nn]
         C.append(val)
     return C
@@ -84,5 +84,5 @@ if __name__=='__main__':
     C0 = A*B
     C1s = multiply(As, Bs)
     C1 = np.einsum('ij,ik->jk', C1s[0], C1s[1])
-    print(np.linalg.norm(C0-C1))
+    print((np.linalg.norm(C0-C1)))
     print('END')

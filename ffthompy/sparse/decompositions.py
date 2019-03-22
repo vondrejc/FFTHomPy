@@ -60,7 +60,7 @@ def subTensor(T, k=None, index=None):
 
         index=[None]*len(k)
         for i in range(len(k)):
-            index[i]=range(k[i])
+            index[i]=list(range(k[i]))
 
         return T[np.ix_(*index)]
 
@@ -115,17 +115,17 @@ if __name__=='__main__':
 
     # A = np.random.rand(7,7)
     A=np.arange(49).reshape((7, 7))
-    print A
+    print(A)
 
     S, U=HOSVD(A)
-    print S
-    print U
-    print norm(A-np.dot(U[0], np.dot(S, U[1].T)))
+    print(S)
+    print(U)
+    print(norm(A-np.dot(U[0], np.dot(S, U[1].T))))
 
     S2, U2=HOSVD(A, 5)
-    print S2
-    print U2
-    print norm(A-np.dot(U2[0], np.dot(S2, U2[1].T)))
+    print(S2)
+    print(U2)
+    print(norm(A-np.dot(U2[0], np.dot(S2, U2[1].T))))
 #    S,U=HOSVD2(A)
 #    print S
 #    print U

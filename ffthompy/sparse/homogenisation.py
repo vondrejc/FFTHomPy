@@ -74,10 +74,10 @@ def homog_Ga_full_potential(Aga, pars):
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
 
-    print('iterations of CG={}'.format(info['kit']))
-    print('norm of residuum={}'.format(info['norm_res']))
+    print(('iterations of CG={}'.format(info['kit'])))
+    print(('norm of residuum={}'.format(info['norm_res'])))
     R=PB-PDFAFGPfun(iPU)
-    print('norm of residuum={} (from definition)'.format(R.norm()))
+    print(('norm of residuum={} (from definition)'.format(R.norm())))
 
     Fu=P*iPU
     X=iF2(grad(Fu).project(Nbar))
@@ -115,8 +115,8 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
-    print('iterations of CG={}'.format(info['kit']))
-    print('norm of residuum={}'.format(info['norm_res']))
+    print(('iterations of CG={}'.format(info['kit'])))
+    print(('norm of residuum={}'.format(info['norm_res'])))
 
     Fu=P*iPU
     Nbar=2*np.array(N)-1
@@ -171,8 +171,8 @@ def homog_Ga_sparse(Agas, pars):
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=1e-10)
-    print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
-    print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
+    print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
+    print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
     PBs=PBs2
     if pars.solver['method'] in ['Richardson','richardson','r','R']:
         Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
@@ -185,11 +185,11 @@ def homog_Ga_sparse(Agas, pars):
                               rank=pars.rank, tol=pars.tol)
     tic.measure()
 
-    print('iterations of solver={}'.format(ress['kit']))
-    print('norm of residuum={}'.format(ress['norm_res'][-1]))
+    print(('iterations of solver={}'.format(ress['kit'])))
+    print(('norm of residuum={}'.format(ress['norm_res'][-1])))
 #    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
-    print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
+    print(('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))))
 #     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu)).full())))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
@@ -240,8 +240,8 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=1e-10)
-    print('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val)))
-    print('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val)))
+    print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
+    print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
     PBs=PBs2
 
     if pars.solver['method'] in ['Richardson','richardson','r','R']:
@@ -254,11 +254,11 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
                               rank=pars.rank, tol=pars.tol)
     tic.measure()
-    print('iterations of solver={}'.format(ress['kit']))
-    print('norm of residuum={}'.format(ress['norm_res'][-1]))
+    print(('iterations of solver={}'.format(ress['kit'])))
+    print(('norm of residuum={}'.format(ress['norm_res'][-1])))
 #    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
-    print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
+    print(('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))))
 #     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
 
     Nbar=2*np.array(N)-1

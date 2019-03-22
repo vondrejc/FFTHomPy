@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import unittest
 import numpy as np
 from numpy.linalg import norm
@@ -240,7 +240,7 @@ class Test_sparse(unittest.TestCase):
         L3=5
         tol=1e-6
         #v=np.random.rand(2**L1,2**L2)
-        v=np.array(range(1,2**(L1+L2+L3)+1))
+        v=np.array(list(range(1,2**(L1+L2+L3)+1)))
         v=np.sin(v)/v # to increase the rank
 
         v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')
