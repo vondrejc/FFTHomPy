@@ -2,7 +2,7 @@ import pickle
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
-from fig_pars import set_labels,set_pars
+from .fig_pars import set_labels,set_pars
 
 os.nice(19)
 
@@ -60,7 +60,7 @@ def plot_error():
 
             lg=plt.legend(loc='best')
             fname=src+'Error_dim{}_mat{}_{}{}'.format(dim,material,solver,'.pdf')
-            print('create figure: {}'.format(fname))
+            print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
         print('END plot errors')
         ##### END: figure 1 resiguum(solution rank) ###########
@@ -102,7 +102,7 @@ def plot_error():
 
             lg=plt.legend(loc='best')
             fname=src+'Error_dim{}_mat{}_{}{}'.format(dim,material,solver,'.pdf')
-            print('create figure: {}'.format(fname))
+            print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
         print('END plot errors')
         ##### END: figure 1 resiguum(solution rank) ###########
@@ -152,7 +152,7 @@ def plot_memory():
 
             lg = plt.legend(loc='best')
             fname = src + 'Memory_dim{}_mat{}{}'.format(dim, material, '.pdf')
-            print('create figure: {}'.format(fname))
+            print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
         print('END plot memory')
         ##### END: figure 2 memory ###########
@@ -193,7 +193,7 @@ def plot_memory():
 
             lg = plt.legend(loc='best')
             fname = src + 'Memory_dim{}_mat{}{}'.format(dim, material, '.pdf')
-            print('create figure: {}'.format(fname))
+            print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
         print('END plot memory')
         ##### END: figure 2 memory ###########
@@ -227,7 +227,7 @@ def plot_residuals():
                         "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):
-                        plt.semilogy(range(len(res_Ga_Spar[sol_rank])), res_Ga_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_Ga_Spar[sol_rank]))), res_Ga_Spar[sol_rank],
                                      lines['Ga'][sol_rank],
                                      label='{} {}'.format(labels['Garank'], sol_rank_range[sol_rank]), markevery=2)
 
@@ -242,7 +242,7 @@ def plot_residuals():
                     lg = plt.legend(loc='upper right')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_Ga_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                     solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
             ##### END: figure 5.1 Residuum for Ga solution ###########
@@ -266,7 +266,7 @@ def plot_residuals():
 
                     plt.xticks(iter_rank_range_set)
                     for sol_rank in range(0, len(sol_rank_range)):
-                        plt.semilogy(range(len(res_GaNi_Spar[sol_rank])), res_GaNi_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_GaNi_Spar[sol_rank]))), res_GaNi_Spar[sol_rank],
                                      lines['GaNi'][sol_rank],
                                      label='{} {}'.format(labels['GaNirank'], sol_rank_range[sol_rank]), markevery=2,
                                      markersize=7,
@@ -284,7 +284,7 @@ def plot_residuals():
 
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_GaNi_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                       solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
             ##### END: figure 5.2 Residuum for GaNi solution ###########
@@ -311,7 +311,7 @@ def plot_residuals():
 
                     for sol_rank in range(0, len(
                             sol_rank_range)):  # range(len(sol_rank_range)):#range(0, len(sol_rank_range), 2)
-                        plt.semilogy(range(len(res_Ga_Spar[sol_rank])), res_Ga_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_Ga_Spar[sol_rank]))), res_Ga_Spar[sol_rank],
                                      lines['Ga'][sol_rank],
                                      label='{} {}'.format(labels['Garank'], sol_rank_range[sol_rank]), markevery=2)
 
@@ -326,7 +326,7 @@ def plot_residuals():
                     lg = plt.legend(loc='upper right')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_Ga_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                     solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
             ##### END: figure 5.1 Residuum for Ga solution ###########
@@ -349,7 +349,7 @@ def plot_residuals():
                              "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):  # range(len(sol_rank_range)):
-                        plt.semilogy(range(len(res_GaNi_Spar[sol_rank])), res_GaNi_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_GaNi_Spar[sol_rank]))), res_GaNi_Spar[sol_rank],
                                      lines['GaNi'][sol_rank],
                                      label='{} {}'.format(labels['GaNirank'], sol_rank_range[sol_rank]), markevery=2,
                                      markersize=7,
@@ -365,7 +365,7 @@ def plot_residuals():
                     lg = plt.legend(loc='upper right')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_GaNi_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                       solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
             ##### END: figure 5.2 Residuum for GaNi solution ###########
@@ -388,7 +388,7 @@ def plot_residuals():
                             "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):  # range(len(sol_rank_range)):
-                        plt.semilogy(range(len(res_Ga_Spar[sol_rank])), res_Ga_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_Ga_Spar[sol_rank]))), res_Ga_Spar[sol_rank],
                                      lines['Ga'][sol_rank],
                                      label='{} {}'.format(labels['Garank'], sol_rank_range[sol_rank]), markevery=2)
                     ax = plt.gca()
@@ -402,7 +402,7 @@ def plot_residuals():
                     lg = plt.legend(loc='lower left')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_Ga_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                     solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
             ##### END: figure 5.1 Residuum for Ga solution ###########
@@ -424,7 +424,7 @@ def plot_residuals():
                                                                                            solver), "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):  # range(len(sol_rank_range)):
-                        plt.semilogy(range(len(res_GaNi_Spar[sol_rank])), res_GaNi_Spar[sol_rank],
+                        plt.semilogy(list(range(len(res_GaNi_Spar[sol_rank]))), res_GaNi_Spar[sol_rank],
                                      lines['GaNi'][sol_rank],
                                      label='{} {}'.format(labels['GaNirank'], sol_rank_range[sol_rank]), markevery=2,
                                      markersize=7,
@@ -440,7 +440,7 @@ def plot_residuals():
                     lg = plt.legend(loc='lower left')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_GaNi_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                       solver, N, '.pdf')
-                    print('create figure: {}'.format(fname))
+                    print(('create figure: {}'.format(fname)))
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
             print('END Ga residuum')
     ##### END: figure 5.2 Residuum for GaNi solution ###########

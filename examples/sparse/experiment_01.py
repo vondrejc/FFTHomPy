@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+
 
 import numpy as np
 import os
@@ -11,8 +11,8 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
 
-from material_setting import getMat_conf,recover_Aga,recover_Agani
-from plots import plot_error, plot_memory, plot_residuals
+from .material_setting import getMat_conf,recover_Aga,recover_Agani
+from .plots import plot_error, plot_memory, plot_residuals
 
 os.nice(19)
 #######################################################

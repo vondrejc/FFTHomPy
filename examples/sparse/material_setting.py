@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+
 import numpy as np
 from ffthompy import Struct
 from uq.decomposition import KL_Fourier

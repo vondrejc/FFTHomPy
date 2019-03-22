@@ -83,4 +83,4 @@ def copy_files(src, dest, files='all'):
             continue
     print('copy of files is finished')
     return
-print(plt.style.available)
+print((plt.style.available))
