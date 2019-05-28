@@ -41,6 +41,9 @@ class TensorFuns(Representation):
         data.update(kwargs)
         return self.__class__(**data)
 
+    def copy(self, **kwargs):
+        return self._copy(self.keys, **kwargs)
+
     def _set_fft(self, fft_form):
         assert(fft_form in ['c', 'r', 0])
 
@@ -85,6 +88,7 @@ class TensorFuns(Representation):
 
 
 class Tensor(TensorFuns):
+    keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin')
 
     def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None,
                  multype='scal', Fourier=False, fft_form=fft_form_default, origin=0):
@@ -341,10 +345,6 @@ class Tensor(TensorFuns):
         polynomial.
         """
         return np.matrix(self.val.ravel()).transpose()
-
-    def copy(self, **kwargs):
-        keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin')
-        return self._copy(keys, **kwargs)
 
     def zeros_like(self, name=None):
         if name is None:
