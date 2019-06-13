@@ -113,7 +113,7 @@ class CanoTensor(SparseTensorFuns):
     def __mul__(self, Y):
         "element-wise multiplication of two canonical tensors"
 
-        if isinstance(Y, float) or isinstance(Y, int) :
+        if isinstance(Y, (float, int)) or np.isscalar(Y) or (isinstance(Y, np.ndarray) and Y.shape==()):
             R=self.copy()
             R.core=self.core*Y
             return R

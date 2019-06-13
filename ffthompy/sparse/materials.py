@@ -36,7 +36,7 @@ class SparseMaterial(Material):
         else:
             raise ValueError()
 
-        FAs*=np.prod(P)
+        FAs*=np.prod(np.array(P))
         if np.allclose(P, Nbar):
             hAM=FAs
         elif np.all(np.greater_equal(P, Nbar)):
