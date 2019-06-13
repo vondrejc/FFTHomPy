@@ -17,6 +17,18 @@ or downloaded at
 
 Tutorials can be found in a folder '/tutorial'.
 
+## Requirements and installation
+
+No special installation is required. However, the folder with the code has to be in the python path.
+
+The code is optimised for [Python](https://www.python.org) (version 3.6) and
+depends on the following numerical libraries:
+- [NumPy](http://www.numpy.org) (version 1.16) and
+- [SciPy](https://www.scipy.org) (version 1.3) for scientific computing as well as on the
+- [Matplotlib](https://matplotlib.org/) (version 3.1) for plotting
+- [StoPy](https://github.com/vondrejc/StoPy) for uncertainty quantification
+- [ttpy](https://github.com/oseledets/ttpy) Python implementation of the Tensor Train (TT)-Toolbox
+
 ## References
 
 The code is based on the following papers, where you can find more theoretical information.

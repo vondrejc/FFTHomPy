@@ -1,8 +1,12 @@
 
 import numpy as np
 from ffthompy import Struct
-from uq.decomposition import KL_Fourier
 
+try:
+    from uq.decomposition import KL_Fourier
+except:
+    import warnings
+    warnings.warn('Package StoPy is not available.')
 
 
 def getMat_conf(material, pars, pars_sparse):
