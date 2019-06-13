@@ -2,7 +2,7 @@ import pickle
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
-from .fig_pars import set_labels,set_pars
+from examples.sparse.fig_pars import set_labels,set_pars
 
 os.nice(19)
 

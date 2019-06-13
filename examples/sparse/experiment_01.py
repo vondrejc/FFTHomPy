@@ -11,38 +11,36 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
 
-from .material_setting import getMat_conf,recover_Aga,recover_Agani
-from .plots import plot_error, plot_memory, plot_residuals
+from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
+#from examples.sparse.plots import plot_error, plot_memory, plot_residuals
 
 os.nice(19)
 #######################################################
-Ns = {'2': [81,243,729,1215],#[45,81,243,729,2187]
-      '3': [27,45,81,135]}
 
-pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
+Ns = {'2': [81,243],#[45,81,243,729,2187]
+      '3': [27,45,81,135]}
 
 kinds = {'2': [0,2],
          '3': [1,2],}
-pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
 
 material_list = [0,2]
-pickle.dump(material_list, open("data_for_plot/material_list.p", "wb"))
 
 sol_rank_range_set={'2': [1,5,10,20,30],
                     '3': [1,5,10,20]}
-pickle.dump(sol_rank_range_set, open("data_for_plot/sol_rank_range_set.p", "wb"))
 
 kind_list = ['cano', 'tucker', 'tt']
-pickle.dump(kind_list, open("data_for_plot/kind_list.p", "wb"))
-
 
 if not os.path.exists('data_for_plot'):
     os.makedirs('data_for_plot/dim_2/mat_0/')
     os.makedirs('data_for_plot/dim_2/mat_2/')
     os.makedirs('data_for_plot/dim_3/mat_0/')
     os.makedirs('data_for_plot/dim_3/mat_2/')
-pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
 
+pickle.dump(kind_list, open("data_for_plot/kind_list.p", "wb"))
+pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
+pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
+pickle.dump(sol_rank_range_set, open("data_for_plot/sol_rank_range_set.p", "wb"))
+pickle.dump(material_list, open("data_for_plot/material_list.p", "wb"))
 
 for dim in [2]:
     for grid in range(len(Ns['{}'.format(dim)])):
@@ -181,6 +179,6 @@ for dim in [2]:
                 pickle.dump( mem_GaNi,  open("data_for_plot/dim_{}/mat_{}/mem_GaNi_{}.p".format(dim, material,N) , "wb"))
 
 
-    plot_error()
-    plot_memory()
-    plot_residuals()
+  #  plot_error()
+  #  plot_memory()
+  #  plot_residuals()
