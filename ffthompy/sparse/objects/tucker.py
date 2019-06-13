@@ -117,7 +117,7 @@ class Tucker(CanoTensor):
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
 
-        if isinstance(Y, float) or isinstance(Y, int) :
+        if isinstance(Y, float) or isinstance(Y, int) or np.isscalar(Y) :
             R=self.copy()
             R.core=self.core*Y
             return R
@@ -211,8 +211,9 @@ class Tucker(CanoTensor):
             # print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self
 
-        if isinstance(rank, int) :
+        if isinstance(rank, int) or np.isscalar(rank) :
             rank=rank*np.ones((self.order,), dtype=int)
+
 
         if isinstance(tol, float) :
             tol=tol*np.ones((self.order,))
@@ -221,7 +222,7 @@ class Tucker(CanoTensor):
 
         basis=list(self.basis)
         core=self.core
-        rank=np.minimum(rank, self.r)
+
 
         # to determine the rank of truncation
         if np.any(tol) is not None:
@@ -233,6 +234,7 @@ class Tucker(CanoTensor):
                 sorted_norm.append(np.sum(abs(core), axis=tuple(np.setdiff1d(ind, i))))
                 rank[i]=np.searchsorted(np.cumsum(sorted_norm[i])/np.sum(sorted_norm[i]), 1.0-tol[i])+1
 
+        rank = np.minimum(rank, self.r)
         L=[None]*self.order
         for d in range(self.order):
             L[d]=list(range(rank[d]))
