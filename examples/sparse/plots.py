@@ -6,15 +6,18 @@ from examples.sparse.fig_pars import set_labels,set_pars
 
 os.nice(19)
 
-material_list = pickle.load(open("data_for_plot/material_list.p", "rb"))
-sol_rank_range_set = pickle.load(open("data_for_plot/sol_rank_range_set.p", "rb"))
-kinds = pickle.load(open("data_for_plot/kinds.p", "rb"))
-Ns = pickle.load(open("data_for_plot/Ns.p", "rb"))
-kind_list = pickle.load(open("data_for_plot/kind_list.p", "rb"))
-solver ='mr'
+def load_experiment_settings():
+    material_list = pickle.load(open("data_for_plot/material_list.p", "rb"))
+    sol_rank_range_set = pickle.load(open("data_for_plot/sol_rank_range_set.p", "rb"))
+    kinds = pickle.load(open("data_for_plot/kinds.p", "rb"))
+    Ns = pickle.load(open("data_for_plot/Ns.p", "rb"))
+    kind_list = pickle.load(open("data_for_plot/kind_list.p", "rb"))
+    solver ='mr'
+    return material_list, sol_rank_range_set, kinds, Ns, kind_list, solver 
 
 
 def plot_error():
+    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings()
     ylimit = [10 ** -11, 10 ** 0]
     xlabel ='rank of solution'
     ylabel='norm of relative error'
@@ -45,7 +48,7 @@ def plot_error():
                 sols_Ga_Spar   =   pickle.load(open( "data_for_plot/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(dim,material,kind,N,solver), "rb"  ) )
                 sols_GaNi_Spar =   pickle.load(open( "data_for_plot/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(dim,material,kind,N,solver), "rb"  ) )
 
-                plt.hold(True)
+                #plt.hold(True)
                 plt.semilogy(sol_rank_range,[abs((sols_Ga_Spar[i]  -sols_Ga[1])  /sols_Ga[1])   for i in range(len(sols_Ga_Spar))], lines['Ga_{}'.format(kind_list[kind])][i],   label=labels['Ga{}'.format(kind_list[kind])] , markevery=1)
                 plt.semilogy(sol_rank_range,[abs((sols_GaNi_Spar[i]-sols_GaNi[1])/sols_GaNi[1]) for i in range(len(sols_GaNi_Spar))],lines['GaNi_{}'.format(kind_list[kind])][i], label=labels['GaNi{}'.format(kind_list[kind])], markevery=1, markersize=7,markeredgewidth=1,markerfacecolor='None')
                 i=i+1
@@ -89,7 +92,7 @@ def plot_error():
                 sols_Ga_Spar   =   pickle.load(open( "data_for_plot/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(dim,material,kind,N,solver), "rb"  ) )
                 sols_GaNi_Spar =   pickle.load(open( "data_for_plot/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(dim,material,kind,N,solver), "rb"  ) )
 
-                plt.hold(True)
+         #       plt.hold(True)
                 plt.semilogy(sol_rank_range,[abs((sols_Ga_Spar[i]  -sols_Ga[1])  /sols_Ga[1])   for i in range(len(sols_Ga_Spar))], lines['Ga_{}'.format(kind_list[kind])][i],   label=labels['Ga{}'.format(kind_list[kind])] , markevery=1)
                 plt.semilogy(sol_rank_range,[abs((sols_GaNi_Spar[i]-sols_GaNi[1])/sols_GaNi[1]) for i in range(len(sols_Ga_Spar))], lines['GaNi_{}'.format(kind_list[kind])][i], label=labels['GaNi{}'.format(kind_list[kind])], markevery=1, markersize=7,markeredgewidth=1,markerfacecolor='None')
 
@@ -108,6 +111,7 @@ def plot_error():
         ##### END: figure 1 resiguum(solution rank) ###########
 
 def plot_memory():
+    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings()
     #ylimit = [10 ** -7, 10 ** -1]
     xlabel = 'rank of solution'
     ylabel = 'memory efficiency'
@@ -140,7 +144,7 @@ def plot_memory():
                     plt.semilogy(sol_rank_range, mem_GaNi_Spar, lines['mem_{}'.format(kind_list[kind])][i],
                                  label='{}{}'.format(labels['GaNi{}N'.format(kind_list[kind])], N), markevery=1,
                                  markersize=7, markeredgewidth=1, markerfacecolor='None')
-                    plt.hold(True)
+            #        plt.hold(True)
                     i = i + 1
 
             ax = plt.gca()
@@ -181,7 +185,7 @@ def plot_memory():
                     plt.semilogy(sol_rank_range, mem_GaNi_Spar, lines['mem_{}'.format(kind_list[kind])][i],
                                  label='{}{}'.format(labels['GaNi{}N'.format(kind_list[kind])], N), markevery=1,
                                  markersize=7, markeredgewidth=1, markerfacecolor='None')
-                    plt.hold(True)
+           #         plt.hold(True)
                     i = i + 1
 
             ax = plt.gca()
@@ -199,6 +203,7 @@ def plot_memory():
         ##### END: figure 2 memory ###########
 
 def plot_residuals():
+    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings()
     xlimit = [0, 20]
     ylimit = [10 ** -7, 10 ** -1]
     xlabel = 'iteration'
@@ -220,7 +225,7 @@ def plot_residuals():
                     src = 'figures/'  # source folder\
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+            #        plt.hold(True)
 
                     res_Ga_Spar = pickle.load(open(
                         "data_for_plot/dim_{}/mat_{}/res_Ga_Spar_{}_{}_{}.p".format(dim, material, kind, N, solver),
@@ -258,7 +263,7 @@ def plot_residuals():
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
 
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+             #       plt.hold(True)
 
                     res_GaNi_Spar = pickle.load(
                         open("data_for_plot/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(dim, material, kind, N,
@@ -302,7 +307,7 @@ def plot_residuals():
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
 
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+             #       plt.hold(True)
 
                     res_Ga_Spar = pickle.load(
                         open(
@@ -341,7 +346,7 @@ def plot_residuals():
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
 
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+            #        plt.hold(True)
 
                     res_GaNi_Spar = pickle.load(
                         open("data_for_plot/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(dim, material, kind, N,
@@ -380,7 +385,7 @@ def plot_residuals():
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
 
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+            #        plt.hold(True)
 
                     res_Ga_Spar = pickle.load(
                         open(
@@ -417,7 +422,7 @@ def plot_residuals():
                     sol_rank_range = sol_rank_range_set['{}'.format(dim)]
 
                     plt.figure(num=None, figsize=parf['figsize'], dpi=parf['dpi'])
-                    plt.hold(True)
+            #        plt.hold(True)
 
                     res_GaNi_Spar = pickle.load(
                         open("data_for_plot/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(dim, material, kind, N,
@@ -446,6 +451,7 @@ def plot_residuals():
     ##### END: figure 5.2 Residuum for GaNi solution ###########
 
 if __name__=='__main__':
+    
     plot_error()
     plot_memory()
     plot_residuals()
