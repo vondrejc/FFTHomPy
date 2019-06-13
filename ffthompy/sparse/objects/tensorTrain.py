@@ -234,7 +234,7 @@ class TensorTrain(vector,SparseTensorFuns):
 
     def __mul__(self, other):
 
-        name=self.name+'*'+(str(other) if isinstance(other, (int, float, complex)) else other.name)
+        name=self.name+'*'+(str(other) if isinstance(other, (int, float, complex)) or np.isscalar(other) else other.name)
 
         if self.fft_form=='sr' and not isinstance(other, (int, float, complex)):
             res_vec=vector.__mul__(self.set_fft_form('c',copy=True), other.set_fft_form('c',copy=True))
