@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from ffthompy.materials import Material
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
-from .material_setting import getMat_conf,recover_Aga,recover_Agani
+from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
 
 import os
 import sys
@@ -29,12 +29,12 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             )
 pars_sparse=pars.copy()
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=25, # rank of solution vector
-                          precond_rank=25,
+                          rank=15, # rank of solution vector
+                          precond_rank=10,
                           tol=None,
                           N=dim*(1*N,),
                           solver=dict(method='mr', #  method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                      approx_omega=True, # inner product of tuckers could be so slow
+                                      approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
                                       eigrange=[0.6,50], # for Chebyshev solver
                                       tol=1e-10,
@@ -46,7 +46,7 @@ print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                             N, dim, material))
 
 ### get material settings for experiment
-pars, pars_sparse, mat_conf = getMat_conf( material, pars, pars_sparse)
+pars, pars_sparse, mat_conf = getMat_conf(material, pars, pars_sparse)
 
 # generating material coefficients
 mat=Material(mat_conf)
