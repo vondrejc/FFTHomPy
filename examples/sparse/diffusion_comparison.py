@@ -12,7 +12,7 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_
 from ffthompy.sparse.materials import SparseMaterial
 
 from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
-#from examples.sparse.plots import plot_error, plot_memory, plot_residuals
+from examples.sparse.plots import plot_error, plot_memory, plot_residuals
 
 os.nice(19)
 #######################################################
@@ -179,6 +179,6 @@ for dim in [2]:
                 pickle.dump( mem_GaNi,  open("data_for_plot/dim_{}/mat_{}/mem_GaNi_{}.p".format(dim, material,N) , "wb"))
 
 
-  #  plot_error()
-  #  plot_memory()
-  #  plot_residuals()
+    plot_error()
+    plot_memory()
+    plot_residuals()

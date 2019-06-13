@@ -8,7 +8,7 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from ffthompy.sparse.materials import SparseMaterial
 
-from .material_setting import getMat_conf,recover_Aga,recover_Agani
+from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
 
 import matplotlib.pylab as plt
 import os
