@@ -179,9 +179,10 @@ class CanoTensor(SparseTensorFuns):
         if tol is None and rank is None:
             return self
 
-        if rank>=self.r:
-            #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
-            return self
+        if rank is not None:
+            if rank>=self.r:
+                #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
+                return self
 
         self=self.orthogonalise()
 
