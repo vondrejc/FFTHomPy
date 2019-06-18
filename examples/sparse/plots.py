@@ -450,9 +450,103 @@ def plot_residuals():
             print('END Ga residuum')
     ##### END: figure 5.2 Residuum for GaNi solution ###########
 
+def plot_time(exact=False):
+
+    if exact == True:
+        material=0
+        kind_list = ['cano', 'tucker', 'tt']
+        kinds = {'2': 0,
+                 '3': 2, }
+        for dim in [2,3]:
+            kind = kinds['{}'.format(dim)]
+            xlabel = 'number of points - $ N $'
+            ylabel = 'time cost [s]'
+            if not os.path.exists('figures'):
+                os.makedirs('figures')
+
+            parf = set_pars(mpl)
+            lines, labels = set_labels()
+            src = 'figures/'  # source folder\
+
+            plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
+
+            N_list = pickle.load(open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material,kind_list[kind]), "rb"))
+            full_time_list = pickle.load(open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material,kind_list[kind]), "rb"))
+            sparse_time_list = pickle.load(
+                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material,kind_list[kind]), "rb"))
+
+
+            plt.plot(N_list, full_time_list, lines['Gafull'], label = 'Full',  markevery = 1)
+            plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'Sparse', markevery = 1)
+
+           # plt.show()
+            ax = plt.gca()
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+
+            xlimit = [N_list[0]-N_list[0]/10, N_list[-1]+N_list[-1]/100]
+            ylimit = [0, full_time_list[-1]*1.1]
+            ax.set_xlim(xlimit)
+            ax.set_ylim(ylimit)
+
+            lg = plt.legend(loc = 'upper right')
+            fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material,kind_list[kind],'.pdf')
+            print(('create figure: {}'.format(fname)))
+            plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
+            print('END Ga residuum')
+            ##### END: figure 5.1 Residuum for Ga solution ###########
+
+        else:
+            material = 0
+            kind_list = ['cano', 'tucker', 'tt']
+            kinds = {'2': 0,
+                     '3': 2, }
+            for dim in [2, 3]:
+                kind = kinds['{}'.format(dim)]
+                xlabel = 'number of points - $ N $'
+                ylabel = 'time cost [s]'
+                if not os.path.exists('figures'):
+                    os.makedirs('figures')
+
+                parf = set_pars(mpl)
+                lines, labels = set_labels()
+                src = 'figures/'  # source folder\
+
+                plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
+
+                N_list = []
+
+                full_time_list = pickle.load(
+                    open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                sparse_time_list = pickle.load(
+                    open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+
+                plt.plot(N_list, full_time_list, lines['Gafull'], label = 'Full', markevery = 1)
+                plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'Sparse', markevery = 1)
+
+                # plt.show()
+                ax = plt.gca()
+                plt.xlabel(xlabel)
+                plt.ylabel(ylabel)
+
+                xlimit = [N_list[0] - N_list[0]/10, N_list[-1] + N_list[-1]/100]
+                ylimit = [0, full_time_list[-1]*1.1]
+                ax.set_xlim(xlimit)
+                ax.set_ylim(ylimit)
+
+                lg = plt.legend(loc = 'upper right')
+                fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
+                print(('create figure: {}'.format(fname)))
+                plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
+                print('END Ga residuum')
+                ##### END: figure 5.1 Residuum for Ga solution ###########
+
+
 if __name__=='__main__':
-    
-    plot_error()
-    plot_memory()
-    plot_residuals()
+
+    plot_time()
+
+   # plot_error()
+   # plot_memory()
+   # plot_residuals()
 
