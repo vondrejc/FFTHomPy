@@ -121,7 +121,7 @@ for dim in [2]:  ## 2,3
             print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
             print ("solution discrepancy",resS_Ga.AH - resP_Ga.AH)
 
-            if resS_Ga.AH - resP_Ga.AH <= 0:
+            if abs(resS_Ga.AH - resP_Ga.AH) <= epsilon:
                 rank_list[i]=r
                 sparse_time_list[i]=resS_Ga.time
                 memory_list[i]=resS_Ga.Fu.memory/resP_Ga.Fu.val.size # memory efficiency
