@@ -19,8 +19,8 @@ material=0
 
 
 
-k_list={'2': [3,4,5,6,7],#[45,81,243,729,2187]
-      '3': [1,2,3]}#,4,5,6 ]
+k_list={'2': [1,2,3],#[45,81,243,729,2187]
+        '3': [1,2,3]}#,4,5,6 ]
 
 kinds = {'2': 0,
          '3': 2,}
@@ -30,7 +30,7 @@ kinds = {'2': 0,
 epsilon=1e-8
 kind_list=['cano','tucker','tt']
 
-for dim in [2,3]:
+for dim in [3]:
     N_list = 5*np.power(3, k_list['{}'.format(dim)])
     kind =kinds['{}'.format(dim)]
 
