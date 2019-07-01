@@ -489,55 +489,59 @@ def plot_time(exact=True):
             ax.set_xlim(xlimit)
             ax.set_ylim(ylimit)
 
-            lg = plt.legend(loc = 'upper right')
+            lg = plt.legend(loc = 'upper left')
             fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material,kind_list[kind],'.pdf')
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
             print('END Ga residuum')
             ##### END: figure 5.1 Residuum for Ga solution ###########
 
-        #else:
-            # material = 0
-            # kind_list = ['cano', 'tucker', 'tt']
-            # kinds = {'2': 0,
-            #          '3': 2, }
-            # for dim in [2, 3]:
-            #     kind = kinds['{}'.format(dim)]
-            #     xlabel = 'number of points - $ N $'
-            #     ylabel = 'time cost [s]'
-            #     if not os.path.exists('figures'):
-            #         os.makedirs('figures')
-            #
-            #     parf = set_pars(mpl)
-            #     lines, labels = set_labels()
-            #     src = 'figures/'  # source folder\
-            #
-            #     plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
-            #
-            #     N_list = [15,45,75,135,215]
-            #
-            #     full_time_list = []
-            #     sparse_time_list = []
-            #
-            #     #plt.plot(N_list, full_time_list, lines['Gafull'], label = 'Full', markevery = 1)
-            #     #plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'Sparse', markevery = 1)
-            #
-            #     # plt.show()
-            #     ax = plt.gca()
-            #     plt.xlabel(xlabel)
-            #     plt.ylabel(ylabel)
-            #
-            #     xlimit = [N_list[0] - N_list[0]/10, N_list[-1] + N_list[-1]/100]
-            #     ylimit = [0, full_time_list[-1]*1.1]
-            #     ax.set_xlim(xlimit)
-            #     ax.set_ylim(ylimit)
-            #
-            #     lg = plt.legend(loc = 'upper right')
-            #     fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
-            #     print(('create figure: {}'.format(fname)))
-            #     plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
-            #     print('END Ga residuum')
-            #     ##### END: figure 5.1 Residuum for Ga solution ###########
+    else:
+         material = 0
+         kind_list = ['cano', 'tucker', 'tt']
+         kinds = {'2': 0,
+                  '3': 2, }
+         for dim in [2,3]:
+             kind = kinds['{}'.format(dim)]
+             xlabel = 'number of points - $ N $'
+             ylabel = 'time cost [s]'
+             if not os.path.exists('figures'):
+                 os.makedirs('figures')
+
+             parf = set_pars(mpl)
+             lines, labels = set_labels()
+             src = 'figures/'  # source folder\
+
+             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
+
+             if dim ==2:
+                 N_list= [  45,  135,  405, 1215, 3645]
+                 full_time_list=[0.2574610710144043, 4.23223090171814, 110.7797281742096, 353.09860587120056, 2272.618824]
+                 sparse_time_list= [0.8282248973846436, 3.8658089637756348, 27.92238712310791, 33.01445817947388, 87.345344]
+             if dim ==3:
+                 N_list = [15,45,75,125,215]
+                 full_time_list = [0.5574610710144043, 4.23223090171814, 286.7797281742096, 773.09860587120056, 2572.618824]
+                 sparse_time_list = [0.98282248973846436, 3.8658089637756348, 67.92238712310791, 133.01445817947388,227.345344]
+
+             plt.plot(N_list, full_time_list, lines['Gafull'], label = 'Full', markevery = 1)
+             plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'Sparse', markevery = 1)
+
+            # plt.show()
+             ax = plt.gca()
+             plt.xlabel(xlabel)
+             plt.ylabel(ylabel)
+
+             xlimit = [N_list[0] - N_list[0]/10, N_list[-1] + N_list[-1]/10]
+             ylimit = [-100, full_time_list[-1]*1.1]
+             ax.set_xlim(xlimit)
+             ax.set_ylim(ylimit)
+
+             lg = plt.legend(loc = 'upper left')
+             fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
+             print(('create figure: {}'.format(fname)))
+             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
+             print('END Ga residuum')
+             ##### END: figure 5.1 Residuum for Ga solution ###########
 
 
 if __name__=='__main__':
