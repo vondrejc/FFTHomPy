@@ -532,12 +532,12 @@ def plot_time(exact=True):
              plt.ylabel(ylabel)
 
              xlimit = [N_list[0] - N_list[0]/10, N_list[-1] + N_list[-1]/10]
-             ylimit = [-100, full_time_list[-1]*1.1]
-             ax.set_xlim(xlimit)
-             ax.set_ylim(ylimit)
+            # ylimit =[-5,3000]# % [-100, full_time_list[-1]*1.1]
+           #  ax.set_xlim(xlimit)
+             #ax.set_ylim(ylimit)
 
              lg = plt.legend(loc = 'upper left')
-             fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
+             fname = src + 'time_efficiencyF_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
              print(('create figure: {}'.format(fname)))
              plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
              print('END Ga residuum')
