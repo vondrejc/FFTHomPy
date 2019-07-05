@@ -31,10 +31,9 @@ def getMat_conf(material, pars, pars_sparse):
                     'params': [0.6 * np.ones(dim), ''],  # size of sides
                     'vals': [10 * np.eye(dim), 1. * np.eye(dim)],
                     'Y': np.ones(dim),
-                    'P': pars.N,
+                    'P': dim*(5,),
                     'order': 0, }
         pars_sparse.update(Struct(matrank=2))
-
 
     elif material in [1]:
         mat_conf = {'inclusions': ['pyramid', 'all'],

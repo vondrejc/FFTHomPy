@@ -393,8 +393,10 @@ class CanoTensor(SparseTensorFuns):
             raise NotImplementedError("M is not a multiple of the old size N")
 
         res=self.copy()
+        shift=lambda bas: np.fft.fftshift(bas, axes=1)
+        ishift=lambda bas: np.fft.ifftshift(bas, axes=1)
         for i in range(self.order):
-            res.basis[i]=np.repeat(res.basis[i], M[i]/self.N[i], axis=1)
+            res.basis[i]=ishift(np.repeat(shift(res.basis[i]), M[i]/self.N[i], axis=1))
             res.basis[i]/=np.sqrt(M[i]/self.N[i]) # restore original norm
 
         res.core*=np.prod(np.sqrt(M/self.N))

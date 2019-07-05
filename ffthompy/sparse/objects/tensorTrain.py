@@ -118,8 +118,11 @@ class TensorTrain(vector,SparseTensorFuns):
         res=self.copy()
         cl = res.to_list(res)
         clf = [None] * self.d
+
+        shift=lambda bas: np.fft.fftshift(bas, axes=1)
+        ishift=lambda bas: np.fft.ifftshift(bas, axes=1)
         for i in range(self.d):
-            clf[i] =np.repeat(cl[i], M[i]/self.n[i], axis=1)
+            clf[i] =ishift(np.repeat(shift(cl[i]), M[i]/self.n[i], axis=1))
 
         res=res.from_list(clf)
 
