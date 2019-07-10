@@ -17,7 +17,6 @@ import pickle
 #dim=2
 material=0
 
-
 k_list={'2': [2,3,4,5],#[45,81,243,729,2187]
         '3': [1,2,3]}#,4,5,6 ]
 
@@ -30,6 +29,7 @@ epsilon=1e-8
 kind_list=['cano','tucker','tt']
 
 for dim in [2]:  ## 2,3
+
     if dim==2:
         N_list = 5*np.power(3, k_list['{}'.format(dim)])
     else:
@@ -50,7 +50,7 @@ for dim in [2]:  ## 2,3
                     N=dim*(N,), # number of voxels (assumed equal for all directions)
                     Y=np.ones(dim), # size of periodic cell
                     recover_sparse=1, # recalculate full material coefficients from sparse one
-                    solver=dict(tol=1e-10,
+                    solver=dict(tol=1e-6,
                                 maxiter=50),
                     )
         pars_sparse = pars.copy()
@@ -58,7 +58,7 @@ for dim in [2]:  ## 2,3
 
         # generating material coefficients
         mat=Material(mat_conf)
-#        Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
+    #    Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
         Aga=mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
 
         print('\n== Full solution with potential by CG (Ga) ===========')
@@ -81,9 +81,9 @@ for dim in [2]:  ## 2,3
                                               approx_omega=False,  # inner product of tuckers could be so slow
                                               # that using an approximate omega could gain.
                                               eigrange=[0.6, 50],  # for Chebyshev solver
-                                              tol=1e-10,
+                                              tol=1e-6,
                                               maxiter=50,  # no. of iterations for a solver
-                                              divcrit=False),
+                                              divcrit=True),
                                   ))
 
         # generating material coefficients
@@ -92,6 +92,7 @@ for dim in [2]:  ## 2,3
 #        Aga=mat.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal')
 
         for r in range(5, N+1,5):
+
             pars_sparse.update(Struct(rank=r, # rank of solution vector
                                       precond_rank=r,
                                       ))
@@ -109,8 +110,8 @@ for dim in [2]:  ## 2,3
             Agas.set_fft_form()
 
 #            Aga.val = recover_Aga(Aga, Agas)
-            pars_sparse.update(Struct(alpha= 5.5))
-
+#            pars_sparse.update(Struct(alpha=0.5*(Aga[0, 0].min()+Aga[0, 0].max())))
+            pars_sparse.update(Struct(alpha= 5.5 ))
 
             print('\n== SPARSE solver with preconditioner (Ga) =======================')
             resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
