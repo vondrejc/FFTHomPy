@@ -18,8 +18,7 @@ import pickle
 material=0
 
 
-
-k_list={'2': [2,3,4],#[45,81,243,729,2187]
+k_list={'2': [2,3,4,5],#[45,81,243,729,2187]
         '3': [1,2,3]}#,4,5,6 ]
 
 kinds = {'2': 0,
@@ -31,7 +30,11 @@ epsilon=1e-8
 kind_list=['cano','tucker','tt']
 
 for dim in [2]:  ## 2,3
-    N_list = 5*np.power(3, k_list['{}'.format(dim)])
+    if dim==2:
+        N_list = 5*np.power(3, k_list['{}'.format(dim)])
+    else:
+        N_list = [5, 15,45,135, 155, 175]
+
     kind =kinds['{}'.format(dim)]
 
     full_time_list = [None]*len(N_list)
@@ -55,7 +58,7 @@ for dim in [2]:  ## 2,3
 
         # generating material coefficients
         mat=Material(mat_conf)
-    #    Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
+#        Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
         Aga=mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
 
         print('\n== Full solution with potential by CG (Ga) ===========')
@@ -85,8 +88,8 @@ for dim in [2]:  ## 2,3
 
         # generating material coefficients
         mat=Material(mat_conf)
-    #    Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
-        Aga=mat.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal')
+#        Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
+#        Aga=mat.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal')
 
         for r in range(5, N+1,5):
             pars_sparse.update(Struct(rank=r, # rank of solution vector
@@ -105,8 +108,8 @@ for dim in [2]:  ## 2,3
             Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
             Agas.set_fft_form()
 
-            Aga.val = recover_Aga(Aga, Agas)
-            pars_sparse.update(Struct(alpha=0.5*(Aga[0, 0].min()+Aga[0, 0].max())))
+#            Aga.val = recover_Aga(Aga, Agas)
+            pars_sparse.update(Struct(alpha= 5.5))
 
 
             print('\n== SPARSE solver with preconditioner (Ga) =======================')
@@ -151,7 +154,7 @@ plt.title('Time cost of full and sparse solvers')
 plt.ylabel('Time cost(s)')
 plt.xlabel('N')
 plt.legend(loc='upper left')
-picname = 'time_efficiency_2D_mat0_cano' +'.png'
+picname = 'time_efficiency_mat0' +'.png'
 
 plt.savefig(picname)
 os.system('eog'+' '+picname +' '+ '&')

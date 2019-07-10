@@ -38,7 +38,7 @@ def homog_Ga_full(Aga, pars):
     tic.measure()
 
     AH=Aga(X+EN)*(X+EN)
-    return Struct(AH=AH, X=X, time=tic.vals[0][1])
+    return Struct(AH=AH, X=X, time=tic.vals[0][0])
 
 def homog_Ga_full_potential(Aga, pars):
 
@@ -84,7 +84,7 @@ def homog_Ga_full_potential(Aga, pars):
 
     AH=Aga(X+EN)*(X+EN)
 
-    return Struct(AH=AH, e=X, Fu=Fu, info=info,  time=tic.vals[0][1])
+    return Struct(AH=AH, e=X, Fu=Fu, info=info,  time=tic.vals[0][0])
 
 def homog_GaNi_full_potential(Agani, Aga, pars):
 
@@ -124,7 +124,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
     XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
     AH=Aga(XEN)*XEN
-    return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][1])
+    return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0])
 
 def homog_Ga_sparse(Agas, pars):
     Nbar=Agas.N
@@ -196,7 +196,7 @@ def homog_Ga_sparse(Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX, method='full')
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][1])
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][0])
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
     N=Aganis.N
@@ -267,7 +267,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     FGX[0]+=Es # adding mean
 
     AH = calculate_AH_sparse(Agas, FGX, method='full')
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][1])
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][0])
 
 def get_preconditioner(N, pars):
     hGrad=grad_tensor(N, pars.Y)
