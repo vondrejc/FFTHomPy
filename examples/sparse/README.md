@@ -42,7 +42,7 @@ in [diffusion.py](#diffusion.py) with material 0 (squere inclusion).
 Plot results
 ========
 File [plots.py](#plots.py) contains procedures which creates .pdf figures with results.
-Procedures plot_error(), plot_memory() and plot_residuals() loads data genereted by [diffusion_comparison.py](#diffusion_comparison.py) 
- and plot_time() load data genereted by [experiment_time_efficiency.py](#experiment_time_efficiency.py).
+Procedures plot_error(), plot_memory() and plot_residuals() use data genereted by [diffusion_comparison.py](#diffusion_comparison.py) 
+ and plot_time() uses data genereted by [experiment_time_efficiency.py](#experiment_time_efficiency.py).
 Visual style, lines and labels are defined in [fig_pars.py](#fig_pars.py).
 
