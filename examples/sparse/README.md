@@ -6,6 +6,7 @@ Folder [examples/sparse](#examples/sparse) contains files working with low-rank 
 
 In file [diffusion.py](#diffusion.py) a model homogenisation problem of a scalar elliptic equation is implemented (see section 2.1. of the paper).
 For predefined:
+
  -  dimension (dim= 2 or 3),
  - grid size (N= odd number),
  - material (material = 0 - square inclusion,
@@ -14,10 +15,12 @@ For predefined:
   
   [diffusion.py](#diffusion.py) compute one element of homogenised material property of the material (see section 2.2. of the paper).
   The problem solution is computed by two different approaches: 
+  
    - (Ga) Galerkin approximation ,
    - (GaNi) Galerkin approximation with Numerical Integration,
  
   and two different formats:
+  
    - full tensor format,
    - low-rank format (canonical, Tucker or Tensor-Train).
 
