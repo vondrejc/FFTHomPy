@@ -31,7 +31,7 @@ sol_rank_range_set={'2': [1,5,10,20,30],
 kind_list = ['cano', 'tucker', 'tt']
 
 if not os.path.exists('data_for_plot'):
-    os.makedirs('data_for_plot/dim_2/mat_0/')
+    os.makedirs('data_for_plot/')
     os.makedirs('data_for_plot/dim_2/mat_2/')
     os.makedirs('data_for_plot/dim_3/mat_0/')
     os.makedirs('data_for_plot/dim_3/mat_2/')
@@ -47,6 +47,8 @@ for dim in [2,3]:
         N = Ns['{}'.format(dim)][grid]
 
         for material in material_list:
+            if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
+                os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
             for kind in kinds['{}'.format(dim)]:
 
                 ################ MATERAL DATA AND SETTINGS ################
@@ -179,6 +181,6 @@ for dim in [2,3]:
                 pickle.dump( mem_GaNi,  open("data_for_plot/dim_{}/mat_{}/mem_GaNi_{}.p".format(dim, material,N) , "wb"))
 
 
-    plot_error()
-    plot_memory()
-    plot_residuals()
+plot_error()
+plot_memory()
+plot_residuals()

@@ -25,6 +25,8 @@ kind_list=['cano','tucker','tt']
 material=0
 
 for dim in [2,3]:
+    if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
+        os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
 
     if dim==2:
         N_list =  W_list['{}'.format(dim)]
