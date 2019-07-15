@@ -1,39 +1,34 @@
-
-
 import numpy as np
-
-from ffthompy import Timer, Struct
-from ffthompy.materials import Material
-from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
-                                            homog_Ga_sparse, homog_GaNi_sparse)
-from ffthompy.sparse.materials import SparseMaterial
-
-from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
-
 import matplotlib.pylab as plt
 import os
 import pickle
 
-#dim=2
-material=0
+from ffthompy import Timer, Struct
+from ffthompy.materials import Material
+from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
+                                            homog_Ga_sparse,)
+from ffthompy.sparse.materials import SparseMaterial
+from examples.sparse.material_setting import getMat_conf
 
-k_list={'2': [2,3,4,5],#[45,81,243,729,2187]
-        '3': [1,2,3]}#,4,5,6 ]
+k_list={'2': [2,3,4,5],
+        '3': [4,3,2,1]}
 
 kinds = {'2': 0,
          '3': 2,}
-#N_list= [15,45,75,125,215]
 
+W_list = {'2': [45,135,405,1215],
+          '3': [5,15,45,135,175]}
 
 epsilon=1e-8
 kind_list=['cano','tucker','tt']
+material=0
 
-for dim in [2]:  ## 2,3
+for dim in [2,3]:
 
     if dim==2:
-        N_list = 5*np.power(3, k_list['{}'.format(dim)])
+        N_list =  W_list['{}'.format(dim)]
     else:
-        N_list = [5, 15,45,135, 155, 175]
+        N_list = W_list['{}'.format(dim)]
 
     kind =kinds['{}'.format(dim)]
 
@@ -58,7 +53,6 @@ for dim in [2]:  ## 2,3
 
         # generating material coefficients
         mat=Material(mat_conf)
-    #    Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
         Aga=mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
 
         print('\n== Full solution with potential by CG (Ga) ===========')
@@ -88,11 +82,8 @@ for dim in [2]:  ## 2,3
 
         # generating material coefficients
         mat=Material(mat_conf)
-#        Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
-#        Aga=mat.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal')
 
         for r in range(5, N+1,5):
-
             pars_sparse.update(Struct(rank=r, # rank of solution vector
                                       precond_rank=r,
                                       ))
@@ -101,16 +92,11 @@ for dim in [2]:  ## 2,3
                                                                         N, dim, material))
 
             # PROBLEM DEFINITION ######################################################
-
             # generating material coefficients
             mats=SparseMaterial(mat_conf, pars_sparse.kind)
-
-    #        Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
             Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
             Agas.set_fft_form()
 
-#            Aga.val = recover_Aga(Aga, Agas)
-#            pars_sparse.update(Struct(alpha=0.5*(Aga[0, 0].min()+Aga[0, 0].max())))
             pars_sparse.update(Struct(alpha= 5.5 ))
 
             print('\n== SPARSE solver with preconditioner (Ga) =======================')
@@ -118,9 +104,6 @@ for dim in [2]:  ## 2,3
             print('mean of solution={}'.format(resS_Ga.Fu.mean()))
             print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
             print(resS_Ga.Fu)
-            #print('iterations={}'.format(resS_Ga.solver['kit']))
-            #if np.array_equal(pars.N, pars_sparse.N):
-            #    print('norm(dif)={}'.format(np.linalg.norm(resP_Ga.Fu.fourier().val-resS_Ga.Fu.fourier().full().val)))
             print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
             print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
             print ("solution discrepancy",resS_Ga.AH - resP_Ga.AH)
@@ -159,16 +142,3 @@ picname = 'time_efficiency_mat0' +'.png'
 
 plt.savefig(picname)
 os.system('eog'+' '+picname +' '+ '&')
-
-
-##figure( 1)
-#fig, ax1 = plt.subplots()
-#fig.set_size_inches(5 , 3.5 , forward=True)
-#
-#ax1.plot(N_list, memory_list,   linewidth=1 , marker='o' , markersize=2 )
-#plt.title('sparse vs full memory ratio')
-#plt.ylabel('Memory ratio S/F')
-#picname = 'memory_efficiency_2D' +'.png'
-#
-#plt.savefig(picname)
-#os.system('eog'+' '+picname +' '+ '&')
