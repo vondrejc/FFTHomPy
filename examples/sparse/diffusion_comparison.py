@@ -17,8 +17,8 @@ from examples.sparse.plots import plot_error, plot_memory, plot_residuals
 os.nice(19)
 #######################################################
 
-Ns = {'2': [81,243],#[45,81,243,729,2187]
-      '3': [27,45,81,135]}
+Ns = {'2': [45, 135, 405, 1215],
+      '3': [15, 25, 55, 135]}
 
 kinds = {'2': [0,2],
          '3': [1,2],}
@@ -42,7 +42,7 @@ pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
 pickle.dump(sol_rank_range_set, open("data_for_plot/sol_rank_range_set.p", "wb"))
 pickle.dump(material_list, open("data_for_plot/material_list.p", "wb"))
 
-for dim in [2]:
+for dim in [2,3]:
     for grid in range(len(Ns['{}'.format(dim)])):
         N = Ns['{}'.format(dim)][grid]
 
