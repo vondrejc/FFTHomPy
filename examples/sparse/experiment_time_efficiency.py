@@ -9,6 +9,7 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
                                             homog_Ga_sparse,)
 from ffthompy.sparse.materials import SparseMaterial
 from examples.sparse.material_setting import getMat_conf
+from examples.sparse.plots import plot_time
 
 k_list={'2': [2,3,4,5],
         '3': [4,3,2,1]}
@@ -125,20 +126,5 @@ for dim in [2,3]:
     pickle.dump(full_time_list, open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
     pickle.dump(sparse_time_list, open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
 
-
-
-
-#####################################################
-fig, ax2 = plt.subplots()
-fig.set_size_inches(5 , 3.5 , forward=True)
-
-ax2.plot(N_list, full_time_list,   linewidth=1 , marker='o' , markersize=2, label="Full")
-ax2.plot(N_list, sparse_time_list,   linewidth=1 , marker='o' , markersize=2, label="Sparse")
-plt.title('Time cost of full and sparse solvers')
-plt.ylabel('Time cost(s)')
-plt.xlabel('N')
-plt.legend(loc='upper left')
-picname = 'time_efficiency_mat0' +'.png'
-
-plt.savefig(picname)
-os.system('eog'+' '+picname +' '+ '&')
+##### plot results ##############
+plot_time()
