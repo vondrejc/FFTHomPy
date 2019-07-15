@@ -29,18 +29,12 @@ Materials are predefined in [material_setting.py](#material_setting.py).
 Generate results 
 ========
 File [diffusion_comparison.py](#diffusion_comparison.py) computes problem defined
-in [diffusion.py](#diffusion.py) for different parameters
- (mesh size-N, rank-r, low-rank format, material, ...) and compare solver behavior
-  (error evolution, memory consumption, and evolution of residua) with full tensor approach.
-   For more details see section 4.2. and 4.3. of the paper.
+in [diffusion.py](#diffusion.py) for different parameters (mesh size-N, rank-r, low-rank format, material, ...) and compare solver behavior
+  (error evolution, memory consumption, and evolution of residua) with full tensor approach. For more details see section 4.2. and 4.3. of the paper.
 
- File [experiment_time_efficiency.py](#experiment_time_efficiency.py) use problem defined
-in [diffusion.py](#diffusion.py) with material 0 (squere inclusion).
- This file computes the computational time at the same level of accuracy 
- for the scheme with exact integration. The full solution is calculated on a 
- grid of size (N,...,N) while the sparse solution on the grid (3N,...,3N)
-  with a solution rank to achieve the same level of accuracy as full scheme.
-   For more details see section 4.4. of the paper.
+ File [experiment_time_efficiency.py](#experiment_time_efficiency.py) use problem defined in [diffusion.py](#diffusion.py) with material 0 (squere inclusion). 
+ This file computes the computational time at the same level of accuracy for the scheme with exact integration. The full solution is calculated on a grid of size (N,...,N) while the sparse solution on the grid (3N,...,3N)
+  with a solution rank to achieve the same level of accuracy as full scheme. For more details see section 4.4. of the paper.
 
 Plot results
 ========
