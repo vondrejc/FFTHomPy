@@ -23,13 +23,13 @@ def set_pars(mpl):
     return fig_par
 
 def set_labels():
-    lines =  {'Gafull': '|-',
+    lines =  {'Gafull': 'bo-',
               'GaNifull': '--',
               'Gacano': 'bx-',
               'Gatucker': 'ro-',
               'Gatt': 'kv-',
 
-              'GaSparse': 'gx-',
+              'GaSparse': 'rx-',
 
               'full': '--',
               'mem_cano':   ['bx--','bo--','bx--','bv--','bo--','bx--','b<--'],
