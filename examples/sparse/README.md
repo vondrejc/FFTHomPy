@@ -5,7 +5,7 @@ Folder [examples/sparse](#examples/sparse) contains files working with low-rank 
  - J. Vondřejc, Liu, D, Ladecký, M., and Matthies, H. G.: *FFT-Based Homogenisation Accelerated by Low-Rank Approximations.* 2019. arXiv:1902.07455
 
 ## Model problem
-In file [diffusion.py](#diffusion.py) a model homogenisation problem of a scalar elliptic equation is implemented (see section 2.1. of the paper).
+In file [diffusion.py](#diffusion.py) a model scalar elliptic homogenisation problem described in section 2.1. of the paper is implemented.
 For predefined:
 
  -  dimension (dim= 2 or 3),
