@@ -4,6 +4,7 @@ Folder [examples/sparse](#examples/sparse) contains files working with low-rank 
 
  - J. Vondřejc, Liu, D, Ladecký, M., and Matthies, H. G.: *FFT-Based Homogenisation Accelerated by Low-Rank Approximations.* 2019. arXiv:1902.07455
 
+## Model problem
 In file [diffusion.py](#diffusion.py) a model homogenisation problem of a scalar elliptic equation is implemented (see section 2.1. of the paper).
 For predefined:
 
@@ -26,8 +27,8 @@ For predefined:
 
 Materials are predefined in [material_setting.py](#material_setting.py).
 
-Generate results 
-========
+##Generate results 
+
 File [diffusion_comparison.py](#diffusion_comparison.py) computes problem defined
 in [diffusion.py](#diffusion.py) for different parameters (mesh size-N, rank-r, low-rank format, material, ...) and compare solver behavior
   (error evolution, memory consumption, and evolution of residua) with full tensor approach. For more details see section 4.2. and 4.3. of the paper.
@@ -35,8 +36,17 @@ in [diffusion.py](#diffusion.py) for different parameters (mesh size-N, rank-r, 
 File [experiment_time_efficiency.py](#experiment_time_efficiency.py) use problem defined in [diffusion.py](#diffusion.py) with material 0 (squere inclusion). 
 This file computes the computational time at the same level of accuracy for the scheme with exact integration (Ga). The full solution is calculated on a grid of size (N,...,N) while the low-rank solution on the grid (3N,...,3N) with a solution rank to achieve the same level of accuracy as full scheme. For more details see section 4.4. of the paper.
 
+<<<<<<< Updated upstream
 Plot results
 ========
 File [plots.py](#plots.py) contains procedures which creates .pdf figures with results. Procedures plot_error(), plot_memory() and plot_residuals() use data genereted by [diffusion_comparison.py](#diffusion_comparison.py) 
  and plot_time() uses data genereted by [experiment_time_efficiency.py](#experiment_time_efficiency.py). Visual style, lines and labels are defined in [fig_pars.py](#fig_pars.py).
+=======
+##Plot results
+
+File [plots.py](#plots.py) contains procedures which creates .pdf figures with results.
+Procedures plot_error(), plot_memory() and plot_residuals() use data genereted by [diffusion_comparison.py](#diffusion_comparison.py) 
+ and plot_time() uses data genereted by [experiment_time_efficiency.py](#experiment_time_efficiency.py).
+Visual style, lines and labels are defined in [fig_pars.py](#fig_pars.py).
+>>>>>>> Stashed changes
 
