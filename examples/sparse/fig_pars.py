@@ -52,7 +52,7 @@ def set_labels():
     labels = {'full': 'Full',
               'sparse': 'Sparse',
               'Gafull': 'Ga Full',
-              'Gacano': 'Ga Cano',
+              'Gacano': 'Ga CP',
               'Gatucker': 'Ga Tucker',
               'Gatt': 'Ga TT',
 
@@ -61,7 +61,7 @@ def set_labels():
 
               'GaNifull': 'GaNi Full',
 
-              'GaNicano': 'GaNi Cano',
+              'GaNicano': 'GaNi CP',
               'GaNicanoN': 'Cano N=',
 
               'GaNitucker': 'GaNi Tucker',
