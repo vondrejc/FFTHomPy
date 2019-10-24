@@ -15,7 +15,6 @@ class SparseMaterial(Material):
         if P is None:
             P=self.conf['P']
 
-
         A_GaNi=self.mat.get_A_GaNi(P, primaldual='primal')
         A_GaNis=SparseTensor(kind=self.kind, val=A_GaNi.val[0, 0], rank=k, name='A_GaNi')
 
