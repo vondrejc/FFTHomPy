@@ -9,7 +9,7 @@ from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
 from ffthompy.sparse.solver import minimal_residual as minimal_residual_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
-#import time
+# import itertools
 
 
 def homog_Ga_full(Aga, pars):
@@ -126,17 +126,29 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     AH=Aga(XEN)*XEN
     return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0])
 
+def material_law(Agas, Aniso, X, rank=None, tol=None):
+    dim=X.__len__()
+    AFGFx=[Agas.multiply(X[ii]) for ii in range(dim)]
+    for i in range(dim):
+        for j in range(dim):
+            AFGFx[i] += X[j]*Aniso[i,j]
+        AFGFx[i].truncate(rank=rank, tol=tol)
+    return AFGFx
+
 def homog_Ga_sparse(Agas, pars):
     Nbar=Agas.N
     N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
     dim=Nbar.__len__()
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
+    if 'Aniso' in pars.keys():
+        Aniso=pars.Aniso
+    else:
+        Aniso=np.zeros([dim,dim])
 
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
-        #assert(X.Fourier)
-        #X=X.truncate(rank=rank, tol=tol)
+        assert(X.Fourier)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-        AFGFx=[Agas.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
+        AFGFx=material_law(Agas, Aniso, FGX, rank=pars.rank, tol=pars.tol)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
@@ -187,15 +199,13 @@ def homog_Ga_sparse(Agas, pars):
 
     print(('iterations of solver={}'.format(ress['kit'])))
     print(('norm of residuum={}'.format(ress['norm_res'][-1])))
-#    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
     print(('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))))
-#     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu)).full())))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     FGX[0]+=Es # adding mean
 
-    AH = calculate_AH_sparse(Agas, FGX, method='full')
+    AH = calculate_AH_sparse(Agas, Aniso, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][0])
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
@@ -203,10 +213,15 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     dim=N.__len__()
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
 
+    if 'Aniso' in pars.keys():
+        Aniso=pars.Aniso
+    else:
+        Aniso=np.zeros([dim,dim])
+
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
         FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
-        AFGFx=[Aganis.multiply(FGX[ii], rank=rank, tol=tol) for ii in range(dim)]
+        AFGFx=material_law(Aganis, Aniso, FGX, rank=pars.rank, tol=pars.tol)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
@@ -252,21 +267,19 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
                               rank=pars.rank, tol=pars.tol)
     elif pars.solver['method'] in ['minimal_residual','mr','m','M']:
         Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
-                              rank=pars.rank, tol=pars.tol)
+                                    rank=pars.rank, tol=pars.tol)
     tic.measure()
     print(('iterations of solver={}'.format(ress['kit'])))
     print(('norm of residuum={}'.format(ress['norm_res'][-1])))
-#    print('norm of residuum={}'.format(ress['norm_res']))
     Fu.name='Fu'
     print(('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))))
-#     print('norm(res)={}'.format(np.linalg.norm((Bs-DFAFGfun_s(Fu, rank=None, tol=None)).full())))
 
     Nbar=2*np.array(N)-1
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
     FGX[0]+=Es # adding mean
 
-    AH = calculate_AH_sparse(Agas, FGX, method='full')
+    AH = calculate_AH_sparse(Agas, Aniso, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][0])
 
 def get_preconditioner(N, pars):
@@ -280,22 +293,23 @@ def get_preconditioner_sparse(N, pars):
     k2=np.einsum('i...,i...', hGrad.val, np.conj(hGrad.val)).real
     k2[mean_index(N, fft_form='c')]=1.
     Prank=np.min([10, N[0]-1])
-#    Prank=pars.rank
     val=1./k2
-#    P=Tensor(name='P', val=val, N=N, order=0, Fourier=True, fft_form='c')
     Ps=SparseTensor(name='Ps', kind=pars.kind, val=val, rank=Prank, Fourier=True, fft_form='c')
     Ps.set_fft_form()
     return Ps
 
-def calculate_AH_sparse(Agas, FGX, method='full', rank=None, tol=None):
+def calculate_AH_sparse(Agas, Aniso, FGX, method='full', rank=None, tol=None):
     tic=Timer(name='AH')
     AH=0.
     if method in ['full']:
         Aga=Agas.full(multype=00)
         FGXf=[T.full() for T in FGX]
-        for ii in range(FGX.__len__()):
-            AH+=(Aga*FGXf[ii])*FGXf[ii]
+        for i in range(FGX.__len__()):
+            AH+=(Aga*FGXf[i])*FGXf[i]
+            for j in range(FGX.__len__()):
+                AH+=(Aniso[i,j]*FGXf[i])*FGXf[j]
     elif method in ['sparse']:
+        assert(np.linalg.norm(Aniso)<1e-12)
         for ii in range(FGX.__len__()):
             AH+=(Agas*FGX[ii]).truncate(rank=rank, tol=tol).scal(FGX[ii])
     else:

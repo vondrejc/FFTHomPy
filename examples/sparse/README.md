@@ -11,7 +11,7 @@ For predefined:
  -  dimension (dim= 2 or 3),
  - grid size (N= odd number),
  - material (material = 0 - square inclusion,
-    1 - pyramid inclusion, 2 - stochastic material),
+    1 - pyramid inclusion, 2 - stochastic material, 3 - anisotropic material),
  - low-rank tensor format (kind= 0-canonical, 1- Tucker, 2- Tensor-Train)
   
  [diffusion.py](#diffusion.py) compute one element of homogenised material property of the material (see section 2.2. of the paper).
@@ -27,7 +27,7 @@ For predefined:
 
 Materials are predefined in [material_setting.py](#material_setting.py).
 
-##Generate results 
+## Generate results
 
 File [diffusion_comparison.py](#diffusion_comparison.py) computes problem defined
 in [diffusion.py](#diffusion.py) for different parameters (mesh size-N, rank-r, low-rank format, material, ...) and compare solver behavior
@@ -37,7 +37,7 @@ File [experiment_time_efficiency.py](#experiment_time_efficiency.py) use problem
 This file computes the computational time at the same level of accuracy for the scheme with exact integration (Ga). The full solution is calculated on a grid of size (N,...,N) while the low-rank solution on the grid (3N,...,3N) with a solution rank to achieve the same level of accuracy as full scheme. For more details see section 4.4. of the paper.
 
 
-##Plot results
+## Plot results
 
 File [plots.py](#plots.py) contains procedures which creates .pdf figures with results.
 Procedures plot_error(), plot_memory() and plot_residuals() use data genereted by [diffusion_comparison.py](#diffusion_comparison.py) 

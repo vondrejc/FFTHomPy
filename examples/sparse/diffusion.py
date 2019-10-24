@@ -59,6 +59,12 @@ Agas.set_fft_form()
 Aga.val=recover_Aga(Aga,Agas)
 Agani.val=recover_Agani(Agani,Aganis)
 
+if 'Aniso' in mat_conf: # workaround for anisotropic material
+    Aniso=mat_conf['Aniso']
+    Agani.add_mean(Aniso)
+    Aga.add_mean(Aniso)
+    pars_sparse.update(Struct(Aniso=Aniso))
+
 pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
 
 print('\n== Full solution with potential by CG (GaNi)===========')
