@@ -83,15 +83,13 @@ def getMat_conf(material, pars, pars_sparse):
                     'P': pars.N,
                     'order': 1, }
 
-    if material in [3]: # anisotropic material
+    elif material in [3]: # anisotropic material
         if dim==2:
             Aniso=np.array([[5.5,-4.5], [-4.5, 5.5]])
         elif dim==3:
             Aniso=np.array([[ 4.25,-3.25,-1.76776695],
                             [-3.25, 4.25, 1.76776695],
                             [-1.76776695, 1.76776695, 7.5       ]])
-
-        print(np.linalg.eigvalsh(Aniso))
 
         mat_conf={'inclusions': ['square', 'otherwise'],
                     'positions': [0. * np.ones(dim), ''],
