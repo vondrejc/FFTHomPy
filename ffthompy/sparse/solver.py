@@ -93,7 +93,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
     res={'norm_res': [],
          'kit': 0}
     if x0 is None:
-        x=B*(1./par['alpha'])
+        x=B
     else:
         x=x0
     if norm is None:
@@ -119,9 +119,9 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
 
-        residuum= B-Afun(x)
+        residuum=(B-Afun(x)).truncate(rank=rank, tol=tol)
 
-        norm_res = norm(residuum)
+        norm_res=norm(residuum)
         if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
             break
         res['norm_res'].append(norm_res)
