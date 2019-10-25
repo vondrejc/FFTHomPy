@@ -71,6 +71,10 @@ class SparseTensorFuns(TensorFuns):
             self.orthogonal=False
             return self
 
+    def __radd__(self, other):
+        if other is None:
+            return self
+        return other + self
 
 if __name__=='__main__':
     # check multiplication

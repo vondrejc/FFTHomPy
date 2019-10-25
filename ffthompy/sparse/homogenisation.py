@@ -9,7 +9,7 @@ from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
 from ffthompy.sparse.solver import minimal_residual as minimal_residual_s
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
-# import itertools
+import itertools
 
 
 def homog_Ga_full(Aga, pars):
@@ -126,14 +126,42 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     AH=Aga(XEN)*XEN
     return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0])
 
-def material_law(Agas, Aniso, X, rank=None, tol=None):
-    dim=X.__len__()
-    AFGFx=[Agas.multiply(X[ii]) for ii in range(dim)]
-    for i in range(dim):
-        for j in range(dim):
-            AFGFx[i] += X[j]*Aniso[i,j]
-        AFGFx[i].truncate(rank=rank, tol=tol)
-    return AFGFx
+class Material_law():
+
+    def __init__(self, Agas, Aniso, Es):
+        self.Agas=Agas
+        self.Aniso=Aniso
+        dim=Aniso.shape[0]
+
+        if np.linalg.norm(Aniso) < 1e-12:
+            self._call=self.material_isotropic
+        else:
+            self._call=self.material_anisotropic
+            self.Aniso_fun=np.empty((dim, dim)).tolist()
+            for i,j in itertools.product(range(dim), repeat=2):
+                if i==j:
+                    self.Aniso_fun[i][j]=Agas+Es*Aniso[i,j]
+                else:
+                    self.Aniso_fun[i][j]=Es*Aniso[i,j]
+
+    def __call__(self, *args, **kwargs):
+        return self._call(*args, **kwargs)
+
+    def material_isotropic(self, X, rank=None, tol=None):
+        dim=X.__len__()
+        AFGFx=dim*[None]
+        for i in range(dim):
+            AFGFx[i]=self.Agas.multiply(X[i])
+        return AFGFx
+
+    def material_anisotropic(self, X, rank=None, tol=None):
+        dim=X.__len__()
+        AFGFx=dim*[None]
+        for i in range(dim):
+            for j in range(dim):
+                AFGFx[i]+=self.Aniso_fun[i][j]*X[j]
+            AFGFx[i].truncate(rank=rank, tol=tol)
+        return AFGFx
 
 def homog_Ga_sparse(Agas, pars):
     Nbar=Agas.N
@@ -145,10 +173,16 @@ def homog_Ga_sparse(Agas, pars):
     else:
         Aniso=np.zeros([dim,dim])
 
+    # creating constant field in sparse tensor
+    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
+    Es=Es.fourier().enlarge(Nbar).fourier()
+
+    material_law=Material_law(Agas, Aniso, Es)
+
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-        AFGFx=material_law(Agas, Aniso, FGX, rank=pars.rank, tol=pars.tol)
+        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
@@ -160,8 +194,6 @@ def homog_Ga_sparse(Agas, pars):
         return -GFAFGFx
 
     # R.H.S.
-    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
-    Es=Es.fourier().enlarge(Nbar).fourier()
     Bs=hGrad_s[0]*((Agas*Es).fourier()).decrease(N) # minus from B and from div
 
     Ps=get_preconditioner_sparse(N, pars)
@@ -218,10 +250,16 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     else:
         Aniso=np.zeros([dim,dim])
 
+    # creating constant field in sparse tensor
+    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
+    Es=Es.fourier().enlarge(N).fourier()
+
+    material_law=Material_law(Aganis, Aniso, Es)
+
     def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
         assert(X.Fourier)
         FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
-        AFGFx=material_law(Aganis, Aniso, FGX, rank=pars.rank, tol=pars.tol)
+        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
@@ -232,8 +270,6 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         return -GFAFGFx
 
     # R.H.S.
-    Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
-    Es=Es.fourier().enlarge(N).fourier()
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
 
     Ps=get_preconditioner_sparse(N, pars)
