@@ -93,7 +93,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
     res={'norm_res': [],
          'kit': 0}
     if x0 is None:
-        x=B
+        x=B*(1./par['alpha'])
     else:
         x=x0
     if norm is None:

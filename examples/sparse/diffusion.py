@@ -21,12 +21,12 @@ pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim), # size of periodic cell
             recover_sparse=1, # recalculate full material coefficients from sparse one
-            solver=dict(tol=1e-10,
+            solver=dict(tol=1e-8,
                         maxiter=50),
             )
 pars_sparse=pars.copy()
 pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=15, # rank of solution vector
+                          rank=10, # rank of solution vector
                           precond_rank=10,
                           tol=None,
                           N=dim*(N,),
@@ -34,8 +34,8 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                                       approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
                                       eigrange=[0.6,50], # for Chebyshev solver
-                                      tol=1e-10,
-                                      maxiter=50,# no. of iterations for a solver
+                                      tol=1e-4,
+                                      maxiter=20,# no. of iterations for a solver
                                       divcrit=False),
                           ))
 
@@ -65,7 +65,9 @@ if 'Aniso' in mat_conf: # workaround for anisotropic material
     Aga.add_mean(Aniso)
     pars_sparse.update(Struct(Aniso=Aniso))
 
-pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
+Amin=np.array([Agani[i,i].min() for i in range(dim)])
+Amax=np.array([Agani[i,i].max() for i in range(dim)])
+pars_sparse.update(Struct(alpha=0.5*(Amin.min()+Amax.max())))
 
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
