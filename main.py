@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from ffthompy.problem import Problem, import_file
 from optparse import OptionParser
