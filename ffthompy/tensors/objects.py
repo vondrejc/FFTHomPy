@@ -363,19 +363,19 @@ class Tensor(TensorFuns):
             eigfun=np.linalg.eigvals
 
         if self.order==2:
-            eigs=np.zeros(self.shape[-1]+self.N)
+            eigs=np.zeros(self.N+(self.shape[0],))
             for ind in np.ndindex(self.N):
-                mat=self.val[:, :][ind]
-                eigs.append(eigfun(mat))
+                mat=self.val[(slice(None), slice(None))+ind]
+                eigs[ind]=eigfun(mat)
+
         elif self.order==4:
             if mandel:
                 matrixfun=lambda x: ElasticTensor.create_mandel(x)
                 d=self.shape[2]
                 eigdim=d*(d+1)/2
             else:
-                matshape=(self.shape[0]*self.shape[1], self.shape[2]*self.shape[3])
-                matrixfun=lambda x: np.reshape(val[ind], matshape)
                 eigdim=self.shape[2]*self.shape[3]
+                matrixfun=lambda x: np.reshape(x, 2*(eigdim,))
 
             eigs=np.zeros(self.N+(eigdim,))
             val=np.copy(self.val)
@@ -383,10 +383,9 @@ class Tensor(TensorFuns):
                 val=np.rollaxis(val, self.val.ndim-self.dim+ii, ii)
 
             for ind in np.ndindex(*self.N):
-                mat=matrixfun(val[ind])
-                eigs[ind]=eigfun(mat)
+                eigs[ind]=eigfun(matrixfun(val[ind]))
 
-        eigs=np.array(eigs)
+        eigs=np.rollaxis(np.array(eigs), -1, 0)
         if sort:
             eigs=np.sort(eigs, axis=0)
         return eigs

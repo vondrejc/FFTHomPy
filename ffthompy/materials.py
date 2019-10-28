@@ -185,18 +185,28 @@ class Material():
         A : numpy.array
             material coefficients at coordinates (coord)
         """
+        N=coord.shape[1:]
+
         if 'fun' in self.conf:
             fun = self.conf['fun']
             A_val = fun(coord)
+            shp=A_val.shape[:A_val.ndim-len(N)]
         else:
-            A_val = np.zeros(self.conf['vals'][0].shape + coord.shape[1:])
+            shp=self.conf['vals'][0].shape
+            A_val = np.zeros(shp+N)
             topos = self.get_topologies(coord)
 
+            astr='abcdefgh'
+            istr='ijklmnopqrst'
+
             for ii in np.arange(len(self.conf['inclusions'])):
-                A_val += np.einsum('ij...,k...->ijk...', self.conf['vals'][ii], topos[ii])
+                stroper='{0},{1}->{0}{1}'.format(astr[:len(shp)], istr[:len(N)])
+                A_val += np.einsum(stroper, self.conf['vals'][ii], topos[ii])
         if tensor:
-            return Tensor(name='A_GaNi', val=A_val, order=2, N=coord[0].shape,
-                          Y=self.Y, multype=21, Fourier=False, origin='c')
+            multypes={'2':21, '4': 42}
+            return Tensor(name='A_GaNi', val=A_val, order=len(shp), N=coord[0].shape,
+                          Y=self.Y, multype=multypes['{}'.format(len(shp))],
+                          Fourier=False, origin='c')
         else:
             return Matrix(name='A_GaNi', val=A_val, Fourier=False)
 
