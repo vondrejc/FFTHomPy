@@ -30,6 +30,12 @@ def set_labels():
               'Gatt': 'kv-',
 
               'GaSparse': 'rx-',
+              'GaSparse_2': 'ro-',
+              'GaSparse_3': 'r<-',
+              'GaSparse_4': 'r*-',
+              'GaSparse_5': 'rd-',
+              'GaSparse_6': 'rv-',
+              'GaSparse_7': 'r^-',
 
               'full': '--',
               'mem_cano':   ['bx--','bo--','bx--','bv--','bo--','bx--','b<--'],
