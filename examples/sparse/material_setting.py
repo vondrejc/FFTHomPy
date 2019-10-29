@@ -25,7 +25,7 @@ def getMat_conf(material, pars, pars_sparse):
     pars_sparse.update(Struct(Nbar=lambda N: 2*np.array(N)-1))
 
     # PROBLEM DEFINITION ######################################################
-    if material in [0]: # square inclusion
+    if material in [0,3]: # square inclusion
         mat_conf={'inclusions': ['square', 'otherwise'],
                     'positions': [0. * np.ones(dim), ''],
                     'params': [0.6*np.ones(dim), ''], # size of sides
@@ -45,7 +45,7 @@ def getMat_conf(material, pars, pars_sparse):
                     'order': 1, }
         pars_sparse.update(Struct(matrank=2))
 
-    elif material in [2]: # stochastic material
+    elif material in [2,4]: # stochastic material
         pars_sparse.update(Struct(matrank=10))
 
         kl=KL_Fourier(covfun=2, cov_pars={'rho': 0.15, 'sigma': 1.}, N=pars.N, puc_size=pars.Y,
@@ -79,30 +79,23 @@ def getMat_conf(material, pars, pars_sparse):
             return np.einsum('ij,...->ij...', np.eye(dim), kl.transform(val))
 
         mat_conf={'fun': mat_fun,
-                    'Y': np.ones(dim),
-                    'P': pars.N,
-                    'order': 1, }
-
-    elif material in [3]: # anisotropic material
-        if dim==2:
-            Aniso=np.array([[5.5,-4.5], [-4.5, 5.5]])
-        elif dim==3:
-            Aniso=np.array([[ 4.25,-3.25,-1.76776695],
-                            [-3.25, 4.25, 1.76776695],
-                            [-1.76776695, 1.76776695, 7.5       ]])
-
-        mat_conf={'inclusions': ['square', 'otherwise'],
-                    'positions': [0. * np.ones(dim), ''],
-                    'params': [0.6*np.ones(dim), ''], # size of sides
-                    'vals': [10*np.eye(dim), 1. * np.eye(dim)],
-                    'Aniso': Aniso,
-                    'Y': np.ones(dim),
-                    'P': dim*(5,),
-                    'order': 0, }
-        pars_sparse.update(Struct(matrank=2))
+                  'Y': np.ones(dim),
+                  'P': pars.N,
+                  'order': 1, }
 
     else:
         raise ValueError()
+
+    if material in [3,4]: # adding anisotropic material
+        if dim==2:
+            Aniso=np.array([[ 5.5,-4.5],
+                            [-4.5, 5.5]])
+        elif dim==3:
+            Aniso=np.array([[ 4.25,      -3.25,      -1.76776695],
+                            [-3.25,       4.25,       1.76776695],
+                            [-1.76776695, 1.76776695, 7.5       ]])
+
+        mat_conf.update({'Aniso': Aniso})
 
     return pars, pars_sparse, mat_conf
 

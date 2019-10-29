@@ -2,7 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ffthompy import Struct
+from ffthompy import Struct, Timer
 from ffthompy.materials import Material
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
@@ -41,6 +41,7 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
 
 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                             N, dim, material))
+print('dofs = {}'.format(N**dim))
 
 # get material settings for experiment
 pars, pars_sparse, mat_conf = getMat_conf(material, pars, pars_sparse)
@@ -65,9 +66,13 @@ if 'Aniso' in mat_conf: # workaround for anisotropic material
     Aga.add_mean(Aniso)
     pars_sparse.update(Struct(Aniso=Aniso))
 
-Amin=np.array([Agani[i,i].min() for i in range(dim)])
-Amax=np.array([Agani[i,i].max() for i in range(dim)])
-pars_sparse.update(Struct(alpha=0.5*(Amin.min()+Amax.max())))
+    tic=Timer('calc_eig')
+    eigs=Agani.calc_eigs(symmetric=True)
+    tic.measure()
+
+    pars_sparse.update(Struct(alpha=0.5*(eigs.min()+eigs.max())))
+else:
+    pars_sparse.update(Struct(alpha=0.5*(Agani[0,0].min()+Agani[0,0].max())))
 
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
@@ -83,19 +88,16 @@ print('\n== SPARSE solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
 print('mean of solution={}'.format(resS_Ga.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
-print(resS_Ga.Fu)
 print('iterations={}'.format(resS_Ga.solver['kit']))
 print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
 
-print('\n== SPARSE  solver with preconditioner (GaNi) =======================')
+print('\n== SPARSE solver with preconditioner (GaNi) =======================')
 resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
 print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
 print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
-
-print(resS_GaNi.Fu)
 print('iterations={}'.format(resS_GaNi.solver['kit']))
 if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier().val-resS_GaNi.Fu.fourier().full().val)))
+    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier(Fourier=False).val-resS_GaNi.Fu.fourier().full().val)))
 print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
 
 print('END')
