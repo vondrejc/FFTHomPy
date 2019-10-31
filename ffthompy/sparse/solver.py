@@ -1,4 +1,5 @@
 import numpy as np
+from ffthompy import Timer
 from ffthompy.sparse.objects import SparseTensor
 
 def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
@@ -119,7 +120,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         x=(x+residuum*omega)
         x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
 
-        residuum=(B-Afun(x)).truncate(rank=rank, tol=tol)
+        residuum=B-Afun(x)
 
         norm_res=norm(residuum)
         if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
@@ -128,6 +129,64 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
 
         beta=Afun(residuum)
 
+    return x, res
+
+def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+    M=SparseTensor(kind=B.kind, val=np.ones(B.N.size*[3, ]), rank=1) # constant field
+    FM=M.fourier().enlarge(B.N)
+
+    res={'norm_res': [],
+         'kit': 0}
+    if x0 is None:
+        x=B*(1./par['alpha'])
+    else:
+        x=x0
+    if norm is None:
+        norm=lambda X: X.norm(normal_domain=False)
+
+    residuum=(B-Afun(x)).truncate(rank=None, tol=1e-10)
+    res['norm_res'].append(norm(residuum))
+    beta=Afun(residuum)
+
+    norm_res=res['norm_res'][res['kit']]
+
+    while (norm_res>par['tol'] and res['kit']<par['maxiter']):
+        res['kit']+=1
+        print('iteration = {}'.format(res['kit']))
+
+        if par['approx_omega']:
+            omega=norm_res/norm(beta) # approximate omega
+        else:
+            omega=beta.inner(residuum)/norm(beta)**2 # exact formula
+
+        x=(x+residuum*omega)
+        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+
+        tic=Timer('compute residuum')
+        residuum=(B-Afun(x))
+#         residuum=residuum.truncate(rank=2*rank, tol=tol)
+#         residuum=(B-Afun(x)).truncate(rank=rank, tol=tol)
+#         residuum=(B-Afun(x))
+        tic.measure()
+        tic=Timer('residuum norm')
+        norm_res=norm(residuum)
+        tic.measure()
+        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+            break
+        res['norm_res'].append(norm_res)
+
+        tic=Timer('truncate residuum')
+#         residuum_for_beta=residuum.truncate(rank=rank, tol=tol)
+#         residuum_for_beta=residuum.truncate(rank=None, tol=1-4)
+        tol=min([norm_res/1e1, par['tol']])
+        residuum_for_beta=residuum.truncate(rank=None, tol=tol)
+        tic.measure()
+        print('tolerance={}, rank={}'.format(tol, residuum_for_beta.r))
+        print('residuum_for_beta.r={}'.format(residuum_for_beta.r))
+        tic=Timer('compute beta')
+        beta=Afun(residuum_for_beta)
+        tic.measure()
+        pass
     return x, res
 
 def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
