@@ -204,13 +204,7 @@ def homog_Ga_sparse(Agas, pars):
         R=R.truncate(rank=rank, tol=tol)
         return R
 
-    parP={'alpha': pars.alpha,
-          'maxiter': pars.solver['maxiter'],
-          'tol': pars.solver['tol'],
-          'divcrit': pars.solver['divcrit'],
-          'approx_omega': pars.solver['approx_omega'],
-          'eigrange':pars.solver['eigrange']
-          }
+    parP=pars.solver
 
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
@@ -280,13 +274,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         R=R.truncate(rank=rank, tol=tol)
         return R
 
-    parP={'alpha': pars.alpha,
-          'maxiter': pars.solver['maxiter'],
-          'tol': pars.solver['tol'],
-          'divcrit': pars.solver['divcrit'],
-          'approx_omega': pars.solver['approx_omega'],
-          'eigrange':pars.solver['eigrange']
-          }
+    parP=pars.solver
 
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs

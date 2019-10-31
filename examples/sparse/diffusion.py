@@ -70,9 +70,9 @@ if 'Aniso' in mat_conf: # workaround for anisotropic material
     eigs=Agani.calc_eigs(symmetric=True)
     tic.measure()
 
-    pars_sparse.update(Struct(alpha=0.5*(eigs.min()+eigs.max())))
+    pars_sparse.solver['alpha']=0.5*(eigs.min()+eigs.max())
 else:
-    pars_sparse.update(Struct(alpha=0.5*(Agani[0,0].min()+Agani[0,0].max())))
+    pars_sparse.solver['alpha']=0.5*(Agani[0,0].min()+Agani[0,0].max())
 
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
