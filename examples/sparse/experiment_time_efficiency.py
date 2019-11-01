@@ -53,12 +53,13 @@ for dim in [2,3]:
                                   precond_rank=10,
                                   tol=None,
                                   N=dim*(N,),
+                                  rhs_tol=1e-8,
                                   solver=dict(method='mr',
                                               # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
                                               approx_omega=False,  # inner product of tuckers could be so slow
                                               # that using an approximate omega could gain.
                                               tol=1e-6,
-                                              maxiter=30,  # no. of iterations for a solver
+                                              maxiter=40,  # no. of iterations for a solver
                                               divcrit=True),
                                   ))
 

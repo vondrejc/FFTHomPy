@@ -144,7 +144,7 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
     if norm is None:
         norm=lambda X: X.norm(normal_domain=False)
 
-    residuum=(B-Afun(x)).truncate(rank=None, tol=1e-10)
+    residuum=(B-Afun(x)).truncate(rank=None, tol=par['tol'])
     res['norm_res'].append(norm(residuum))
     beta=Afun(residuum)
 

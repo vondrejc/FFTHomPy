@@ -17,8 +17,8 @@ from examples.sparse.plots import plot_time
 kinds = {'2': 0,
          '3': 2,}
 
-W_list = {'2': [45,135,405,1215],
-          '3': [5,15,45,135,175]}
+W_list = {'2': [45, 135, 320, 405, 640, 1215, 2560],
+          '3': [5, 15, 45, 80, 135, 160, 175]}
 
 #W_list = {'2': [45,3645],
 #          '3': [5,15,25,35,45]}
@@ -59,13 +59,14 @@ for dim in [2, 3]:
                                   precond_rank=1,
                                   tol=None,
                                   N=dim * (1 * N,),
+                                  rhs_tol=1e-8,
                                   solver=dict(method='mr',
                                               # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
                                               approx_omega=False,  # inner product of tuckers could be so slow
                                               # that using an approximate omega could gain.
                                               eigrange=[0.6, 50],  # for Chebyshev solver
                                               tol=1e-6,
-                                              maxiter=50,  # no. of iterations for a solver
+                                              maxiter=40,  # no. of iterations for a solver
                                               divcrit=True),
                                   ))
 

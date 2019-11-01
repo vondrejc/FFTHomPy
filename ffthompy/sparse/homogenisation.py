@@ -209,7 +209,7 @@ def homog_Ga_sparse(Agas, pars):
 
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
-    PBs2=PBs.truncate(tol=1e-10)
+    PBs2=PBs.truncate(tol=pars.rhs_tol)
     print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
     print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
     PBs=PBs2
@@ -282,7 +282,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
-    PBs2=PBs.truncate(tol=1e-10)
+    PBs2=PBs.truncate(tol=pars.rhs_tol)
     print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
     print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
     PBs=PBs2

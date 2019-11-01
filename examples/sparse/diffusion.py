@@ -29,7 +29,7 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                           precond_rank=10,
                           tol=None,
                           N=dim*(N,),
-                          solver=dict(method='mr', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
+                          rhs_tol=1e-8,
                                       approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
                                       tol=1e-4,
