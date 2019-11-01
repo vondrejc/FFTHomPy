@@ -1,13 +1,46 @@
-
 import numpy as np
-from ffthompy import Struct
+from ffthompy import Struct, Timer
+from ffthompy.materials import Material
+from ffthompy.sparse.materials import SparseMaterial
 
 try:
     from uq.decomposition import KL_Fourier
 except:
     import warnings
-    warnings.warn('Package StoPy is not available.')
+    warnings.warn('Package StoPy is not available; required for Karhunen-Loeve decomposition.')
 
+
+def get_material_coef(material, pars, pars_sparse):
+    # get configuration settings
+    pars, pars_sparse, mat_conf = getMat_conf(material, pars, pars_sparse)
+
+    # generating material coefficients
+    mat=Material(mat_conf)
+    mats=SparseMaterial(mat_conf, pars_sparse.kind)
+
+    Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
+    Aga=mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
+
+    Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
+    Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
+
+    Aga.val=recover_Aga(Aga, Agas)
+    Agani.val=recover_Agani(Agani, Aganis)
+
+    if 'Aniso' in mat_conf: # workaround for anisotropic material
+        Aniso=mat_conf['Aniso']
+        Agani.add_mean(Aniso)
+        Aga.add_mean(Aniso)
+        pars_sparse.update(Struct(Aniso=Aniso))
+
+        tic=Timer('calc_eig')
+        eigs=Agani.calc_eigs(symmetric=True)
+        tic.measure()
+
+        pars_sparse.solver['alpha']=0.5*(eigs.min()+eigs.max())
+    else:
+        pars_sparse.solver['alpha']=0.5*(Agani[0, 0].min()+Agani[0, 0].max())
+    return Aga, Agani, Agas, Aganis
 
 def getMat_conf(material, pars, pars_sparse):
 
@@ -49,7 +82,7 @@ def getMat_conf(material, pars, pars_sparse):
         pars_sparse.update(Struct(matrank=10))
 
         kl=KL_Fourier(covfun=2, cov_pars={'rho': 0.15, 'sigma': 1.}, N=pars.N, puc_size=pars.Y,
-                        transform=lambda x: np.exp(x))
+                      transform=lambda x: np.exp(x))
         if dim==2:
             kl.calc_modes(relerr=0.1)
         elif dim==3:

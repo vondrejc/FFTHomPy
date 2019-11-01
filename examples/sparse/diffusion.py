@@ -3,11 +3,10 @@ from __future__ import division, print_function
 import numpy as np
 
 from ffthompy import Struct, Timer
-from ffthompy.materials import Material
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
-from ffthompy.sparse.materials import SparseMaterial
-from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
+
+from examples.sparse.material_setting import get_material_coef
 
 
 # PARAMETERS ##############################################################
@@ -33,46 +32,17 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                           solver=dict(method='mr', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
                                       approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
-                                      eigrange=[0.6,50], # for Chebyshev solver
                                       tol=1e-4,
-                                      maxiter=20,# no. of iterations for a solver
-                                      divcrit=False),
+                                      maxiter=20, # no. of iterations for a solver
+                                      divcrit=False), # stop if the norm of residuum fails to decrease
                           ))
 
 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                             N, dim, material))
 print('dofs = {}'.format(N**dim))
 
-# get material settings for experiment
-pars, pars_sparse, mat_conf = getMat_conf(material, pars, pars_sparse)
-
-# generating material coefficients
-mat=Material(mat_conf)
-mats=SparseMaterial(mat_conf, pars_sparse.kind)
-
-Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
-Aga=mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
-
-Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
-Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal', k=pars_sparse.matrank)
-Agas.set_fft_form()
-
-Aga.val=recover_Aga(Aga,Agas)
-Agani.val=recover_Agani(Agani,Aganis)
-
-if 'Aniso' in mat_conf: # workaround for anisotropic material
-    Aniso=mat_conf['Aniso']
-    Agani.add_mean(Aniso)
-    Aga.add_mean(Aniso)
-    pars_sparse.update(Struct(Aniso=Aniso))
-
-    tic=Timer('calc_eig')
-    eigs=Agani.calc_eigs(symmetric=True)
-    tic.measure()
-
-    pars_sparse.solver['alpha']=0.5*(eigs.min()+eigs.max())
-else:
-    pars_sparse.solver['alpha']=0.5*(Agani[0,0].min()+Agani[0,0].max())
+# get material coefficients
+Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
 
 print('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)

@@ -5,13 +5,9 @@ import os
 import pickle
 
 from ffthompy import Struct
-from ffthompy.materials import Material
-
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
-from ffthompy.sparse.materials import SparseMaterial
-
-from examples.sparse.material_setting import getMat_conf,recover_Aga,recover_Agani
+from examples.sparse.material_setting import get_material_coef
 from examples.sparse.plots import plot_error, plot_memory, plot_residuals
 
 os.nice(19)
@@ -81,22 +77,8 @@ for dim in [2,3]:
                 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                                             N, dim, material))
 
-                ### get material settings for experiment
-                pars, pars_sparse, mat_conf = getMat_conf( material, pars, pars_sparse)
-
-                #### generating material coefficients
-                mat = Material(mat_conf)
-                mats = SparseMaterial(mat_conf, pars_sparse.kind)
-
-                Aga = mat.get_A_Ga(pars.Nbar(pars.N), primaldual='primal')
-                Agas = mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal',
-                                     k=pars_sparse.matrank)
-                Agas.set_fft_form()
-                Agani = mat.get_A_GaNi(pars.N, primaldual='primal')
-                Aganis = mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
-
-                Aga.val = recover_Aga(Aga, Agas)
-                Agani.val = recover_Agani(Agani, Aganis)
+                # get material settings for experiment
+                Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
 
                 pars_sparse.update(Struct(alpha=0.5 * (Agani[0, 0].min() + Agani[0, 0].max())))
                 #######################################################################
@@ -128,8 +110,7 @@ for dim in [2,3]:
                 mem_GaNi_Spar = list()
                 res_GaNi_Spar = list()
 
-
-                for sol_rank in sol_rank_range_set['{}'.format(dim)]:# rank of solution vector
+                for sol_rank in sol_rank_range_set['{}'.format(dim)]: # rank of solution vector
                     sols_Ga.append(resP_Ga.AH)
                     iter_Ga.append(resP_Ga.info['kit'])
                     time_Ga.append(resP_Ga.info['time'][0])

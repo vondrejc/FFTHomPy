@@ -47,7 +47,7 @@ class SparseMaterial(Material):
 
         WFAs=(Wraw*hAM).fourier(real_output=True)
         WFAs.name='Agas'
-        return WFAs
+        return WFAs.set_fft_form()
 
 
 def tile(FAs, N):
