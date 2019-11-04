@@ -11,32 +11,22 @@ from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
 from examples.sparse.material_setting import get_material_coef
 from examples.sparse.plots import plot_time
 
-#k_list={'2': [2,3,4,5],
-#        '3': [4,3,2,1]}
-
 kinds = {'2': 0,
          '3': 2,}
 
-W_list = {'2': [45, 135, 320, 405, 640, 1215, 2560],
-          '3': [5, 15, 45, 80, 135, 160, 175]}
-
-#W_list = {'2': [45,3645],
-#          '3': [5,15,25,35,45]}
+N_lists = {'2': [45, 135, 320, 405, 640, 1215, 2560],
+           '3': [5, 15, 45, 80, 135, 160, 175]}
 
 epsilon=1e-8
 kind_list=['cano','tucker','tt']
-material= 2 # or 4
+material= 2 # 2 or 4
 
 for dim in [2, 3]:
     if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
         os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
 
-    if dim==2:
-        N_list = W_list['{}'.format(dim)]
-    else:
-        N_list = W_list['{}'.format(dim)]
-
-    kind =kinds['{}'.format(dim)]
+    N_list = N_lists['{}'.format(dim)]
+    kind=kinds['{}'.format(dim)]
 
     full_time_list = [None]*len(N_list)
     sparse_time_list = [None]*len(N_list)
@@ -105,9 +95,8 @@ for dim in [2, 3]:
             print('homogenised properties (component 11) = {}'.format(resS.AH))
             print('iterations={}'.format(resS.solver['kit']))
             print('norm(resP)={}'.format(resS.solver['norm_res']))
-
             print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
-            print("solution discrepancy",(resS.AH - resP.AH)/resP.AH)
+            print("solution discrepancy", (resS.AH - resP.AH)/resP.AH)
 
             if (resS.AH - resP.AH)/resP.AH <= 1e-8:
                 rank_list[i]=r
