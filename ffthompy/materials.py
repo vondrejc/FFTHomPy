@@ -97,9 +97,8 @@ class Material():
                 elif np.all(np.greater_equal(P, Nbar)):
                     hAM = decrease(hAM0, Nbar)
                 elif np.all(np.less(P, Nbar)):
-                    factor = np.ceil(np.array(Nbar, dtype=np.float64) / P)
-                    hAM0per = np.tile(hAM0,
-                                      2*np.array(factor, dtype=np.int)-1)
+                    factor = np.ceil(np.array(Nbar, dtype=np.float64)/2/P)
+                    hAM0per = np.tile(hAM0, 2*np.array(factor, dtype=np.int)+1)
                     hAM = decrease(hAM0per, Nbar)
                 else:
                     msg = """This combination of double N (%s) and P (%s) "
