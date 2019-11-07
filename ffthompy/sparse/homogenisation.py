@@ -39,7 +39,7 @@ def homog_Ga_full(Aga, pars):
     tic.measure()
 
     AH=Aga(X+EN)*(X+EN)
-    return Struct(AH=AH, X=X, time=tic.vals[0][0])
+    return Struct(AH=AH, X=X, time=tic.vals[0][0], pars=pars)
 
 def homog_Ga_full_potential(Aga, pars):
 
@@ -125,7 +125,7 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
     XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
     AH=Aga(XEN)*XEN
-    return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0])
+    return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0], pars=pars)
 
 class Material_law():
 
