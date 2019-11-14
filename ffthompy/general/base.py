@@ -67,10 +67,12 @@ class Timer():
 
     def start(self):
         self.vals = []
-        self.ttin = [time.clock(), time.time()]
+        #self.ttin = [time.clock(), time.time()]
+        self.ttin = [time.process_time(), time.time()]
 
     def measure(self, print_time=True):
-        self.vals.append([time.clock()-self.ttin[0], time.time()-self.ttin[1]])
+        #self.vals.append([time.clock()-self.ttin[0], time.time()-self.ttin[1]])
+        self.vals.append([time.process_time()-self.ttin[0], time.time()-self.ttin[1]])
         if print_time:
             print(self)
 
