@@ -152,7 +152,7 @@ class Material_law():
         dim=X.__len__()
         AFGFx=dim*[None]
         for i in range(dim):
-            AFGFx[i]=self.Agas.multiply(X[i])
+            AFGFx[i]=self.Agas.multiply(X[i], rank=rank, tol=tol)
         return AFGFx
 
     def material_anisotropic(self, X, rank=None, tol=None):
@@ -161,7 +161,7 @@ class Material_law():
         for i in range(dim):
             for j in range(dim):
                 AFGFx[i]+=self.Aniso_fun[i][j]*X[j]
-            AFGFx[i].truncate(rank=rank, tol=tol)
+            AFGFx[i]=AFGFx[i].truncate(rank=rank, tol=tol)
         return AFGFx
 
 def homog_Ga_sparse(Agas, pars):
