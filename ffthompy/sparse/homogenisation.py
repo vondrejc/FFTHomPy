@@ -120,11 +120,16 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     print(('norm of residuum={}'.format(info['norm_res'])))
 
     Fu=P*iPU
-    Nbar=2*np.array(N)-1
+    if Aga is None: # GaNi homogenised properties
+        print('!!!!! homogenised properties are GaNi only !!!!!')
+        XEN=iF(grad(Fu))+EN
+        AH=Agani(XEN)*XEN
+    else:
+        Nbar=2*np.array(N)-1
+        iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
+        XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
+        AH=Aga(XEN)*XEN
 
-    iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
-    XEN=iF2(grad(Fu).project(Nbar))+EN.project(Nbar)
-    AH=Aga(XEN)*XEN
     return Struct(AH=AH, Fu=Fu, info=info, time=tic.vals[0][0], pars=pars)
 
 class Material_law():
@@ -132,7 +137,8 @@ class Material_law():
     def __init__(self, Agas, Aniso, Es):
         self.Agas=Agas
         self.Aniso=Aniso
-        dim=Aniso.shape[0]
+        self.dim=Aniso.shape[0]
+        dim=self.dim
 
         if np.linalg.norm(Aniso) < 1e-12:
             self._call=self.material_isotropic
@@ -149,17 +155,12 @@ class Material_law():
         return self._call(*args, **kwargs)
 
     def material_isotropic(self, X, rank=None, tol=None):
-        dim=X.__len__()
-        AFGFx=dim*[None]
-        for i in range(dim):
-            AFGFx[i]=self.Agas.multiply(X[i], rank=rank, tol=tol)
-        return AFGFx
+        return [self.Agas.multiply(X[i], rank=rank, tol=tol) for i in range(self.dim)]
 
     def material_anisotropic(self, X, rank=None, tol=None):
-        dim=X.__len__()
-        AFGFx=dim*[None]
-        for i in range(dim):
-            for j in range(dim):
+        AFGFx=self.dim*[None]
+        for i in range(self.dim):
+            for j in range(self.dim):
                 AFGFx[i]+=self.Aniso_fun[i][j]*X[j]
             AFGFx[i]=AFGFx[i].truncate(rank=rank, tol=tol)
         return AFGFx
@@ -305,12 +306,18 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Fu.name='Fu'
     print(('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))))
 
-    Nbar=2*np.array(N)-1
-    FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
-    Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
-    FGX[0]+=Es # adding mean
+    if Agas is None: # GaNi homogenised properties
+        print('!!!!! homogenised properties are GaNi only !!!!!')
+        FGX=[(hGrad_s[ii]*Fu).fourier() for ii in range(dim)]
+        FGX[0]+=Es # adding mean
+        AH = calculate_AH_sparse(Aganis, Aniso, FGX, method='full')
+    else:
+        Nbar=2*np.array(N)-1
+        FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
+        Es=SparseTensor(kind=pars.kind, val=np.ones(Nbar), rank=1)
+        FGX[0]+=Es # adding mean
+        AH = calculate_AH_sparse(Agas, Aniso, FGX, method='full')
 
-    AH = calculate_AH_sparse(Agas, Aniso, FGX, method='full')
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][0])
 
 def get_preconditioner(N, pars):

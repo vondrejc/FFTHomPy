@@ -30,10 +30,11 @@ pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano',
                           tol=None,
                           N=dim*(N,),
                           rhs_tol=1e-8,
+                          solver=dict(method='mrd', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
                                       approx_omega=False, # inner product of tuckers could be so slow
                                                           # that using an approximate omega could gain.
                                       tol=1e-4,
-                                      maxiter=20, # no. of iterations for a solver
+                                      maxiter=15, # no. of iterations for a solver
                                       divcrit=False), # stop if the norm of residuum fails to decrease
                           ))
 

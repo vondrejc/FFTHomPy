@@ -16,7 +16,7 @@ kinds = {'2': 0,
 
 N_lists = {'2': [45, 135, 320, 405, 640, 1215, 2560],
            '3': [5, 15, 45, 80, 135, 160, 175]}
-
+method=1 # 0-Ga, 1-GaNi
 epsilon=1e-8
 kind_list=['cano','tucker','tt']
 material= 2 # 2 or 4
@@ -61,42 +61,46 @@ for dim in [2, 3]:
                                   ))
 
         # generating material coefficients
-        Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
-
-#         print('\n== Full solution with potential by CG (Ga) ===========')
-#         resP_Ga=homog_Ga_full_potential(Aga, pars)
-#         print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-#         print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
-#         full_time_list[i]=resP_Ga.time
-
-        print('\n== Full solution with potential by CG (GaNi)===========')
-        resP=homog_GaNi_full_potential(Agani, Aga, pars)
-        print('mean of solution={}'.format(resP.Fu.mean()))
-        print('homogenised properties (component 11) = {}'.format(resP.AH))
+        if method in ['Ga',0]:
+            Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
+            print('\n== Full solution with potential by CG (Ga) ===========')
+            resP_Ga=homog_Ga_full_potential(Aga, pars)
+            print('mean of solution={}'.format(resP_Ga.Fu.mean()))
+            print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+            full_time_list[i]=resP_Ga.time
+        elif method in ['GaNi',1]:
+            Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse, ga=False)
+            print('\n== Full solution with potential by CG (GaNi)===========')
+            resP=homog_GaNi_full_potential(Agani, Aga, pars)
+            print('mean of solution={}'.format(resP.Fu.mean()))
+            print('homogenised properties (component 11) = {}'.format(resP.AH))
+        else:
+            raise ValueError()
 
         full_time_list[i]=resP.time
 
         for r in range(5, N+1,5):
             pars_sparse.update(Struct(rank=r)) # rank of solution vector
 
-            print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
-                                                                        N, dim, material))
+            print('\n== format={}, N={}, dim={}, material={}, rank={} ===='.format(pars_sparse.kind,
+                N, dim, material, pars_sparse.rank))
 
             # PROBLEM DEFINITION ######################################################
-#             print('\n== SPARSE solver with preconditioner (Ga) =======================')
-#             resS=homog_Ga_sparse(Agas, pars_sparse)
-#             print('mean of solution={}'.format(resS.Fu.mean()))
-#             print('homogenised properties (component 11) = {}'.format(resS.AH))
-#             print('norm(resP)={}'.format(resS.solver['norm_res']))
-
-            print('\n== SPARSE solver with preconditioner (GaNi) =======================')
-            resS=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-            print('mean of solution={}'.format(resS.Fu.mean()))
-            print('homogenised properties (component 11) = {}'.format(resS.AH))
-            print('iterations={}'.format(resS.solver['kit']))
-            print('norm(resP)={}'.format(resS.solver['norm_res']))
-            print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
-            print("solution discrepancy", (resS.AH - resP.AH)/resP.AH)
+            if method in ['Ga',0]:
+                print('\n== SPARSE solver with preconditioner (Ga) =======================')
+                resS=homog_Ga_sparse(Agas, pars_sparse)
+                print('mean of solution={}'.format(resS.Fu.mean()))
+                print('homogenised properties (component 11) = {}'.format(resS.AH))
+                print('norm(resP)={}'.format(resS.solver['norm_res']))
+            elif method in ['GaNi',1]:
+                print('\n== SPARSE solver with preconditioner (GaNi) =======================')
+                resS=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+                print('mean of solution={}'.format(resS.Fu.mean()))
+                print('homogenised properties (component 11) = {}'.format(resS.AH))
+                print('iterations={}'.format(resS.solver['kit']))
+                print('norm(resP)={}'.format(resS.solver['norm_res']))
+                print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
+                print("solution discrepancy", (resS.AH - resP.AH)/resP.AH)
 
             if (resS.AH - resP.AH)/resP.AH <= 1e-8:
                 rank_list[i]=r
