@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.linalg import svd, norm
+from numpy.linalg import svd, norm, qr
 from numpy import tensordot
 
 def unfold(T, dim):
@@ -110,6 +110,28 @@ def HOSVD(A, k=None, tol=None):
 
     return S, U
 
+def fast_qr( A ):
+    """
+    """
+    N,M=A.shape
+
+    if M>16:
+
+        R=np.zeros((M,M))
+
+        k= np.ceil(M/2).astype(int)
+        qa, R[:k, :k]=fast_qr(A[:,:k])
+
+        coordinate = np.dot(qa.T, A[:,k:])
+        R[:k,k:]= coordinate
+
+        qb, R[k:, k:]=fast_qr(A[:,k:]-np.dot(qa,coordinate))
+
+        Q = np.hstack(( qa, qb))
+    else:
+        Q, R =qr(A)
+
+    return Q, R
 
 if __name__=='__main__':
 
