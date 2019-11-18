@@ -112,20 +112,20 @@ def HOSVD(A, k=None, tol=None):
 
 def fast_qr( A ):
     """
+    This is a recursive partioned QR. about two times faster than QR for tall matrices
     """
     N,M=A.shape
 
-    if M>16:
+    if M>16:  # the minimal partion is 32
 
         R=np.zeros((M,M))
 
         k= np.ceil(M/2).astype(int)
         qa, R[:k, :k]=fast_qr(A[:,:k])
 
-        coordinate = np.dot(qa.T, A[:,k:])
-        R[:k,k:]= coordinate
+        R[:k,k:] = np.dot(qa.T, A[:,k:])
 
-        qb, R[k:, k:]=fast_qr(A[:,k:]-np.dot(qa,coordinate))
+        qb, R[k:, k:]=fast_qr(A[:,k:]-np.dot(qa, R[:k,k:]))
 
         Q = np.hstack(( qa, qb))
     else:

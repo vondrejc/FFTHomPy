@@ -118,18 +118,21 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
             omega= beta.inner(residuum)/norm(beta)**2 # exact formula
 
         x=(x+residuum*omega)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol,fast=True) # setting correct mean
 
         residuum=B-Afun(x)
 
         norm_res=norm(residuum)
+
         if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
             break
         res['norm_res'].append(norm_res)
 
-        beta=Afun(residuum)
+        beta=Afun(residuum.truncate(rank=rank, tol=tol, fast=True))
 
     return x, res
+
+
 
 def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
     M=SparseTensor(kind=B.kind, val=np.ones(B.N.size*[3, ]), rank=1) # constant field
@@ -218,7 +221,7 @@ def richardson(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
             break
 
         x=(x+residuum*omega)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol, fast=True) # setting correct mean
 
         res['norm_res'].append(norm_res)
 
