@@ -3,6 +3,7 @@ from numpy import newaxis
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
+from ffthompy.sparse.decompositions import fast_qr
 
 class CanoTensor(SparseTensorFuns):
     kind='cano'
@@ -81,26 +82,55 @@ class CanoTensor(SparseTensorFuns):
         self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
 
-    def orthogonalise(self):
+    def orthogonalise(self, rank=None, tol=None):
         """re-orthogonalise the basis"""
         if self.orthogonal:
             return self
+
+        if (rank is not None) or (tol is not None) :
+
+            norm0= np.linalg.norm(self.basis[0],axis=1)
+            norm1= np.linalg.norm(self.basis[1],axis=1)
+
+
+            self.basis[0]/= norm0[:, np.newaxis]
+            self.basis[1]/= norm1[:, np.newaxis]
+
+            self.core *= (norm0*norm1)
+
+            if tol is not None:
+                core_abs= np.abs(self.core)
+                select_ind = np.argwhere(core_abs >= tol*np.sum(core_abs))
+            else:
+                ind=np.argpartition(-np.abs(self.core), rank)[:rank]
+                rank_th_largest = np.abs(self.core[ind[-1]])
+                select_ind = np.argwhere(np.abs(self.core) >= (1e-3)*rank_th_largest)
+
+            select_ind = np.squeeze(select_ind)
+
+            self.core = np.take(self.core, select_ind )
+            self.basis[0] = np.take(self.basis[0], select_ind, axis=0 )
+            self.basis[1] = np.take(self.basis[1], select_ind, axis=0 )
+
+            qa, ra=fast_qr(self.basis[0].T)
+            qb, rb=fast_qr(self.basis[1].T)
         else:
-            # re-orthogonalise the basis by QR and SVD
             qa, ra=np.linalg.qr(self.basis[0].T, 'reduced')
             qb, rb=np.linalg.qr(self.basis[1].T, 'reduced')
 
-            core=ra.real*self.core[np.newaxis, :]
-            core=np.dot(core, rb.T.real)
+        core=ra.real*self.core[np.newaxis, :]
+        core=np.dot(core, rb.T.real)
 
-            u, s, vt=np.linalg.svd(core,full_matrices=False)
+        u, s, vt=np.linalg.svd(core,full_matrices=False)
 
-            newA=np.dot(qa, u)
-            newB=np.dot(vt, qb.T)
 
-            newBasis=[newA.T, newB]
-            return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True,
-                              Fourier=self.Fourier, fft_form=self.fft_form)
+        newA=np.dot(qa, u)
+        newB=np.dot(vt, qb.T)
+
+        newBasis=[newA.T, newB]
+
+        return CanoTensor(name=self.name, core=s, basis=newBasis, orthogonal=True,
+                          Fourier=self.Fourier, fft_form=self.fft_form)
 
     def __add__(self, Y):
         X=self
@@ -172,7 +202,7 @@ class CanoTensor(SparseTensorFuns):
         else:
             raise NotImplementedError()
 
-    def truncate(self, rank=None, tol=None):
+    def truncate(self, rank=None, tol=None, fast=False):
         "return truncated tensor"
         # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
         # if tol is not none, it will override rank as the truncation criteria.
@@ -183,8 +213,10 @@ class CanoTensor(SparseTensorFuns):
             if rank>=self.r:
                 #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
                 return self
-
-        self=self.orthogonalise()
+        if fast:
+            self=self.orthogonalise(rank=rank, tol=tol)
+        else:
+            self=self.orthogonalise()
 
         basis=list(self.basis)
         core=self.core
