@@ -282,14 +282,15 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     parP=pars.solver
 
-    num=5
+    num=1
 
     tic=Timer(name=pars.solver['method'])
 
     for i in range(num):
+        print(i)
         PBs=Ps*Bs
-        PBs2=PBs.truncate(tol=pars.rhs_tol, fast=True)
-
+        #PBs2=PBs.truncate(tol=pars.rhs_tol, fast=True)
+        PBs2=PBs.truncate(rank=pars.rank, fast=True)
 #        print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
 #        print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
         PBs=PBs2
