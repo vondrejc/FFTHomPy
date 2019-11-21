@@ -288,7 +288,7 @@ class TensorTrain(vector,SparseTensorFuns):
         keys=['name', 'Fourier', 'fft_form', 'dim', 'N', 'r']
         return self._repr(keys)
 
-    def truncate(self, tol=None, rank=None):
+    def truncate(self, tol=None, rank=None, fast=False):
         if np.any(tol) is None and np.any(rank) is None:
             return self
         elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
@@ -296,7 +296,33 @@ class TensorTrain(vector,SparseTensorFuns):
         else:
             if tol is None: tol=1e-14
             if rank is None: rank=int(1e6)
-            res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
+
+            if fast:  # do a preliminary truncation before optimal truncation
+                r=self.r.copy()
+                cr=self.to_list(self)
+                cr_new=[None]*self.d
+
+                ratio=10 # keep ratio-times more bases than the target rank before the optimal truncation
+                for i in range(1,self.d):
+                    if rank < r[i]:
+                        nrm=norm(cr[i-1],axis=1).squeeze()
+                        if i>1: nrm=norm(nrm, axis=0).squeeze()
+                        keep_rank_num= np.minimum(ratio*rank, r[i])
+                        ind=np.argpartition(-nrm, keep_rank_num-1)[:keep_rank_num]
+                        select_ind = np.argwhere( nrm >= nrm[ind[-1]]).squeeze() # nrm[ind[-1] is the rank-th largest value in norm list
+
+                        cr_new[i-1] = np.take(cr[i-1], select_ind, axis=2)
+                        cr[i] = np.take(cr[i], select_ind, axis=0)
+                    else:
+                        cr_new[i-1]=cr[i-1]
+
+                cr_new[self.d-1]=cr[self.d-1]
+
+                res_vec=self.from_list(cr_new)
+                res_vec=res_vec.round(eps=tol, rmax=rank)
+            else:
+                res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
+
             res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier,
                             fft_form=self.fft_form)
             return res
