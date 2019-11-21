@@ -389,7 +389,7 @@ def plot_residuals():
 
 
 def plot_time():
-    material = 0
+    material = 3
     kind_list = ['cano', 'tucker', 'tt']
     kinds = {'2': 0,
              '3': 2, }
@@ -430,6 +430,25 @@ def plot_time():
         plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
         print('END Ga time efficiency')
 
+def display_rank():
+    #material = 3
+    kind_list = ['cano', 'tucker', 'tt']
+    kinds = {'2': 0,
+             '3': 2, }
+
+    for material in [0, 3]:
+        for dim in [2, 3]:
+            kind = kinds['{}'.format(dim)]
+
+            N_list = pickle.load(
+                open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+            rank_list = pickle.load(
+                open("data_for_plot/dim_{}/mat_{}/rank_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+
+            print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
+            print("N list {} ".format(N_list))
+            print("rank list {} ".format(rank_list))
+            print()
 
 if __name__ == '__main__':
     # data used in plot_time have to be genereted first by experiment_time_efficiency.py
@@ -439,3 +458,4 @@ if __name__ == '__main__':
     plot_error()
     plot_memory()
     plot_residuals()
+    display_rank()
