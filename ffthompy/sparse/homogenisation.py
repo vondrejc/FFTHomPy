@@ -166,14 +166,12 @@ class Material_law():
         return AFGFx
 
 def homog_Ga_sparse(Agas, pars):
+    debug=getattr(pars, 'debug', False)
     Nbar=Agas.N
     N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
     dim=Nbar.__len__()
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
-    if 'Aniso' in pars.keys():
-        Aniso=pars.Aniso
-    else:
-        Aniso=np.zeros([dim,dim])
+    Aniso=getattr(pars, 'Aniso', np.zeros([dim,dim]))
 
     # creating constant field in sparse tensor
     Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
@@ -212,8 +210,9 @@ def homog_Ga_sparse(Agas, pars):
 
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=pars.rhs_tol)
-#    print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
-#    print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
+    if debug:
+        print(('norm of r.h.s.= {}'.format(np.linalg.norm(PBs.full().val))))
+        print(('error in r.h.s. = {}'.format(np.linalg.norm(PBs.full().val-PBs2.full().val))))
     PBs=PBs2
     if pars.solver['method'] in ['Richardson','richardson','r','R']:
         Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=parP,
@@ -241,15 +240,13 @@ def homog_Ga_sparse(Agas, pars):
     return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][0])
 
 def homog_GaNi_sparse(Aganis, Agas, pars):
+    debug=getattr(pars, 'debug', False)
 
     N=Aganis.N
     dim=N.__len__()
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
 
-    if 'Aniso' in pars.keys():
-        Aniso=pars.Aniso
-    else:
-        Aniso=np.zeros([dim,dim])
+    Aniso=getattr(pars, 'Aniso', np.zeros([dim,dim]))
 
     # creating constant field in sparse tensor
     Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
