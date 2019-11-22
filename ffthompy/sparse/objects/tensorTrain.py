@@ -306,7 +306,7 @@ class TensorTrain(vector, SparseTensorFuns):
                     if rank < r[i] or tol > 1e-14:
                         nrm=norm(cr[i-1],axis=1).squeeze()
                         if i>1: nrm=norm(nrm, axis=0).squeeze()
-                        print(nrm)
+                        #print(nrm)
                         if tol > 1e-14:
                             keep_rank_num=np.searchsorted(np.cumsum(nrm)/np.sum(nrm), 1.0-0.1*tol)+1
                         else:
