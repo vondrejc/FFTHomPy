@@ -394,8 +394,15 @@ class Tensor(TensorFuns):
     def axes(self): # axes for Fourier transform
         return tuple(range(self.order, self.order+self.dim))
 
-    def fourier(self, copy=False):
+    def fourier(self, Fourier=None, copy=False):
         assert(self.origin==0)
+
+        if self.Fourier==Fourier:
+            if copy:
+                return self.copy()
+            else:
+                return self
+
         if copy:
             if self.Fourier:
                 return self.copy(val=self.ifftn(self.val, self.N), Fourier=not self.Fourier)

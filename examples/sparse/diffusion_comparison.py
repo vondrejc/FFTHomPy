@@ -80,7 +80,6 @@ for dim in [2,3]:
                 # get material settings for experiment
                 Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
 
-                pars_sparse.update(Struct(alpha=0.5 * (Agani[0, 0].min() + Agani[0, 0].max())))
                 #######################################################################
 
                 ### COMPUTING FULL SOLUTION ###

@@ -6,13 +6,12 @@ from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import SparseTensorFuns
-#from ffthompy.trigpol import mean_index
 from tt.core.vector import vector
 from ffthompy.sparse.objects.tensors import fft_form_default
 from functools import reduce
 
 
-class TensorTrain(vector,SparseTensorFuns):
+class TensorTrain(vector, SparseTensorFuns):
     kind='tt'
 
     def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',
@@ -241,11 +240,11 @@ class TensorTrain(vector,SparseTensorFuns):
 
         if self.fft_form=='sr' and not isinstance(other, (int, float, complex)):
             res_vec=vector.__mul__(self.set_fft_form('c',copy=True), other.set_fft_form('c',copy=True))
-            res=TensorTrain(vectorObj=res_vec, name=name,
+            res=TensorTrain(vectorObj=res_vec, name=name[:50],
                             Fourier=self.Fourier, fft_form='c').set_fft_form('sr')
         else:
             res_vec=vector.__mul__(self, other)
-            res=TensorTrain(vectorObj=res_vec, name=name,
+            res=TensorTrain(vectorObj=res_vec, name=name[:50],
                             Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 

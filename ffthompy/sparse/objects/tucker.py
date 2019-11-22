@@ -247,7 +247,7 @@ class Tucker(CanoTensor):
 
         return Tucker(name=self.name+'_truncated', core=core, basis=basis, orthogonal=True, Fourier=self.Fourier,fft_form=self.fft_form)
 
-    def norm(self, ord='core', normal_domain=True):
+    def norm(self, ord='core', normal_domain=True): # ToDo: rename normal_domain
 
         if ord=='fro':
             R=self*self.conj()
