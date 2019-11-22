@@ -303,10 +303,15 @@ class TensorTrain(vector, SparseTensorFuns):
 
                 ratio=10 # keep ratio-times more bases than the target rank before the optimal truncation
                 for i in range(1,self.d):
-                    if rank < r[i]:
+                    if rank < r[i] or tol > 1e-14:
                         nrm=norm(cr[i-1],axis=1).squeeze()
                         if i>1: nrm=norm(nrm, axis=0).squeeze()
-                        keep_rank_num= np.minimum(ratio*rank, r[i])
+                        print(nrm)
+                        if tol > 1e-14:
+                            keep_rank_num=np.searchsorted(np.cumsum(nrm)/np.sum(nrm), 1.0-0.1*tol)+1
+                        else:
+                            keep_rank_num= np.minimum(ratio*rank, r[i])
+
                         ind=np.argpartition(-nrm, keep_rank_num-1)[:keep_rank_num]
                         select_ind = np.argwhere(nrm >= nrm[ind[-1]]).squeeze() # nrm[ind[-1] is the rank-th largest value in norm list
 
@@ -477,178 +482,201 @@ if __name__=='__main__':
     print('----testing "Fourier" function ----')
     print()
 
-    v1=np.random.rand(120,)
+    v1=np.random.rand(50,130,10)
+    v2=np.random.rand(50,130,10)
 
-    v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(val=v, rmax=3)
 
+
+#    v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
+    t1=TensorTrain(val=v1, rmax=99999)
+    t2=TensorTrain(val=v2, rmax=99999)
+    print(t1)
+
+    t=t1*t2
     print(t)
 
-    cl=t.to_list(t)
 
-    t2=TensorTrain(core=cl)
-
-    print(t2)
-
-#    vfft=np.fft.fftn(v)
+#    t2=t.truncate(rank=5)
+#    print(t2)
 #
-# #    TT=t.to_list(t)
-# #    TTfft=[None]*t.d
-# #
-# #    for i in range(t.d):
-# #        TTfft[i]=np.fft.fft(TT[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
-# #
-# #    vTTfft=TensorTrain.from_list(TTfft)
-# #    #print (vTTfft.full())
-# #    print(np.linalg.norm(vfft-vTTfft.full()))
+#    print((t-t2).norm())
 #
-#    tf=t.fft(shift=False)
-#    print(np.linalg.norm(vfft-tf.full()))
-
-#    tf2=t.fourier()
-#    vfft_shift=DFT.fftnc(v, v.shape)
+#    t5=t.truncate(rank=5, fast=True)
+#    print(t5)
 #
-#    print(np.linalg.norm(vfft_shift-tf2.full()))
-
-#    tf2i=tf2.fourier()
-#    print(np.linalg.norm(v-tf2i.full()))
+#    print((t-t5).norm())
 #
-#    ### test mean()#####
-#    print
-#    print np.linalg.norm(t.mean()-np.sum(t.full()))
-#
-#    print t
-#
-    # ## test casting a vector obj to tensortrain obj
-    ty=vector(v)
-    ty2=TensorTrain(vectorObj=ty)
-
-#    ##   test  enlarge  ###
-#    n=3
-# #    T1= np.zeros((n,n, n))
-# #    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
-#
-#    T1= np.zeros((n,n ))
-#    T1[n/3:2*n/3, n/3:2*n/3 ]=1
-#
-#    print(T1)
-#    print
-#
-#    t=TensorTrain(T1)
-#    tf=t.fourier()
-#    tfl=tf.enlarge([7,7])
-#    tfli= tfl.fourier()
-#
-#    print(tfli.full().real)
-#    print
-#
-#    cl_tf=tf.to_list(tf)
-#    cl_tfl=tfl.to_list(tfl)
-#    cl_tfli=tfli.to_list(tfli)
-#
-#    tfld=tfl.decrease([5,5])
-#    print(tfld.fourier().full())
-
-# # test hardamard product
-
-    v1=np.random.rand(2, 3, 4)
-    t1=TensorTrain(v1)
-    v2=np.random.rand(2, 3, 4)
-    t2=TensorTrain(v2)
-
-    t3=t1.__dot__(t2)
+    t3=t.truncate(tol=0.01)
     print(t3)
 
-    c1=t1.__getitem__([0, [list(range(t1.N[1]))], [list(range(t1.N[2]))]])
-
-    print(c1)
-
-    t3=t1*t2
-    print(t3)
-    print((np.linalg.norm(t3.full()-v1*v2)))
-
-    t4=t1+t2
-    print((np.linalg.norm(t4.full()-v1-v2)))
-    # print t4
-
-    t4o=t4.orthogonalise('lr')
-    print((np.linalg.norm(t4o.full()-t4.full())))
-
-    t4o=t4.orthogonalise('rl')
-    print((np.linalg.norm(t4o.full()-t4.full())))
-
-    # print t5.size
-    v1=np.random.rand(1, 5)
-
-    v=np.reshape(v1, (1, 5), order='F') # use 'F' to keep v the same as in matlab
-    t=TensorTrain(val=v, rmax=3)
-
-    print(t3.r)
-
-    t5=t3.truncate(rank=3)
-    print((np.linalg.norm(t3.full()-t5.full())))
-
-    print()
-    print((np.mean(t1.full().val) - t1.mean()))
+    print((t-t3).norm())
 
 
-    ### test Fourier Hadamard product #####
-    af=t1.set_fft_form('c').fourier()
-    bf=t2.set_fft_form('c').fourier()
+    t4=t.truncate(tol=0.01, fast=True)
+    print(t4)
 
-    afbf=af*bf
+    print((t-t4).norm())
 
-    af2=t1.set_fft_form('sr').fourier()
-    bf2=t2.set_fft_form('sr').fourier()
-
-    afbf2=af2*bf2
-
-    print(( (afbf.fourier()-afbf2.fourier()).norm()))
-    print((t1.norm()))
-
-#    v1=np.array([[1,0]])
-#    t1=TensorTrain(val=v1)
-#    v2=np.array([[14.2126 ,  -1.2689],[  0.0557,    0.6243]])
-#    t2=TensorTrain(val=v2 )
+#
+##    vfft=np.fft.fftn(v)
+##
+## #    TT=t.to_list(t)
+## #    TTfft=[None]*t.d
+## #
+## #    for i in range(t.d):
+## #        TTfft[i]=np.fft.fft(TT[i], axis=1)  # the axis to compute fft is in the middle of 0,1,2, i.e. 1.
+## #
+## #    vTTfft=TensorTrain.from_list(TTfft)
+## #    #print (vTTfft.full())
+## #    print(np.linalg.norm(vfft-vTTfft.full()))
+##
+##    tf=t.fft(shift=False)
+##    print(np.linalg.norm(vfft-tf.full()))
+#
+##    tf2=t.fourier()
+##    vfft_shift=DFT.fftnc(v, v.shape)
+##
+##    print(np.linalg.norm(vfft_shift-tf2.full()))
+#
+##    tf2i=tf2.fourier()
+##    print(np.linalg.norm(v-tf2i.full()))
+##
+##    ### test mean()#####
+##    print
+##    print np.linalg.norm(t.mean()-np.sum(t.full()))
+##
+##    print t
+##
+#    # ## test casting a vector obj to tensortrain obj
+#    ty=vector(v)
+#    ty2=TensorTrain(vectorObj=ty)
+#
+##    ##   test  enlarge  ###
+##    n=3
+## #    T1= np.zeros((n,n, n))
+## #    T1[n/3:2*n/3, n/3:2*n/3, n/3:2*n/3]=1
+##
+##    T1= np.zeros((n,n ))
+##    T1[n/3:2*n/3, n/3:2*n/3 ]=1
+##
+##    print(T1)
+##    print
+##
+##    t=TensorTrain(T1)
+##    tf=t.fourier()
+##    tfl=tf.enlarge([7,7])
+##    tfli= tfl.fourier()
+##
+##    print(tfli.full().real)
+##    print
+##
+##    cl_tf=tf.to_list(tf)
+##    cl_tfl=tfl.to_list(tfl)
+##    cl_tfli=tfli.to_list(tfli)
+##
+##    tfld=tfl.decrease([5,5])
+##    print(tfld.fourier().full())
+#
+## # test hardamard product
+#
+#    v1=np.random.rand(2, 3, 4)
+#    t1=TensorTrain(v1)
+#    v2=np.random.rand(2, 3, 4)
+#    t2=TensorTrain(v2)
 #
 #    t3=t1.__dot__(t2)
+#    print(t3)
 #
-#    print t3.full()
-#    print t3.full().shape
-
-#    c11=t1.get_slice(0,0)
-#    c12=t1.get_slice(0,1)
+#    c1=t1.__getitem__([0, [list(range(t1.N[1]))], [list(range(t1.N[2]))]])
 #
-#    c21=t1.get_slice(1,0)
+#    print(c1)
 #
-#    c34=t1.get_slice(2,3)
+#    t3=t1*t2
+#    print(t3)
+#    print((np.linalg.norm(t3.full()-v1*v2)))
 #
-#    chunk1=t1.tt_chunk(1,1)
+#    t4=t1+t2
+#    print((np.linalg.norm(t4.full()-v1-v2)))
+#    # print t4
 #
-#    rs1=chunk1.get_rank_slice('left',0)
+#    t4o=t4.orthogonalise('lr')
+#    print((np.linalg.norm(t4o.full()-t4.full())))
 #
-#    v1=np.array(range(1,121))
-#    v=np.reshape(v1**2, (2, 3, 4, 5  ), order='F') # use 'F' to keep v the same as in matlab
-#    t=TensorTrain(val=v)
+#    t4o=t4.orthogonalise('rl')
+#    print((np.linalg.norm(t4o.full()-t4.full())))
 #
-#    chunk1=t.tt_chunk(1,1)
+#    # print t5.size
+#    v1=np.random.rand(1, 5)
 #
-#    rs1=chunk1.get_rank_slice('left',0)
+#    v=np.reshape(v1, (1, 5), order='F') # use 'F' to keep v the same as in matlab
+#    t=TensorTrain(val=v, rmax=3)
 #
-##    ## test norm###
-# #    print t1.norm()
-# #    print np.sqrt(np.sum(t1.full()**2))
-# #
-# #    print t3.norm()
-# #    print np.sqrt(np.sum(t3.full()**2))
-# #
-# #    t3tr=t3.truncate(rank=3)
-# #    print t3tr.norm()
-# #    print np.sqrt(np.sum(t3tr.full()**2))
-#    tp1=t1.tt_chunk(0,1)
-#    tp1s1=tp1.get_rank_slice('right',0)
+#    print(t3.r)
 #
-#    tp2=t1.tt_chunk(1,2)
-#    #tp2s1=tp2.get_rank_slice('right',0)
-
-    print('END')
+#    t5=t3.truncate(rank=3)
+#    print((np.linalg.norm(t3.full()-t5.full())))
+#
+#    print()
+#    print((np.mean(t1.full().val) - t1.mean()))
+#
+#
+#    ### test Fourier Hadamard product #####
+#    af=t1.set_fft_form('c').fourier()
+#    bf=t2.set_fft_form('c').fourier()
+#
+#    afbf=af*bf
+#
+#    af2=t1.set_fft_form('sr').fourier()
+#    bf2=t2.set_fft_form('sr').fourier()
+#
+#    afbf2=af2*bf2
+#
+#    print(( (afbf.fourier()-afbf2.fourier()).norm()))
+#    print((t1.norm()))
+#
+##    v1=np.array([[1,0]])
+##    t1=TensorTrain(val=v1)
+##    v2=np.array([[14.2126 ,  -1.2689],[  0.0557,    0.6243]])
+##    t2=TensorTrain(val=v2 )
+##
+##    t3=t1.__dot__(t2)
+##
+##    print t3.full()
+##    print t3.full().shape
+#
+##    c11=t1.get_slice(0,0)
+##    c12=t1.get_slice(0,1)
+##
+##    c21=t1.get_slice(1,0)
+##
+##    c34=t1.get_slice(2,3)
+##
+##    chunk1=t1.tt_chunk(1,1)
+##
+##    rs1=chunk1.get_rank_slice('left',0)
+##
+##    v1=np.array(range(1,121))
+##    v=np.reshape(v1**2, (2, 3, 4, 5  ), order='F') # use 'F' to keep v the same as in matlab
+##    t=TensorTrain(val=v)
+##
+##    chunk1=t.tt_chunk(1,1)
+##
+##    rs1=chunk1.get_rank_slice('left',0)
+##
+###    ## test norm###
+## #    print t1.norm()
+## #    print np.sqrt(np.sum(t1.full()**2))
+## #
+## #    print t3.norm()
+## #    print np.sqrt(np.sum(t3.full()**2))
+## #
+## #    t3tr=t3.truncate(rank=3)
+## #    print t3tr.norm()
+## #    print np.sqrt(np.sum(t3tr.full()**2))
+##    tp1=t1.tt_chunk(0,1)
+##    tp1s1=tp1.get_rank_slice('right',0)
+##
+##    tp2=t1.tt_chunk(1,2)
+##    #tp2s1=tp2.get_rank_slice('right',0)
+#
+#    print('END')
