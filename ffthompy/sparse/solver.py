@@ -91,8 +91,6 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
 
 def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None, fast=False):
 
-    print('fast')
-    print(fast)
     res={'norm_res': [],
          'kit': 0}
     if x0 is None:

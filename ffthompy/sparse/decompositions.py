@@ -115,9 +115,10 @@ def fast_qr( A ):
     This is a recursive partioned QR. about two times faster than QR for tall matrices
     """
     N,M=A.shape
+    if N < M:
+        Q, R =qr(A)  # not tall matrices, use normal qr
 
-    if M>16:  # the minimal partion is 32
-
+    elif M>16 :  # the minimal partition size is 32
         R=np.zeros((M,M))
 
         k= np.ceil(M/2).astype(int)
@@ -128,7 +129,7 @@ def fast_qr( A ):
         qb, R[k:, k:]=fast_qr(A[:,k:]-np.dot(qa, R[:k,k:]))
 
         Q = np.hstack(( qa, qb))
-    else:
+    else: # reach the smallest partition size, no more partitions, use normal qr
         Q, R =qr(A)
 
     return Q, R
