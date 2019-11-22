@@ -34,7 +34,7 @@ for dim in [2,3]:
     for i, N in enumerate(N_list):
         # PARAMETERS ##############################################################
         pars, pars_sparse=get_default_parameters(dim, N, material, kind)
-        pars.solver['tol']=1e-6
+        pars.solver.update(dict(tol=1e-6))
 
         # generating material coefficients
         Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)

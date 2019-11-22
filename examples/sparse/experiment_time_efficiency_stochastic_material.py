@@ -38,7 +38,7 @@ for material in [2, 4]:
         for i, N in enumerate(N_list):
             # PARAMETERS ##############################################################
             pars, pars_sparse=get_default_parameters(dim, N, material, kind)
-            pars.solver['tol']=1e-6
+            pars.solver.update(dict(tol=1e-6))
 
             # generating material coefficients
             if method in ['Ga',0]:

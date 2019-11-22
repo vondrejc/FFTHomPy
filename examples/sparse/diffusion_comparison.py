@@ -16,6 +16,9 @@ os.nice(19)
 Ns = {'2': [45, 135, 405, 1215],
       '3': [15, 25, 55, 135]}
 
+Ns = {'2': [45, 135, 405],
+      '3': [15, 25, 55]}
+
 kinds = {'2': [0,2],
          '3': [1,2],}
 
@@ -49,8 +52,8 @@ for dim in [2,3]:
                 ## parameters
                 pars, pars_sparse=get_default_parameters(dim, N, material, kind)
                 pars_sparse.update(Struct(rank=1,  # rank of solution vector
-                                          solver=dict(divcrit=False),  # no. of iterations for a solver
                                           ))
+                pars_sparse.solver.update(dict(divcrit=False))
 
                 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                                             N, dim, material))
