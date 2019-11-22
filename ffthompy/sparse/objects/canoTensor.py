@@ -82,16 +82,14 @@ class CanoTensor(SparseTensorFuns):
         self.core=np.random.random((self.r,))
         self.basis=[np.random.random([self.r, self.N[ii]]) for ii in range(self.order)]
 
-    def orthogonalise(self, rank=None, tol=None):
+    def orthogonalise(self, rank=None, tol=None, fast=False):
         """re-orthogonalise the basis"""
         if self.orthogonal:
             return self
 
-        if (rank is not None) or (tol is not None) :
-
+        if fast: # returns faster approximate orthogonalisation with reduced basis
             norm0= np.linalg.norm(self.basis[0],axis=1)
             norm1= np.linalg.norm(self.basis[1],axis=1)
-
 
             self.basis[0]/= norm0[:, np.newaxis]
             self.basis[1]/= norm1[:, np.newaxis]
@@ -100,7 +98,7 @@ class CanoTensor(SparseTensorFuns):
 
             if tol is not None:
                 core_abs= np.abs(self.core)
-                select_ind = np.argwhere(core_abs >= tol*np.sum(core_abs))
+                select_ind = np.argwhere(core_abs >= (1e-3)*tol*np.sum(core_abs))
             else:
                 ind=np.argpartition(-np.abs(self.core), rank)[:rank]
                 rank_th_largest = np.abs(self.core[ind[-1]])
@@ -213,10 +211,8 @@ class CanoTensor(SparseTensorFuns):
             if rank>=self.r:
                 #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
                 return self
-        if fast:
-            self=self.orthogonalise(rank=rank, tol=tol)
-        else:
-            self=self.orthogonalise()
+
+        self=self.orthogonalise(rank=rank, tol=tol, fast=fast)
 
         basis=list(self.basis)
         core=self.core

@@ -308,7 +308,7 @@ class TensorTrain(vector, SparseTensorFuns):
                         if i>1: nrm=norm(nrm, axis=0).squeeze()
                         keep_rank_num= np.minimum(ratio*rank, r[i])
                         ind=np.argpartition(-nrm, keep_rank_num-1)[:keep_rank_num]
-                        select_ind = np.argwhere( nrm >= nrm[ind[-1]]).squeeze() # nrm[ind[-1] is the rank-th largest value in norm list
+                        select_ind = np.argwhere(nrm >= nrm[ind[-1]]).squeeze() # nrm[ind[-1] is the rank-th largest value in norm list
 
                         cr_new[i-1] = np.take(cr[i-1], select_ind, axis=2)
                         cr[i] = np.take(cr[i], select_ind, axis=0)

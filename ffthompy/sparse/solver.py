@@ -101,9 +101,9 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
     if norm is None:
         norm=lambda X: X.norm(normal_domain=False)
 
-    residuum= B-Afun(x)
+    residuum=B-Afun(x)
     res['norm_res'].append(norm(residuum))
-    beta=Afun(residuum)
+    beta=Afun(residuum.truncate(tol=par['tol'], fast=fast))
 
     M=SparseTensor(kind=x.kind, val=np.ones(x.N.size*[3,]), rank=1) # constant field
     FM=M.fourier().enlarge(x.N)
@@ -129,10 +129,9 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
             break
         res['norm_res'].append(norm_res)
 
-        beta=Afun(residuum.truncate(rank=rank, tol=tol, fast=fast))
+        beta=Afun(residuum.truncate(tol=min([norm_res/1e1, par['tol']]), fast=fast))
 
     return x, res
-
 
 
 def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):

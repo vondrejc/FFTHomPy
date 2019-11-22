@@ -201,7 +201,7 @@ def homog_Ga_sparse(Agas, pars):
     def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol, fast=pars.solver['fast']):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol, fast=fast)
         R=Ps*R
-        R=R.truncate(rank=rank, tol=tol, fast=pars.solver['fast'])
+        R=R.truncate(rank=rank, tol=tol, fast=fast)
         return R
 
     tic=Timer(name=pars.solver['method'])
