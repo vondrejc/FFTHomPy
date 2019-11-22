@@ -62,7 +62,7 @@ for material in [2, 4]:
 
             for counter, err_tol in enumerate(err_tol_list):
 
-                for r in range(5, N+1,5):
+                for r in range(4, N+1, 2):
                     pars_sparse.update(Struct(rank=r)) # rank of solution vector
 
                     print('\n== format={}, N={}, dim={}, material={}, rank={}, err_tol={} ===='.format(pars_sparse.kind,

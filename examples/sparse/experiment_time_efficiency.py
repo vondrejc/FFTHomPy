@@ -51,7 +51,7 @@ for dim in [2,3]:
         pars.update(Struct(N=dim*(alp*N,),)) # number of voxels (assumed equal for all directions)
         # ----------------------------
 
-        for r in range(5, N+1,5):
+        for r in range(4, N+1, 2):
             pars_sparse.update(Struct(rank=r)) # rank of solution vector
 
             print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
