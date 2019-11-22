@@ -202,7 +202,7 @@ class CanoTensor(SparseTensorFuns):
 
     def truncate(self, rank=None, tol=None, fast=False):
         "return truncated tensor"
-        # tol is the maximum "portion" of the core trace to be lost, e.g. tol=0.01 means at most 1 percent could be lost in the truncation.
+        # tol is the minmimum absolute value of the terms to be kept in the sorted core
         # if tol is not none, it will override rank as the truncation criteria.
         if tol is None and rank is None:
             return self
@@ -218,9 +218,9 @@ class CanoTensor(SparseTensorFuns):
         core=self.core
 
         if tol is not None:
-            # determine the truncation rank so that (1.0-tol)*100% of the trace of the core is perserved.
-            rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
-
+            # determine the truncation rank so that core terms smaller than the tol is discarded.
+            #rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
+            rank=np.searchsorted( -np.abs(core), -tol)+1
         # truncation
         core=core[:rank]
         for ii in range(self.order):
