@@ -6,6 +6,7 @@ from ffthompy.tensors import Tensor
 from ffthompy.sparse.objects.tensors import fft_form_default
 from numpy.linalg import norm
 from numpy import newaxis
+import warnings
 
 
 class Tucker(CanoTensor):
@@ -201,9 +202,12 @@ class Tucker(CanoTensor):
 
         return T
 
-    def truncate(self, tol=None, rank=None):
+    def truncate(self, tol=None, rank=None, fast=False):
         """return truncated tensor. tol, if presented, would override rank as truncation criteria.
         """
+        if fast:
+            warnings.warn('The fast truncation is not implemented for Tucker.')
+
         if np.any(tol) is None and np.any(rank) is None:
             # print ("Warning: No truncation criteria input, truncation aborted!")
             return self

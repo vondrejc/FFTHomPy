@@ -154,15 +154,15 @@ class Material_law():
     def __call__(self, *args, **kwargs):
         return self._call(*args, **kwargs)
 
-    def material_isotropic(self, X, rank=None, tol=None):
-        return [self.Agas.multiply(X[i], rank=rank, tol=tol) for i in range(self.dim)]
+    def material_isotropic(self, X, rank=None, tol=None, fast=False):
+        return [(self.Agas*X[i]).truncate(rank=rank, tol=tol, fast=fast) for i in range(self.dim)]
 
-    def material_anisotropic(self, X, rank=None, tol=None):
+    def material_anisotropic(self, X, rank=None, tol=None, fast=False):
         AFGFx=self.dim*[None]
         for i in range(self.dim):
             for j in range(self.dim):
                 AFGFx[i]+=self.Aniso_fun[i][j]*X[j]
-            AFGFx[i]=AFGFx[i].truncate(rank=rank, tol=tol)
+            AFGFx[i]=AFGFx[i].truncate(rank=rank, tol=tol, fast=fast)
         return AFGFx
 
 def homog_Ga_sparse(Agas, pars):
@@ -179,17 +179,17 @@ def homog_Ga_sparse(Agas, pars):
 
     material_law=Material_law(Agas, Aniso, Es)
 
-    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
+    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol, fast=False): # linear operator
         assert(X.Fourier)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol)
+        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol, fast=fast)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol, fast= pars.fast)
+        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol, fast=fast)
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
@@ -198,10 +198,10 @@ def homog_Ga_sparse(Agas, pars):
 
     Ps=get_preconditioner_sparse(N, pars)
 
-    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
-        R=DFAFGfun_s(Fx, rank=rank, tol=tol)
+    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol, fast=pars.solver['fast']):
+        R=DFAFGfun_s(Fx, rank=rank, tol=tol, fast=fast)
         R=Ps*R
-        R=R.truncate(rank=rank, tol=tol, fast= pars.fast)
+        R=R.truncate(rank=rank, tol=tol, fast=pars.solver['fast'])
         return R
 
     tic=Timer(name=pars.solver['method'])
@@ -252,16 +252,16 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     material_law=Material_law(Aganis, Aniso, Es)
 
-    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol): # linear operator
+    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol, fast=False): # linear operator
         assert(X.Fourier)
         FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
-        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol)
+        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol, fast=fast)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
         for ii in range(1, dim):
             GFAFGFx+=hGrad_s[ii]*FAFGFx[ii]
-        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol, fast= pars.fast)
+        GFAFGFx=GFAFGFx.truncate(rank=rank, tol=tol, fast=fast)
         GFAFGFx.name='fun(x)'
         return -GFAFGFx
 
@@ -269,10 +269,10 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
     Ps=get_preconditioner_sparse(N, pars)
 
-    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol):
-        R=DFAFGfun_s(Fx, rank=rank, tol=tol)
+    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol, fast=pars.solver['fast']):
+        R=DFAFGfun_s(Fx, rank=rank, tol=tol, fast=fast)
         R=Ps*R
-        R=R.truncate(rank=rank, tol=tol, fast= pars.fast)
+        R=R.truncate(rank=rank, tol=tol, fast=fast)
         return R
 
     tic=Timer(name=pars.solver['method'])

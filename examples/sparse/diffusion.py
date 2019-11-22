@@ -1,8 +1,6 @@
 from __future__ import division, print_function
 
 import numpy as np
-
-from ffthompy import Struct, Timer
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 
