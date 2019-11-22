@@ -89,7 +89,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         res['norm_res'] = 0
     return x, res
 
-def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None, fast=False):
 
     res={'norm_res': [],
          'kit': 0}
@@ -118,7 +118,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
             omega= beta.inner(residuum)/norm(beta)**2 # exact formula
 
         x=(x+residuum*omega)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol,fast=True) # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol, fast=fast) # setting correct mean
 
         residuum=B-Afun(x)
 
@@ -128,7 +128,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
             break
         res['norm_res'].append(norm_res)
 
-        beta=Afun(residuum.truncate(rank=rank, tol=tol, fast=True))
+        beta=Afun(residuum.truncate(rank=rank, tol=tol, fast=fast))
 
     return x, res
 
