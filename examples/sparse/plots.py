@@ -92,7 +92,7 @@ def plot_error():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             sol_rank_range = sol_rank_range_set['{}'.format(dim)]
-
+            i = 0
             for kind in kinds['{}'.format(dim)]:
                 sols_Ga = pickle.load(open("data_for_plot/dim_{}/mat_{}/sols_Ga_{}.p".format(dim, material, N), "rb"))
                 sols_GaNi = pickle.load(

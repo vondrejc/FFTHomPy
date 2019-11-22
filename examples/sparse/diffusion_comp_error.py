@@ -13,11 +13,11 @@ from examples.sparse.plots import plot_error
 os.nice(19)
 #######################################################
 
-Ns = {'2': [55],
-      '3': [15]}
+Ns = {'2': [1215],
+      '3': [135]}
 
-kinds = {'2': [0,2],
-         '3': [1,2],}
+kinds = {'2': [0],
+         '3': [1,2]}
 
 material_list = [0,2]
 
@@ -26,6 +26,7 @@ sol_rank_range_set={'2': [1,5,10,20,30],
 
 if not os.path.exists('data_for_plot'):
     os.makedirs('data_for_plot/')
+    os.makedirs('data_for_plot/dim_2/mat_0/')
     os.makedirs('data_for_plot/dim_2/mat_2/')
     os.makedirs('data_for_plot/dim_3/mat_0/')
     os.makedirs('data_for_plot/dim_3/mat_2/')
@@ -36,7 +37,7 @@ pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
 pickle.dump(sol_rank_range_set, open("data_for_plot/sol_rank_range_set.p", "wb"))
 pickle.dump(material_list, open("data_for_plot/material_list.p", "wb"))
 
-for dim in [3]:
+for dim in [2,3]:
     for grid in range(len(Ns['{}'.format(dim)])):
         N = Ns['{}'.format(dim)][grid]
 
