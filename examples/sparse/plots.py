@@ -229,7 +229,7 @@ def plot_residuals():
         os.makedirs('figures')
 
     for dim in [2]:
-        xlimit = [0, 20]
+        xlimit = [0, 30]
         ylimit = [10**-7, 10**-1]
         for N in Ns['{}'.format(dim)]:
 
@@ -308,8 +308,8 @@ def plot_residuals():
             ##### END: figure 5.2 Residuum for GaNi solution ###########
 
     for dim in [3]:
-        xlimit = [0, 20]
-        ylimit = [10**-8, 10**-1]
+        xlimit = [0, 30]
+        ylimit = [10**-7, 10**-1]
         for N in Ns['{}'.format(dim)]:
             ##### 0 material  ###########
             for material in material_list:
@@ -452,10 +452,10 @@ def display_rank():
 
 if __name__ == '__main__':
     # data used in plot_time have to be genereted first by experiment_time_efficiency.py
-    plot_time()
+  #  plot_time()
 
     # data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
-    plot_error()
-    plot_memory()
+   # plot_error()
+   # plot_memory()
     plot_residuals()
-    display_rank()
+    #display_rank()
