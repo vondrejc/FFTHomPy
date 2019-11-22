@@ -125,7 +125,7 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
 
         norm_res=norm(residuum)
 
-        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+        if par['divcrit'] and norm_res>res['norm_res'][-1]:
             break
         res['norm_res'].append(norm_res)
 
@@ -135,6 +135,8 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
 
 
 def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+    fast=par.get('fast')
+
     M=SparseTensor(kind=B.kind, val=np.ones(B.N.size*[3, ]), rank=1) # constant field
     FM=M.fourier().enlarge(B.N)
 
@@ -147,7 +149,7 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
     if norm is None:
         norm=lambda X: X.norm(normal_domain=False)
 
-    residuum=(B-Afun(x)).truncate(rank=None, tol=par['tol'])
+    residuum=(B-Afun(x)).truncate(rank=None, tol=par['tol'], fast=fast)
     res['norm_res'].append(norm(residuum))
     beta=Afun(residuum)
 
@@ -174,7 +176,7 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
         tic=Timer('residuum norm')
         norm_res=norm(residuum)
         tic.measure()
-        if par['divcrit'] and norm_res>res['norm_res'][res['kit']-1]:
+        if par['divcrit'] and norm_res>res['norm_res'][-1]:
             break
         res['norm_res'].append(norm_res)
 
@@ -182,7 +184,7 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
 #         residuum_for_beta=residuum.truncate(rank=rank, tol=tol)
 #         residuum_for_beta=residuum.truncate(rank=None, tol=1-4)
         tol=min([norm_res/1e1, par['tol']])
-        residuum_for_beta=residuum.truncate(rank=None, tol=tol)
+        residuum_for_beta=residuum.truncate(rank=None, tol=tol, fast=fast)
         tic.measure()
         print('tolerance={}, rank={}'.format(tol, residuum_for_beta.r))
         print('residuum_for_beta.r={}'.format(residuum_for_beta.r))
