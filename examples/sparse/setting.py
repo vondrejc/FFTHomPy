@@ -7,8 +7,37 @@ try:
     from uq.decomposition import KL_Fourier
 except:
     import warnings
-    warnings.warn('Package StoPy is not available; required for Karhunen-Loeve decomposition.')
+    warnings.warn('Package StoPy (https://github.com/vondrejc/StoPy) is not available; required for Karhunen-Loeve decomposition.')
 
+
+kind_list=['cano','tucker','tt']
+
+def get_default_parameters(dim, N, material, kind):
+    pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
+            N=dim*(N,), # number of voxels (assumed equal for all directions)
+            Y=np.ones(dim), # size of periodic cell
+            recover_sparse=1, # recalculate full material coefficients from sparse one
+            solver=dict(tol=1e-8,
+                        maxiter=50),
+            )
+    pars_sparse=pars.copy()
+    pars_sparse.update(Struct(debug=False,
+                              kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
+                              rank=10, # rank of solution vector
+                              precond_rank=10,
+                              tol=None,
+                              N=dim*(N,),
+                              rhs_tol=1e-8,
+                              solver=dict(method='mr', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
+                                          approx_omega=False, # inner product of tuckers could be so slow
+                                                              # that using an approximate omega could gain.
+                                          tol=1e-8,
+                                          maxiter=30, # no. of iterations for a solver
+                                          divcrit=True, # stop if the norm of residuum fails to decrease
+                                          fast=True, # fast truncation
+                                          ),
+                              ))
+    return pars, pars_sparse
 
 def get_material_coef(material, pars, pars_sparse, ga=True):
     # get configuration settings

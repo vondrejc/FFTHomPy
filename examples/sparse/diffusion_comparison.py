@@ -7,7 +7,7 @@ import pickle
 from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
-from examples.sparse.material_setting import get_material_coef
+from examples.sparse.setting import get_material_coef, kind_list, get_default_parameters
 from examples.sparse.plots import plot_error, plot_memory, plot_residuals
 
 os.nice(19)
@@ -23,8 +23,6 @@ material_list = [0,2]
 
 sol_rank_range_set={'2': [1,5,10,20,30],
                     '3': [1,5,10,20]}
-
-kind_list = ['cano', 'tucker', 'tt']
 
 if not os.path.exists('data_for_plot'):
     os.makedirs('data_for_plot/')
@@ -48,32 +46,12 @@ for dim in [2,3]:
             for kind in kinds['{}'.format(dim)]:
 
                 ################ MATERAL DATA AND SETTINGS ################
-                ## parameters for non-sparse solution
-                pars = Struct(dim=dim,  # number of dimensions (works for 2D and 3D)
-                              N=dim * (N,),  # number of voxels (assumed equal for all directions)
-                              Y=np.ones(dim),  # size of periodic cell
-                              recover_sparse=1,  # recalculate full material coefficients from sparse one
-                              solver=dict(tol=1e-10,
-                                          maxiter=20,
-                                          method='mr'),
-                              material=material,
-                              )
-
-                ## parameters for SPARSE solution
-                pars_sparse = pars.copy()
-                pars_sparse.update(Struct(kind=kind_list[kind],  # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                                          rank=1,  # rank of solution vector
-                                          precond_rank=15,
-                                          tol=None,
-                                          solver=dict(method='mr',
-                                                      # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                                      approx_omega=False,  # inner product of tuckers could be slow
-                                                      eigrange=[0.6, 50],
-                                                      tol=1e-10,
-                                                      maxiter=20,
-                                                      divcrit=False),  # no. of iterations for a solver
-                                          material=material
+                ## parameters
+                pars, pars_sparse=get_default_parameters(dim, N, material, kind)
+                pars_sparse.update(Struct(rank=1,  # rank of solution vector
+                                          solver=dict(divcrit=False),  # no. of iterations for a solver
                                           ))
+
                 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                                             N, dim, material))
 
@@ -110,6 +88,8 @@ for dim in [2,3]:
                 res_GaNi_Spar = list()
 
                 for sol_rank in sol_rank_range_set['{}'.format(dim)]: # rank of solution vector
+                    pars_sparse.update(Struct(rank=sol_rank))
+
                     sols_Ga.append(resP_Ga.AH)
                     iter_Ga.append(resP_Ga.info['kit'])
                     time_Ga.append(resP_Ga.info['time'][0])
@@ -118,9 +98,6 @@ for dim in [2,3]:
                     iter_GaNi.append(resP_GaNi.info['kit'])
                     time_GaNi.append(resP_GaNi.info['time'][0])
                     mem_GaNi.append([1])
-
-                    pars_sparse.update(Struct(rank=sol_rank))
-                    pars_sparse.update(Struct(precond_rank=sol_rank))
 
                     resS_Ga = homog_Ga_sparse(Agas, pars_sparse)
 

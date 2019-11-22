@@ -1,15 +1,12 @@
-import numpy as np
-import matplotlib.pylab as plt
 import os
 import pickle
 
-from ffthompy import Timer, Struct
+from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
                                             homog_Ga_sparse,)
-from examples.sparse.material_setting import get_material_coef, getMat_conf
+from examples.sparse.setting import get_material_coef, getMat_conf, get_default_parameters
 from examples.sparse.plots import plot_time
 
-from ffthompy.materials import Material
 from ffthompy.sparse.materials import SparseMaterial
 
 kinds = {'2': 0,
@@ -36,29 +33,8 @@ for dim in [2,3]:
 
     for i, N in enumerate(N_list):
         # PARAMETERS ##############################################################
-        pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
-                    N=dim*(N,), # number of voxels (assumed equal for all directions)
-                    Y=np.ones(dim), # size of periodic cell
-                    recover_sparse=1, # recalculate full material coefficients from sparse one
-                    solver=dict(tol=1e-6,
-                                maxiter=50),
-                    )
-
-        pars_sparse = pars.copy()
-        pars_sparse.update(Struct(kind=kind_list[kind],  # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                                  rank=1,  # rank of solution vector
-                                  precond_rank=10,
-                                  tol=None,
-                                  N=dim*(N,),
-                                  rhs_tol=1e-8,
-                                  solver=dict(method='mr',
-                                              # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                              approx_omega=False,  # inner product of tuckers could be so slow
-                                              # that using an approximate omega could gain.
-                                              tol=1e-6,
-                                              maxiter=40,  # no. of iterations for a solver
-                                              divcrit=True),
-                                  ))
+        pars, pars_sparse=get_default_parameters(dim, N, material, kind)
+        pars.solver['tol']=1e-6
 
         # generating material coefficients
         Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)

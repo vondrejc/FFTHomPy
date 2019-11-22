@@ -6,40 +6,20 @@ from ffthompy import Struct, Timer
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 
-from examples.sparse.material_setting import get_material_coef
+from examples.sparse.setting import get_material_coef, get_default_parameters
 
 
 # PARAMETERS ##############################################################
-dim=3
-N=5*3**1
+dim=2
+N=5*3**2
 material=0
-kind=1
-kind_list=['cano','tucker','tt']
+kind=0 # from kind_list=['cano','tucker','tt']
 
-pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
-            N=dim*(N,), # number of voxels (assumed equal for all directions)
-            Y=np.ones(dim), # size of periodic cell
-            recover_sparse=1, # recalculate full material coefficients from sparse one
-            solver=dict(tol=1e-8,
-                        maxiter=50),
-            )
-pars_sparse=pars.copy()
-pars_sparse.update(Struct(kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                          rank=10, # rank of solution vector
-                          precond_rank=10,
-                          tol=None,
-                          N=dim*(N,),
-                          rhs_tol=1e-8,
-                          solver=dict(method='mrd', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                      approx_omega=False, # inner product of tuckers could be so slow
-                                                          # that using an approximate omega could gain.
-                                      tol=1e-4,
-                                      maxiter=15, # no. of iterations for a solver
-                                      divcrit=False), # stop if the norm of residuum fails to decrease
-                          ))
+pars, pars_sparse=get_default_parameters(dim, N, material, kind)
+pars_sparse.debug=True
 
-print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
-                                                            N, dim, material))
+print('== format={}, N={}, dim={}, material={}, rank={} ===='.format(pars_sparse.kind, N, dim,
+                                                                     material, pars_sparse.rank))
 print('dofs = {}'.format(N**dim))
 
 # get material coefficients
