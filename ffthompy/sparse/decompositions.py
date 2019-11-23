@@ -134,6 +134,18 @@ def fast_qr( A ):
 
     return Q, R
 
+def new_expand_dims(a, axes):
+    """
+    This is a new version of extend_dims() function of numpy, it extend multiple dims rather than one.
+    """
+    # if int is passed, retain the same behaviour
+    if type(axes) == int:
+        return np.expand_dims(a, axes)
+    # insert axes to given indices
+    for ax in sorted(axes):
+        a = np.expand_dims(a, ax)
+    return a
+
 if __name__=='__main__':
 
     # A = np.random.rand(7,7)
