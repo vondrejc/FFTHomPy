@@ -183,7 +183,7 @@ class Tucker(CanoTensor):
 
                     for i in range(self.order):
                         slice_norm=norm(core,axis=tuple(np.setdiff1d(range(self.order), i)))
-                        if np.any(rank) is None:
+                        if np.any(tol) is not None:
                             select_ind = np.argwhere(slice_norm >= (1e-3)*tol[i]*np.sum(slice_norm)).squeeze()
                         else:
                             trun_rank = np.minimum(ratio*rank[i],self.r[i])

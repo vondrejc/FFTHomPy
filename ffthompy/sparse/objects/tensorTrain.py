@@ -308,12 +308,10 @@ class TensorTrain(vector, SparseTensorFuns):
                         if i>1: nrm=norm(nrm, axis=0).squeeze()
                         #print(nrm)
                         if tol > 1e-14:
-                            keep_rank_num=np.searchsorted(np.cumsum(nrm)/np.sum(nrm), 1.0-0.1*tol)+1
+                            select_ind = np.argwhere(nrm >= (1e-3)*tol*np.sum(nrm)).squeeze()
                         else:
                             keep_rank_num= np.minimum(ratio*rank, r[i])
-
-                        ind=np.argpartition(-nrm, keep_rank_num-1)[:keep_rank_num]
-                        select_ind = np.argwhere(nrm >= nrm[ind[-1]]).squeeze() # nrm[ind[-1] is the rank-th largest value in norm list
+                            select_ind=np.argpartition(-nrm, keep_rank_num-1)[:keep_rank_num]
 
                         cr_new[i-1] = np.take(cr[i-1], select_ind, axis=2)
                         cr[i] = np.take(cr[i], select_ind, axis=0)
@@ -482,8 +480,8 @@ if __name__=='__main__':
     print('----testing "Fourier" function ----')
     print()
 
-    v1=np.random.rand(50,130,10)
-    v2=np.random.rand(50,130,10)
+    v1=np.random.rand(50,23,10)
+    v2=np.random.rand(50,23,10)
 
 
 
@@ -506,13 +504,17 @@ if __name__=='__main__':
 #
 #    print((t-t5).norm())
 #
-    t3=t.truncate(tol=0.01)
+    t3=t.truncate(tol=4e-1)
     print(t3)
 
     print((t-t3).norm())
 
+    t4=t.truncate(tol=4e-1, fast=True)
+    print(t4)
 
-    t4=t.truncate(tol=0.01, fast=True)
+    print((t-t4).norm())
+
+    t4=t.truncate(rank=5, fast=True)
     print(t4)
 
     print((t-t4).norm())
