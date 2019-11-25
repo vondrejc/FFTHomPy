@@ -22,7 +22,7 @@ def plot_error():
     material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings()
     ylimit = [10**-11, 10**0]
     xlabel = 'rank of solution'
-    ylabel = 'norm of relative error'
+    ylabel = 'relative error'
     iter_rank_range_set = [1, 5, 10, 15, 20, 30, 40, 50]
 
     for dim in [2]:
@@ -67,6 +67,8 @@ def plot_error():
             ax = plt.gca()
             plt.xlabel(xlabel)
             ax.set_xlim([0, xlimend])
+            ax.set_ylim(ylimit)
+
             plt.xticks(sol_rank_range)
 
             plt.ylabel(ylabel)
@@ -118,7 +120,7 @@ def plot_error():
             plt.xlabel(xlabel)
             ax.set_xlim([0, xlimend])
             plt.xticks(sol_rank_range)
-
+            ax.set_ylim(ylimit)
             plt.ylabel(ylabel)
 
             lg = plt.legend(loc = 'best')
@@ -455,7 +457,7 @@ if __name__ == '__main__':
   #  plot_time()
 
     # data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
-   # plot_error()
+   plot_error()
    # plot_memory()
-    plot_residuals()
+ # plot_residuals()
     #display_rank()

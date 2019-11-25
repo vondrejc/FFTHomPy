@@ -92,7 +92,7 @@ def plot_error():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             sol_rank_range = sol_rank_range_set['{}'.format(dim)]
-
+            i = 0
             for kind in kinds['{}'.format(dim)]:
                 sols_Ga = pickle.load(open("data_for_plot/dim_{}/mat_{}/sols_Ga_{}.p".format(dim, material, N), "rb"))
                 sols_GaNi = pickle.load(
@@ -229,7 +229,7 @@ def plot_residuals():
         os.makedirs('figures')
 
     for dim in [2]:
-        xlimit = [0, 20]
+        xlimit = [0, 30]
         ylimit = [10**-7, 10**-1]
         for N in Ns['{}'.format(dim)]:
 
@@ -308,8 +308,8 @@ def plot_residuals():
             ##### END: figure 5.2 Residuum for GaNi solution ###########
 
     for dim in [3]:
-        xlimit = [0, 20]
-        ylimit = [10**-8, 10**-1]
+        xlimit = [0, 30]
+        ylimit = [10**-7, 10**-1]
         for N in Ns['{}'.format(dim)]:
             ##### 0 material  ###########
             for material in material_list:
