@@ -21,11 +21,13 @@ N_lists = {'2': [45, 135, 320, 405, 640, 1215, 2560,3645,5120],
 err_tol_list=[ 1e-4, 1e-6 ]
 method=1 # 0-Ga, 1-GaNi
 
+data_folder = "data_for_plot/time"
+
 for material in [2, 4]:
     for dim in [2, 3]:
 
-        if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
-            os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
+        if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
+            os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
 
         N_list = N_lists['{}'.format(dim)]
         kind=kinds['{}'.format(dim)]
@@ -101,12 +103,12 @@ for material in [2, 4]:
 
 
 
-        pickle.dump(N_list, open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
-        pickle.dump(full_time_list, open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[0], open(("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[1], open(("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[0],        open(("data_for_plot/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[1],        open(("data_for_plot/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(dim, material,kind_list[kind]), "wb"))
+        pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(rank_list[0],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(rank_list[1],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
 
 ##### plot results ##############
 #plot_time()

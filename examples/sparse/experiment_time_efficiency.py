@@ -5,7 +5,7 @@ from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
                                             homog_Ga_sparse,)
 from examples.sparse.setting import get_material_coef, getMat_conf, get_default_parameters
-from examples.sparse.plots import plot_time
+from examples.sparse.plots import plot_time, save_experiment_settings
 
 from ffthompy.sparse.materials import SparseMaterial
 
@@ -18,9 +18,11 @@ N_lists = {'2': [45,135,405,1215],
 kind_list=['cano','tucker','tt']
 material=3 # 0 or 3
 
+data_folder = "data_for_plot/time"
+
 for dim in [2,3]:
-    if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
-        os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
+    if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
+        os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
 
     N_list = N_lists['{}'.format(dim)]
 
@@ -85,9 +87,9 @@ for dim in [2,3]:
     print("full solver time:",full_time_list)
     print("rank:",rank_list)
 
-    pickle.dump(N_list, open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
-    pickle.dump(full_time_list, open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
-    pickle.dump(sparse_time_list, open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material,kind_list[kind]), "wb"))
+    pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
 
 ##### plot results ##############
 plot_time()
