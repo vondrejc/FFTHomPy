@@ -21,10 +21,10 @@ kinds = {'2': [0],
 
 material_list = [0,2]
 
-sol_rank_range_set={'2': [1,5,10,20,30],
-                    '3': [1,5,10,20]}
+sol_rank_range_set={'2': [2,5,10,20,30],
+                    '3': [2,5,10,20]}
 
-data_folder = "data_for_plot/residua"
+data_folder = 'data_for_plot/error'
 save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list,data_folder=data_folder)
 
 for dim in [2,3]:
