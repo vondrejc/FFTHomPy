@@ -7,16 +7,10 @@ from examples.sparse.fig_pars import set_labels, set_pars
 
 os.nice(19)
 
-'''
-def load_experiment_settings():
-    material_list = pickle.load(open("data_for_plot/material_list.p", "rb"))
-    sol_rank_range_set = pickle.load(open("data_for_plot/sol_rank_range_set.p", "rb"))
-    kinds = pickle.load(open("data_for_plot/kinds.p", "rb"))
-    Ns = pickle.load(open("data_for_plot/Ns.p", "rb"))
-    kind_list = pickle.load(open("data_for_plot/kind_list.p", "rb"))
-    solver = 'mr'
-    return material_list, sol_rank_range_set, kinds, Ns, kind_list, solver
-'''
+
+
+
+
 def save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list, data_folder='data_for_plot'):
 
     if not os.path.exists('{}'.format(data_folder)):
@@ -53,7 +47,7 @@ def plot_error():
     ylimit = [10**-11, 10**0]
     xlabel = 'rank of solution'
     ylabel = 'relative error'
-    iter_rank_range_set = [1, 5, 10, 15, 20, 30, 40, 50]
+
 
     for dim in [2]:
         N = max(Ns['{}'.format(dim)])
