@@ -12,13 +12,13 @@ os.nice(19)
 
 
 def save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list, data_folder='data_for_plot'):
-
     if not os.path.exists('{}'.format(data_folder)):
         os.makedirs('{}/'.format(data_folder))
-        os.makedirs('{}/dim_2/mat_0/'.format(data_folder))
-        os.makedirs('{}/dim_2/mat_2/'.format(data_folder))
-        os.makedirs('{}/dim_3/mat_0/'.format(data_folder))
-        os.makedirs('{}/dim_3/mat_2/'.format(data_folder))
+
+    for dim in [2,3]:
+        for material in material_list:
+            if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim,material)):
+                os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim,material))
 
     pickle.dump(kind_list, open("{}/kind_list.p".format(data_folder), "wb"))
     pickle.dump(Ns, open("{}/Ns.p".format(data_folder), "wb"))
@@ -482,7 +482,7 @@ if __name__ == '__main__':
   #  plot_time()
 
     # data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
- #  plot_error()
+   plot_error()
    # plot_memory()
-  plot_residuals()
+#  plot_residuals()
     #display_rank()

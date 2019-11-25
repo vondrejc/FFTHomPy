@@ -389,6 +389,8 @@ def plot_residuals():
 
 
 def plot_time():
+    data_folder = "data_for_plot/time"
+
     for material in [2, 4]:
         kind_list = ['cano', 'tucker', 'tt']
         kinds = {'2': 0,
@@ -407,18 +409,18 @@ def plot_time():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             N_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
             full_time_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
             sparse_time_list_1 = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_1e-03.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-03.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
 
          #   sparse_time_list_2 = pickle.load(
          #       open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_1e-04.p".format(dim, material, kind_list[kind]), "rb"))
             sparse_time_list_3 = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_1e-05.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-05.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
             sparse_time_list_4 = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_1e-06.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-06.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
 
         #    sparse_time_list_5 = pickle.load(
         #        open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}_1e-07.p".format(dim, material, kind_list[kind]), "rb"))
