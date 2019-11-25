@@ -8,7 +8,7 @@ from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from examples.sparse.setting import get_material_coef, kind_list, get_default_parameters
-from examples.sparse.plots import plot_error
+from examples.sparse.plots import plot_error, save_experiment_settings
 
 os.nice(19)
 #######################################################
@@ -24,26 +24,16 @@ material_list = [0,2]
 sol_rank_range_set={'2': [1,5,10,20,30],
                     '3': [1,5,10,20]}
 
-if not os.path.exists('data_for_plot'):
-    os.makedirs('data_for_plot/')
-    os.makedirs('data_for_plot/dim_2/mat_0/')
-    os.makedirs('data_for_plot/dim_2/mat_2/')
-    os.makedirs('data_for_plot/dim_3/mat_0/')
-    os.makedirs('data_for_plot/dim_3/mat_2/')
-
-pickle.dump(kind_list, open("data_for_plot/kind_list.p", "wb"))
-pickle.dump(Ns, open("data_for_plot/Ns.p", "wb"))
-pickle.dump(kinds, open("data_for_plot/kinds.p", "wb"))
-pickle.dump(sol_rank_range_set, open("data_for_plot/sol_rank_range_set.p", "wb"))
-pickle.dump(material_list, open("data_for_plot/material_list.p", "wb"))
+data_folder = "data_for_plot/residua"
+save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list,data_folder=data_folder)
 
 for dim in [2,3]:
     for grid in range(len(Ns['{}'.format(dim)])):
         N = Ns['{}'.format(dim)][grid]
 
         for material in material_list:
-            if not os.path.exists('data_for_plot/dim_{}/mat_{}/'.format(dim, material)):
-                os.makedirs('data_for_plot/dim_{}/mat_{}/'.format(dim, material))
+            if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
+                os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
             for kind in kinds['{}'.format(dim)]:
 
                 ################ MATERAL DATA AND SETTINGS ################
@@ -84,10 +74,10 @@ for dim in [2,3]:
                     resS_GaNi = homog_GaNi_sparse(Aganis, Agas, pars_sparse)
                     sols_GaNi_Spar.append(resS_GaNi.AH)
 
-                pickle.dump( sols_Ga_Spar ,  open( "data_for_plot/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
-                pickle.dump( sols_GaNi_Spar ,open( "data_for_plot/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
+                pickle.dump( sols_Ga_Spar ,  open( "{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder,dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
+                pickle.dump( sols_GaNi_Spar ,open( "{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
 
-                pickle.dump( sols_Ga,   open( "data_for_plot/dim_{}/mat_{}/sols_Ga_{}.p".format(dim, material,N) , "wb"))
-                pickle.dump( sols_GaNi, open("data_for_plot/dim_{}/mat_{}/sols_GaNi_{}.p".format(dim, material,N), "wb"))
+                pickle.dump( sols_Ga,   open( "{}/dim_{}/mat_{}/sols_Ga_{}.p".format(data_folder,dim, material,N) , "wb"))
+                pickle.dump( sols_GaNi, open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder,dim, material,N), "wb"))
 
 plot_error()
