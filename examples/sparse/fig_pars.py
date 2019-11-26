@@ -2,23 +2,19 @@ import matplotlib.pyplot as plt
 
 def set_pars(mpl):
     mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath,bm,amsfonts}"]
-    params={'text.usetex' : True,
-            'text.latex.unicode': True,
+    params={'text.usetex': True,
             'font.family': 'serif',
             'font.size': 12,
             'legend.fontsize': 10,
-              }
+            }
     mpl.rcParams.update(params)
-    fig_par={'dpi' : 1000,
-             'facecolor' : 'w',
-             'edgecolor' : 'k',
-#            'figsize' : (8, 6),
-#            'figsize_square' : (6, 6),
-             'figsize' : (4, 3),
-             'figsize3D': (4,4 ),
-#            'figsize_square' : (3, 3),
-             'pad_inches' : 0.02,
-               }
+    fig_par={'dpi': 1000,
+             'facecolor': 'w',
+             'edgecolor': 'k',
+             'figsize': (4, 3),
+             'figsize3D': (4, 4),
+             'pad_inches': 0.02,
+             }
 
     return fig_par
 
