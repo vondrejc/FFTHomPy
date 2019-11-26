@@ -125,13 +125,17 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
 
         norm_res=norm(residuum)
 
-        if par['divcrit'] and norm_res>res['norm_res'][-1]:
-            break
+        if par['divcrit']:
+            if norm_res <= np.min(res['norm_res']):
+                x_sol=x
+
+        else: x_sol=x
+
         res['norm_res'].append(norm_res)
 
         beta=Afun(residuum.truncate(tol=min([norm_res/1e1, par['tol']]), fast=fast))
 
-    return x, res
+    return x_sol, res
 
 
 def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
