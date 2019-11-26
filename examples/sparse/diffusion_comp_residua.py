@@ -40,9 +40,9 @@ for dim in [2,3]:
                 ################ MATERAL DATA AND SETTINGS ################
                 ## parameters
                 pars, pars_sparse=get_default_parameters(dim, N, material, kind)
-                pars_sparse.update(Struct(rank=1,  # rank of solution vector
-                                          ))
-                pars_sparse.solver.update(dict(divcrit=False))
+                pars_sparse.solver.update(dict(rank=1,  # rank of solution vector
+                                               minres_fails=int(1e6), # obtain info from all iters
+                                               ))
 
                 print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                                             N, dim, material))
@@ -68,7 +68,7 @@ for dim in [2,3]:
                 res_GaNi_Spar = list()
 
                 for sol_rank in sol_rank_range_set['{}'.format(dim)]: # rank of solution vector
-                    pars_sparse.update(Struct(rank=sol_rank))
+                    pars_sparse.solver.update(dict(rank=sol_rank))
 
                     iter_Ga.append(resP_Ga.info['kit'])
                     iter_GaNi.append(resP_GaNi.info['kit'])

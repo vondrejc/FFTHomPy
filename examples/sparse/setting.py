@@ -23,18 +23,18 @@ def get_default_parameters(dim, N, material, kind):
     pars_sparse=pars.copy()
     pars_sparse.update(Struct(debug=False,
                               kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
-                              rank=10, # rank of solution vector
                               precond_rank=10,
-                              tol=None,
                               N=dim*(N,),
                               rhs_tol=1e-8,
                               solver=dict(method='mr', # method could be 'Richardson'(r),'minimal_residual'(mr), or 'Chebyshev'(c)
-                                          approx_omega=False, # inner product of tuckers could be so slow
-                                                              # that using an approximate omega could gain.
+                                          rank=10, # rank of solution vector
+                                          tol_truncate=None,
                                           tol=1e-8,
                                           maxiter=30, # no. of iterations for a solver
-                                          divcrit=True, # stop if the norm of residuum fails to decrease
+                                          minres_fails=6, # stop the solver when the residuum fails to decrease n times
                                           fast=True, # fast truncation
+                                          approx_omega=False, # inner product of tuckers could be so slow
+                                                              # that using an approximate omega could gain.
                                           ),
                               ))
     return pars, pars_sparse

@@ -13,12 +13,12 @@ kinds = {'2': 0,
          '3': 2,}
 
 N_lists = {'2': [45, 135, 320, 405, 640, 1215, 2560,3645,5120],
-           '3': [5, 15, 45, 80, 135, 175, 225, 305, 375 ]}
+           '3': [5, 15, 45, 80, 135, 175, 225, 305, 375]}
 
-#N_lists = {'2': [5, 15 ,25],
-#           '3': [5, 15, 25]}
+# N_lists = {'2': [5, 15, 25, 45],
+#            '3': [5, 15, 25]}
 
-err_tol_list=[ 1e-4, 1e-6 ]
+err_tol_list=[1e-4, 1e-6]
 method=1 # 0-Ga, 1-GaNi
 
 data_folder = "data_for_plot/time"
@@ -61,14 +61,13 @@ for material in [2, 4]:
 
             full_time_list[i]=resP.time
 
-
             for counter, err_tol in enumerate(err_tol_list):
 
                 for r in range(4, N+1, 2):
-                    pars_sparse.update(Struct(rank=r)) # rank of solution vector
+                    pars_sparse.solver.update(dict(rank=r)) # rank of solution vector
 
                     print('\n== format={}, N={}, dim={}, material={}, rank={}, err_tol={} ===='.format(pars_sparse.kind,
-                        N, dim, material, pars_sparse.rank, err_tol))
+                        N, dim, material, pars_sparse.solver['rank'], err_tol))
 
                     # PROBLEM DEFINITION ######################################################
                     if method in ['Ga',0]:

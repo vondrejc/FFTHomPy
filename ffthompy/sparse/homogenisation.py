@@ -4,10 +4,7 @@ import ffthompy.tensors.projection as proj
 from ffthompy.general.solver import linear_solver
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index
-from ffthompy.sparse.solver import richardson as richardson_s
-from ffthompy.sparse.solver import cheby2TERM as cheby2TERM_s
-from ffthompy.sparse.solver import minimal_residual as minimal_residual_s
-from ffthompy.sparse.solver import minimal_residual_debug
+from ffthompy.sparse.solver import linear_solver as linear_solver_lowrank
 from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
 from ffthompy.sparse.objects import SparseTensor
 import itertools
@@ -32,10 +29,10 @@ def homog_Ga_full(Aga, pars):
 
     x0=Tensor(N=Nbar, shape=(dim,), Fourier=False) # initial approximation to solvers
     B=PAfun(-EN) # right-hand side of linear system
+
     tic=Timer(name='CG (gradient field)')
     X, info=linear_solver(solver='CG', Afun=PAfun, B=B,
                           x0=x0, par=pars.solver, callback=None)
-
     tic.measure()
 
     AH=Aga(X+EN)*(X+EN)
@@ -47,7 +44,6 @@ def homog_Ga_full_potential(Aga, pars):
     N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
 
     dim=Nbar.__len__()
-    Y=np.ones(dim) # cell size
 
     F2=DFT(name='FN', inverse=False, N=Nbar) # discrete Fourier transform (DFT)
     iF2=DFT(name='FiN', inverse=True, N=Nbar) # inverse DFT
@@ -85,13 +81,12 @@ def homog_Ga_full_potential(Aga, pars):
 
     AH=Aga(X+EN)*(X+EN)
 
-    return Struct(AH=AH, e=X, Fu=Fu, info=info,  time=tic.vals[0][0])
+    return Struct(AH=AH, e=X, Fu=Fu, info=info, time=tic.vals[0][0])
 
 def homog_GaNi_full_potential(Agani, Aga, pars):
 
     N=Agani.N # double grid number
     dim=N.__len__()
-    Y=np.ones(dim) # cell size
 
     F=DFT(name='FN', inverse=False, N=N) # discrete Fourier transform (DFT)
     iF=DFT(name='FiN', inverse=True, N=N) # inverse DFT
@@ -179,10 +174,10 @@ def homog_Ga_sparse(Agas, pars):
 
     material_law=Material_law(Agas, Aniso, Es)
 
-    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol, fast=False): # linear operator
+    def DFAFGfun_s(X, rank=None, tol=None, fast=False): # linear operator
         assert(X.Fourier)
         FGX=[((hGrad_s[ii]*X).enlarge(Nbar)).fourier() for ii in range(dim)]
-        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol, fast=fast)
+        AFGFx=material_law(FGX, rank=rank, tol=tol, fast=fast)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         FAFGFx=[FAFGFx[ii].decrease(N) for ii in range(dim)]
@@ -198,32 +193,23 @@ def homog_Ga_sparse(Agas, pars):
 
     Ps=get_preconditioner_sparse(N, pars)
 
-    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol, fast=pars.solver['fast']):
+    def PDFAFGfun_s(Fx, rank=pars.solver['rank'], tol=pars.solver['tol_truncate'],
+                    fast=pars.solver['fast']):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol, fast=fast)
         R=Ps*R
         R=R.truncate(rank=rank, tol=tol, fast=fast)
         return R
 
-    tic=Timer(name=pars.solver['method'])
-
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=pars.rhs_tol, fast=False)
+
     if debug:
         print('r.h.s. norm = {}; error={}; rank={}'.format(np.linalg.norm(PBs.full().val),
             np.linalg.norm(PBs.full().val-PBs2.full().val), PBs2.r))
     PBs=PBs2
-    if pars.solver['method'] in ['Richardson','richardson','r','R']:
-        Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                              rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
-        Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                              rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['minimal_residual','mr','m','M']:
-        Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                                    rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['minimal_residual_debug','mrd']:
-        Fu, ress=minimal_residual_debug(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                                        rank=pars.rank, tol=pars.tol)
+
+    tic=Timer(name=pars.solver['method'])
+    Fu, ress=linear_solver_lowrank(pars.solver['method'], Afun=PDFAFGfun_s, B=PBs, par=pars.solver)
     tic.measure()
 
     print('iterations of solver={}'.format(ress['kit']))
@@ -252,10 +238,10 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     material_law=Material_law(Aganis, Aniso, Es)
 
-    def DFAFGfun_s(X, rank=pars.rank, tol=pars.tol, fast=False): # linear operator
+    def DFAFGfun_s(X, rank=None, tol=None, fast=False): # linear operator
         assert(X.Fourier)
         FGX=[(hGrad_s[ii]*X).fourier() for ii in range(dim)]
-        AFGFx=material_law(FGX, rank=pars.rank, tol=pars.tol, fast=fast)
+        AFGFx=material_law(FGX, rank=rank, tol=tol, fast=fast)
         # or in following: Fourier, reduce, truncate
         FAFGFx=[AFGFx[ii].fourier() for ii in range(dim)]
         GFAFGFx=hGrad_s[0]*FAFGFx[0] # div
@@ -269,13 +255,13 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Bs=hGrad_s[0]*(Aganis*Es).fourier() # minus from B and from div
     Ps=get_preconditioner_sparse(N, pars)
 
-    def PDFAFGfun_s(Fx, rank=pars.rank, tol=pars.tol, fast=pars.solver['fast']):
+    def PDFAFGfun_s(Fx, rank=pars.solver['rank'], tol=pars.solver['tol_truncate'],
+                    fast=pars.solver['fast']):
         R=DFAFGfun_s(Fx, rank=rank, tol=tol, fast=fast)
         R=Ps*R
         R=R.truncate(rank=rank, tol=tol, fast=fast)
         return R
 
-    tic=Timer(name=pars.solver['method'])
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=pars.rhs_tol, fast=False)
     if debug:
@@ -284,19 +270,10 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     PBs=PBs2
 
-    if pars.solver['method'] in ['Richardson','richardson','r','R']:
-        Fu, ress=richardson_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                              rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['Chebyshev','chebyshev','c','C']:
-        Fu, ress=cheby2TERM_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                              rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['minimal_residual','mr','m','M']:
-        Fu, ress=minimal_residual_s(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                                    rank=pars.rank, tol=pars.tol)
-    elif pars.solver['method'] in ['minimal_residual_debug','mrd']:
-        Fu, ress=minimal_residual_debug(Afun=PDFAFGfun_s, B=PBs, par=pars.solver,
-                                        rank=pars.rank, tol=pars.tol)
+    tic=Timer(name=pars.solver['method'])
+    Fu, ress=linear_solver_lowrank(pars.solver['method'], Afun=PDFAFGfun_s, B=PBs, par=pars.solver)
     tic.measure()
+
     print('iterations of solver={}'.format(ress['kit']))
     print('norm of residuum={}'.format(ress['norm_res'][-1]))
     Fu.name='Fu'
@@ -314,7 +291,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
         FGX[0]+=Es # adding mean
         AH = calculate_AH_sparse(Agas, Aniso, FGX, method='full')
 
-    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu,  time=tic.vals[0][0])
+    return Struct(AH=AH, e=FGX, solver=ress, Fu=Fu, time=tic.vals[0][0])
 
 def get_preconditioner(N, pars):
     hGrad=grad_tensor(N, pars.Y)

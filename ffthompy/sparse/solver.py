@@ -2,7 +2,18 @@ import numpy as np
 from ffthompy import Timer
 from ffthompy.sparse.objects import SparseTensor
 
-def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
+def linear_solver(method, Afun, B, par):
+    if method in ['Richardson','richardson','r','R']:
+        Fu, ress=richardson(Afun=Afun, B=B, par=par)
+    elif method in ['Chebyshev','chebyshev','c','C']:
+        Fu, ress=cheby2TERM(Afun=Afun, B=B, par=par)
+    elif method in ['minimal_residual','mr','m','M']:
+        Fu, ress=minimal_residual(Afun=Afun, B=B, par=par)
+    elif method in ['minimal_residual_debug','mrd']:
+        Fu, ress=minimal_residual_debug(Afun=Afun, B=B, par=par)
+    return Fu, ress
+
+def cheby2TERM(Afun, B, x0=None, par={}, callback=None):
     """
     Chebyshev two-term iterative solver
 
@@ -21,8 +32,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
     res : dict
         results
     """
-    if par is None:
-        par = dict()
+
     if 'tol' not in par:
         par['tol'] = 1e-06
     if 'maxiter' not in par:
@@ -33,7 +43,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         Egv = par['eigrange']
 
     res={'norm_res': [],
-           'kit': 0}
+         'kit': 0}
 
     bnrm2 = B.norm()
     Ib = 1.0/bnrm2
@@ -49,7 +59,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
     r0=r.norm()
     res['norm_res'].append(Ib*r0)# For Normal Residue
 
-    if res['norm_res'][res['kit']] < par['tol']: # if errnorm is less than tol
+    if res['norm_res'][-1] < par['tol']: # if errnorm is less than tol
         return x, res
 
     M=SparseTensor(kind=x.kind, val=np.ones(x.N.size*[3,]), rank=1) # constant field
@@ -58,7 +68,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
     d = (Egv[1]+Egv[0])/2.0 # np.mean(par['eigrange'])
     c = (Egv[1]-Egv[0])/2.0 # par['eigrange'][1] - d
     v = x*0.0
-    while (res['norm_res'][res['kit']] > par['tol']) and (res['kit'] < par['maxiter']):
+    while (res['norm_res'][-1] > par['tol']) and (res['kit'] < par['maxiter']):
         res['kit'] += 1
         x_prev = x
         if res['kit'] == 1:
@@ -70,9 +80,9 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         else:
             p = -(c*c/4)*w*w
             w = 1/(d-c*c*w/4)
-        v = (r - p*v).truncate(rank=rank, tol=tol)
+        v = (r - p*v).truncate(rank=par['rank'], tol=par['tol_truncate'])
         x = (x_prev + w*v)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=par['tol'], tol=par['tol_truncate']) # setting correct mean
         r = B - Afun(x)
 
         res['norm_res'].append((1.0/r0)*r.norm())
@@ -89,7 +99,7 @@ def cheby2TERM(Afun, B, x0=None, rank=None, tol=None, par=None, callback=None):
         res['norm_res'] = 0
     return x, res
 
-def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+def minimal_residual(Afun, B, x0=None, par=None):
     fast=par.get('fast')
 
     res={'norm_res': [],
@@ -98,47 +108,50 @@ def minimal_residual(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None)
         x=B*(1./par['alpha'])
     else:
         x=x0
-    if norm is None:
+    x_sol=x # solution with minimal residuum
+
+    if 'norm' not in par:
         norm=lambda X: X.norm(normal_domain=False)
 
     residuum=B-Afun(x)
     res['norm_res'].append(norm(residuum))
-    beta=Afun(residuum.truncate(tol=par['tol'], fast=fast))
+    beta=Afun(residuum.truncate(tol=par['tol_truncate'], fast=fast))
 
     M=SparseTensor(kind=x.kind, val=np.ones(x.N.size*[3,]), rank=1) # constant field
     FM=M.fourier().enlarge(x.N)
+    minres_fail_counter=0
 
-    norm_res= res['norm_res'][res['kit']]
-
-    while (norm_res>par['tol'] and res['kit']<par['maxiter']):
+    while (res['norm_res'][-1] > par['tol'] and res['kit'] < par['maxiter']):
         res['kit']+=1
 
         if par['approx_omega']:
-            omega=norm_res/norm(beta) # approximate omega
+            omega=res['norm_res'][-1] / norm(beta) # approximate omega
         else:
             omega= beta.inner(residuum)/norm(beta)**2 # exact formula
 
         x=(x+residuum*omega)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol, fast=fast) # setting correct mean
+
+        # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=par['rank'], tol=par['tol_truncate'], fast=fast)
 
         residuum=B-Afun(x)
 
-        norm_res=norm(residuum)
+        res['norm_res'].append(norm(residuum))
 
-        if par['divcrit']:
-            if norm_res <= np.min(res['norm_res']):
-                x_sol=x
+        if res['norm_res'][-1] <= np.min(res['norm_res'][:-1]):
+            x_sol=x
+        else:
+            minres_fail_counter+=1
+            if minres_fail_counter>=par['minres_fails']:
+                print('Residuum has risen up {} times -> ending solver.'.format(par['minres_fails']))
+                break
 
-        else: x_sol=x
-
-        res['norm_res'].append(norm_res)
-
-        beta=Afun(residuum.truncate(tol=min([norm_res/1e1, par['tol']]), fast=fast))
+        beta=Afun(residuum.truncate(tol=min([res['norm_res'][-1]/1e1, par['tol']]), fast=fast))
 
     return x_sol, res
 
 
-def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm=None):
+def minimal_residual_debug(Afun, B, x0=None, par=None):
     fast=par.get('fast')
 
     M=SparseTensor(kind=B.kind, val=np.ones(B.N.size*[3, ]), rank=1) # constant field
@@ -150,7 +163,8 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
         x=B*(1./par['alpha'])
     else:
         x=x0
-    if norm is None:
+
+    if 'norm' not in par:
         norm=lambda X: X.norm(normal_domain=False)
 
     residuum=(B-Afun(x)).truncate(rank=None, tol=par['tol'], fast=fast)
@@ -169,7 +183,7 @@ def minimal_residual_debug(Afun, B, x0=None, rank=None, tol=None, par=None, norm
             omega=beta.inner(residuum)/norm(beta)**2 # exact formula
 
         x=(x+residuum*omega)
-        x=(-FM*x.mean()+x).truncate(rank=rank, tol=tol) # setting correct mean
+        x=(-FM*x.mean()+x).truncate(rank=par['rank'], tol=par['tol']) # setting correct mean
 
         tic=Timer('compute residuum')
         residuum=(B-Afun(x))

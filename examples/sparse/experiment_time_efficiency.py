@@ -15,6 +15,9 @@ kinds = {'2': 0,
 N_lists = {'2': [45,135,405,1215],
            '3': [5,15,45,135,175]}
 
+# N_lists = {'2': [5, 15, 25, 45],
+#            '3': [5, 15, 25]}
+
 kind_list=['cano','tucker','tt']
 material=3 # 0 or 3
 
@@ -54,7 +57,7 @@ for dim in [2,3]:
         # ----------------------------
 
         for r in range(4, N+1, 2):
-            pars_sparse.update(Struct(rank=r)) # rank of solution vector
+            pars_sparse.solver.update(dict(rank=r)) # rank of solution vector
 
             print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
                                                                         N, dim, material))

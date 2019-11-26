@@ -17,7 +17,8 @@ pars, pars_sparse=get_default_parameters(dim, N, material, kind)
 pars_sparse.debug=True
 
 print('== format={}, N={}, dim={}, material={}, rank={} ===='.format(pars_sparse.kind, N, dim,
-                                                                     material, pars_sparse.rank))
+                                                                     material,
+                                                                     pars_sparse.solver['rank']))
 print('dofs = {}'.format(N**dim))
 
 # get material coefficients
