@@ -1,22 +1,18 @@
 import os
 import pickle
 
-from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
                                             homog_GaNi_full_potential,
                                             homog_Ga_sparse,
                                             homog_GaNi_sparse)
 from examples.sparse.setting import get_material_coef, kind_list, get_default_parameters
-from examples.sparse.plots import plot_time
+
 
 kinds = {'2': 0,
          '3': 2,}
 
 N_lists = {'2': [45, 135, 320, 405, 640, 1215, 2560,3645,5120],
            '3': [5, 15, 45, 80, 135, 175, 225, 305, 375]}
-
-# N_lists = {'2': [5, 15, 25, 45],
-#            '3': [5, 15, 25]}
 
 err_tol_list=[1e-4, 1e-6]
 method=1 # 0-Ga, 1-GaNi
@@ -99,15 +95,9 @@ for material in [2, 4]:
         print("full solver time:",full_time_list)
         print("rank:",rank_list)
 
-
-
-
         pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
         pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
         pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
         pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
         pickle.dump(rank_list[0],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
         pickle.dump(rank_list[1],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
-
-##### plot results ##############
-#plot_time()

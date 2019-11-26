@@ -5,7 +5,6 @@ from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
                                             homog_Ga_sparse,)
 from examples.sparse.setting import get_material_coef, getMat_conf, get_default_parameters
-from examples.sparse.plots import plot_time, save_experiment_settings
 
 from ffthompy.sparse.materials import SparseMaterial
 
@@ -14,9 +13,6 @@ kinds = {'2': 0,
 
 N_lists = {'2': [45,135,405,1215],
            '3': [5,15,45,135,175]}
-
-# N_lists = {'2': [5, 15, 25, 45],
-#            '3': [5, 15, 25]}
 
 kind_list=['cano','tucker','tt']
 material=3 # 0 or 3
@@ -93,6 +89,3 @@ for dim in [2,3]:
     pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
     pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
     pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
-
-##### plot results ##############
-plot_time()

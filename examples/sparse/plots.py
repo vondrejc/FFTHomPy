@@ -7,14 +7,15 @@ from examples.sparse.fig_pars import set_labels, set_pars
 
 os.nice(19)
 
-def save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list, data_folder='data_for_plot'):
+
+def save_experiment_settings(kind_list, Ns, kinds, sol_rank_range_set, material_list, data_folder = 'data_for_plot'):
     if not os.path.exists('{}'.format(data_folder)):
         os.makedirs('{}/'.format(data_folder))
 
-    for dim in [2,3]:
+    for dim in [2, 3]:
         for material in material_list:
-            if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim,material)):
-                os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim,material))
+            if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder, dim, material)):
+                os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder, dim, material))
 
     pickle.dump(kind_list, open("{}/kind_list.p".format(data_folder), "wb"))
     pickle.dump(Ns, open("{}/Ns.p".format(data_folder), "wb"))
@@ -25,7 +26,7 @@ def save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list
     return
 
 
-def load_experiment_settings(data_folder='data_for_plot'):
+def load_experiment_settings(data_folder = 'data_for_plot'):
     material_list = pickle.load(open("{}/material_list.p".format(data_folder), "rb"))
     sol_rank_range_set = pickle.load(open("{}/sol_rank_range_set.p".format(data_folder), "rb"))
     kinds = pickle.load(open("{}/kinds.p".format(data_folder), "rb"))
@@ -36,14 +37,13 @@ def load_experiment_settings(data_folder='data_for_plot'):
     return material_list, sol_rank_range_set, kinds, Ns, kind_list, solver
 
 
-
 def plot_error():
     data_folder = "data_for_plot/error"
-    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings(data_folder= data_folder)
+    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings(
+        data_folder = data_folder)
     ylimit = [10**-11, 10**0]
     xlabel = 'rank of solution'
     ylabel = 'relative error'
-
 
     for dim in [2]:
         N = max(Ns['{}'.format(dim)])
@@ -63,14 +63,15 @@ def plot_error():
             sol_rank_range = sol_rank_range_set['{}'.format(dim)]
             i = 0
             for kind in kinds['{}'.format(dim)]:
-                sols_Ga = pickle.load(open("{}/dim_{}/mat_{}/sols_Ga_{}.p".format(data_folder,dim, material, N), "rb"))
+                sols_Ga = pickle.load(open("{}/dim_{}/mat_{}/sols_Ga_{}.p".format(data_folder, dim, material, N), "rb"))
                 sols_GaNi = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder,dim, material, N), "rb"))
+                    open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder, dim, material, N), "rb"))
                 sols_Ga_Spar = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                    open("{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N, solver),
                          "rb"))
                 sols_GaNi_Spar = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                    open("{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N,
+                                                                             solver),
                          "rb"))
 
                 plt.semilogy(sol_rank_range,
@@ -94,7 +95,7 @@ def plot_error():
             plt.ylabel(ylabel)
 
             lg = plt.legend(loc = 'best')
-            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver,N, '.pdf')
+            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver, N, '.pdf')
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
         print('END plot errors 2D')
@@ -116,14 +117,16 @@ def plot_error():
             sol_rank_range = sol_rank_range_set['{}'.format(dim)]
             i = 0
             for kind in kinds['{}'.format(dim)]:
-                sols_Ga = pickle.load(open("data_for_plot/error/dim_{}/mat_{}/sols_Ga_{}.p".format(dim, material, N), "rb"))
+                sols_Ga = pickle.load(
+                    open("data_for_plot/error/dim_{}/mat_{}/sols_Ga_{}.p".format(dim, material, N), "rb"))
                 sols_GaNi = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder,dim, material, N), "rb"))
+                    open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder, dim, material, N), "rb"))
                 sols_Ga_Spar = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                    open("{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N, solver),
                          "rb"))
                 sols_GaNi_Spar = pickle.load(
-                    open("{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                    open("{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N,
+                                                                             solver),
                          "rb"))
 
                 plt.semilogy(sol_rank_range,
@@ -144,7 +147,7 @@ def plot_error():
             plt.ylabel(ylabel)
 
             lg = plt.legend(loc = 'best')
-            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver,N, '.pdf')
+            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver, N, '.pdf')
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
         print('END plot errors 3D')
@@ -243,7 +246,8 @@ def plot_memory():
 
 def plot_residuals():
     data_folder = "data_for_plot/residua"
-    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings(data_folder=data_folder)
+    material_list, sol_rank_range_set, kinds, Ns, kind_list, solver = load_experiment_settings(
+        data_folder = data_folder)
 
     xlabel = 'iteration'
     ylabel = 'norm of residuum'
@@ -267,7 +271,7 @@ def plot_residuals():
                     plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
                     res_Ga_Spar = pickle.load(open(
-                        "{}/dim_{}/mat_{}/res_Ga_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                        "{}/dim_{}/mat_{}/res_Ga_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N, solver),
                         "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):
@@ -302,8 +306,8 @@ def plot_residuals():
                     plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
                     res_GaNi_Spar = pickle.load(
-                        open("{}/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N,
-                                                                                           solver), "rb"))
+                        open("{}/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N,
+                                                                                solver), "rb"))
                     plt.xticks(iter_rank_range_set)
                     for sol_rank in range(0, len(sol_rank_range)):
                         plt.semilogy(list(range(len(res_GaNi_Spar[sol_rank]))), res_GaNi_Spar[sol_rank],
@@ -345,7 +349,8 @@ def plot_residuals():
                     plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
                     res_Ga_Spar = pickle.load(
                         open(
-                            "{}/dim_{}/mat_{}/res_Ga_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N, solver),
+                            "{}/dim_{}/mat_{}/res_Ga_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N,
+                                                                             solver),
                             "rb"))
 
                     for sol_rank in range(0, len(
@@ -383,8 +388,8 @@ def plot_residuals():
                     #        plt.hold(True)
 
                     res_GaNi_Spar = pickle.load(
-                        open("{}/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim, material, kind, N,
-                                                                                           solver),
+                        open("{}/dim_{}/mat_{}/res_GaNi_Spar_{}_{}_{}.p".format(data_folder, dim, material, kind, N,
+                                                                                solver),
                              "rb"))
 
                     for sol_rank in range(0, len(sol_rank_range)):  # range(len(sol_rank_range)):
@@ -433,11 +438,12 @@ def plot_time():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             N_list = pickle.load(
-                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder, dim, material, kind_list[kind]), "rb"))
             full_time_list = pickle.load(
-                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder, dim, material, kind_list[kind]), "rb"))
             sparse_time_list = pickle.load(
-                open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder, dim, material, kind_list[kind]),
+                     "rb"))
 
             plt.plot(N_list, full_time_list, lines['Gafull'], label = 'full', markevery = 1, markerfacecolor = 'None')
             plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'low-rank', markevery = 1)
@@ -456,12 +462,11 @@ def plot_time():
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
             print('END Ga time efficiency')
 
-
     for material in [2, 4]:
         kind_list = ['cano', 'tucker', 'tt']
         kinds = {'2': 0,
                  '3': 2, }
-        for dim in [ 2,3]:
+        for dim in [2, 3]:
             kind = kinds['{}'.format(dim)]
             xlabel = 'number of points - $ N $'
             ylabel = 'time cost [s]'
@@ -475,15 +480,16 @@ def plot_time():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             N_list = pickle.load(
-                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder, dim, material, kind_list[kind]), "rb"))
             full_time_list = pickle.load(
-                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder, dim, material, kind_list[kind]), "rb"))
             sparse_time_list_1 = pickle.load(
-                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-03.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-03.p".format(data_folder, dim, material, kind_list[kind]),
+                     "rb"))
 
             sparse_time_list_4 = pickle.load(
-                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-06.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
-
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-06.p".format(data_folder, dim, material, kind_list[kind]),
+                     "rb"))
 
             plt.plot(N_list, full_time_list, lines['Gafull'], label = 'full', markevery = 1, markerfacecolor = 'None')
             plt.plot(N_list, sparse_time_list_1, lines['GaSparse'], label = 'low-rank, err $<$ 1e-3', markevery = 1)
@@ -504,10 +510,7 @@ def plot_time():
             print('END Ga time efficiency')
 
 
-
-
 def display_data():
-
     kind_list = ['cano', 'tucker', 'tt']
     kinds = {'2': 0,
              '3': 2, }
@@ -554,12 +557,13 @@ def display_data():
             print("rank list {} ".format(rank_list_2))
             print()
 
+
 if __name__ == '__main__':
     # data used in plot_time have to be genereted first by experiment_time_efficiency.py
-  plot_time()
+    plot_time()
 
-    # data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
- #  plot_error()
-   # plot_memory()
-#  plot_residuals()
-    #display_data()
+##  data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
+#   plot_error()
+#   plot_memory()
+#   plot_residuals()
+#   display_data()
