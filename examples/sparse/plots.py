@@ -7,10 +7,6 @@ from examples.sparse.fig_pars import set_labels, set_pars
 
 os.nice(19)
 
-
-
-
-
 def save_experiment_settings(kind_list,Ns,kinds,sol_rank_range_set,material_list, data_folder='data_for_plot'):
     if not os.path.exists('{}'.format(data_folder)):
         os.makedirs('{}/'.format(data_folder))
@@ -416,10 +412,12 @@ def plot_residuals():
 
 
 def plot_time():
-    #material = 3
+    data_folder = "data_for_plot/time"
+
     kind_list = ['cano', 'tucker', 'tt']
     kinds = {'2': 0,
              '3': 2, }
+
     for material in [0, 3]:
         for dim in [2, 3]:
             kind = kinds['{}'.format(dim)]
@@ -435,11 +433,11 @@ def plot_time():
             plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
 
             N_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
             full_time_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
             sparse_time_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
 
             plt.plot(N_list, full_time_list, lines['Gafull'], label = 'full', markevery = 1, markerfacecolor = 'None')
             plt.plot(N_list, sparse_time_list, lines['GaSparse'], label = 'low-rank', markevery = 1)
@@ -457,6 +455,56 @@ def plot_time():
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
             print('END Ga time efficiency')
+
+
+    for material in [2, 4]:
+        kind_list = ['cano', 'tucker', 'tt']
+        kinds = {'2': 0,
+                 '3': 2, }
+        for dim in [ 2,3]:
+            kind = kinds['{}'.format(dim)]
+            xlabel = 'number of points - $ N $'
+            ylabel = 'time cost [s]'
+            if not os.path.exists('figures'):
+                os.makedirs('figures')
+
+            parf = set_pars(mpl)
+            lines, labels = set_labels()
+            src = 'figures/'
+
+            plt.figure(num = None, figsize = parf['figsize'], dpi = parf['dpi'])
+
+            N_list = pickle.load(
+                open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+            full_time_list = pickle.load(
+                open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+            sparse_time_list_1 = pickle.load(
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-03.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+
+            sparse_time_list_4 = pickle.load(
+                open("{}/dim_{}/mat_{}/sparse_time_list_{}_1e-06.p".format(data_folder,dim, material, kind_list[kind]), "rb"))
+
+
+            plt.plot(N_list, full_time_list, lines['Gafull'], label = 'full', markevery = 1, markerfacecolor = 'None')
+            plt.plot(N_list, sparse_time_list_1, lines['GaSparse'], label = 'low-rank, err $<$ 1e-3', markevery = 1)
+            plt.plot(N_list, sparse_time_list_4, lines['GaSparse_4'], label = 'low-rank, err $<$ 1e-6', markevery = 1)
+
+            ax = plt.gca()
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            xlimit = [0, N_list[-1] + N_list[-1]/20]
+            ylimit = [0 - full_time_list[-1]*0.05, full_time_list[-1]*1.05]
+            ax.set_xlim(xlimit)
+            ax.set_ylim(ylimit)
+
+            lg = plt.legend(loc = 'upper left')
+            fname = src + 'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
+            print(('create figure: {}'.format(fname)))
+            plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
+            print('END Ga time efficiency')
+
+
+
 
 def display_data():
 
@@ -508,10 +556,10 @@ def display_data():
 
 if __name__ == '__main__':
     # data used in plot_time have to be genereted first by experiment_time_efficiency.py
-  #  plot_time()
+  plot_time()
 
     # data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
-   plot_error()
+ #  plot_error()
    # plot_memory()
 #  plot_residuals()
     #display_data()
