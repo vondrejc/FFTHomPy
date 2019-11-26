@@ -98,7 +98,7 @@ def plot_error():
             plt.ylabel(ylabel)
 
             lg = plt.legend(loc = 'best')
-            fname = src + 'Error_dim{}_mat{}_{}{}'.format(dim, material, solver, '.pdf')
+            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver,N, '.pdf')
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
         print('END plot errors 2D')
@@ -148,7 +148,7 @@ def plot_error():
             plt.ylabel(ylabel)
 
             lg = plt.legend(loc = 'best')
-            fname = src + 'Error_dim{}_mat{}_{}{}'.format(dim, material, solver, '.pdf')
+            fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver,N, '.pdf')
             print(('create figure: {}'.format(fname)))
             plt.savefig(fname, dpi = parf['dpi'], pad_inches = parf['pad_inches'], bbox_inches = 'tight')
         print('END plot errors 3D')
