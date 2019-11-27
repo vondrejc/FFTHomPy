@@ -10,8 +10,8 @@ For predefined:
 
  -  dimension (dim= 2 or 3),
  - grid size (N= odd number),
- - material (material = 0 - square inclusion,
-    1 - pyramid inclusion, 2 - stochastic material, 3 - anisotropic material),
+ - material (material = 0 - square inclusion, 1 - pyramid inclusion, 2 - stochastic material, 3 - square inclusion with anisotropic material,
+         4 - stochastic material with anisotropy),
  - low-rank tensor format (kind= 0-canonical, 1- Tucker, 2- Tensor-Train)
   
  [diffusion.py](#diffusion.py) compute one element of homogenised material property of the material (see section 2.2. of the paper).
@@ -29,7 +29,8 @@ Materials and solver settings are predefined in [setting.py](#setting.py).
 
 ## Generate results
 
-Results shown in section 4 of the paper are computed with files [diffusion_comp_xxx.py](#diffusion_comp_xxx.py).
+Results shown in section 4 of the paper are computed with files [diffusion_comp_error.py](#diffusion_comp_error.py),
+ [diffusion_comp_residua.py](#diffusion_compresidua.py), [diffusion_comp_time.py](#diffusion_comp_time.py) and [diffusion_comp_time_stochastic_material.py](#diffusion_comp_time_stochastic_material.py).
 
 File [diffusion_comp_error.py](#diffusion_comp_error.py) computes problem defined
 in [diffusion.py](#diffusion.py) with different solution rank-r and compare relative errors of approximation with full tensor approach. For more details see section 4.3. of the paper.
@@ -37,15 +38,18 @@ in [diffusion.py](#diffusion.py) with different solution rank-r and compare rela
 File [diffusion_comp_residua.py](#diffusion_compresidua.py) computes problem defined
 in [diffusion.py](#diffusion.py) with different solution rank-r and shows the evolution of the norm during the Minimal Residual iteration. For more details see section 4.2. of the paper.
 
-File [diffusion_comp_time.py](#diffusion_comp_time.py) use problem defined in [diffusion.py](#diffusion.py) with material 0 (square inclusion with isotropic material) and material 3 (square inclusion with anisotropic material).
-This file computes the computational time at the same level of accuracy for the scheme with exact integration (Ga). The full solution is calculated on a grid of size (N,...,N) while the low-rank solution on the grid (3N,...,3N) with a solution rank to achieve the same level of accuracy as full scheme. For more details see section 4.4. of the paper.
+File [diffusion_comp_time.py](#diffusion_comp_time.py) use problem defined in [diffusion.py](#diffusion.py)
+ with material 0 (square inclusion) and material 3 (square inclusion with anisotropic material).
+This file computes the computational time at the same level of accuracy for the scheme with exact integration (Ga).
+ The full solution is calculated on a grid of size (N,...,N) while the low-rank solution on the grid (3N,...,3N)
+  with a solution rank to achieve the same level of accuracy as full scheme. For more details see section 4.4. of the paper.
 
 File [diffusion_comp_time_stochastic_material.py](#diffusion_comp_time_stochastic_material.py) use problem defined
  in [diffusion.py](#diffusion.py) with material 2
- (stochastic material with isotropic material) and material 4 (stochastic material with anisotropic material).
+ (stochastic material) and material 4 (stochastic material with anisotropy).
 Both full and low-rank solutions are calculated on a grid of size (N,...,N). The ranks of the low-rank solution are
-  chosen such that it achieves a relative error below $10^-3$ or $10^−6$
-  
+  chosen such that it achieves a relative error below $10^-3$ or $10^−6$. For more details see section 4.4. of the paper.
+
 ## Plot results
 
 File [plots.py](#plots.py) contains procedures which creates .pdf figures with results.
