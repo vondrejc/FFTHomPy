@@ -520,13 +520,13 @@ def display_data():
             kind = kinds['{}'.format(dim)]
 
             N_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
             rank_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/rank_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/rank_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
             full_time_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/full_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
             sparse_time_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
 
             print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
             print("N list {} ".format(N_list))
@@ -540,9 +540,9 @@ def display_data():
             kind = kinds['{}'.format(dim)]
 
             N_list = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
             rank_list_1 = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/rank_list_{}_1e-03.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/rank_list_{}_1e-03.p".format(dim, material, kind_list[kind]), "rb"))
 
             print("dim={}, material={}, kind={}, err_tol=1e-03 ".format(dim, material, kind_list[kind]))
             print("N list {} ".format(N_list))
@@ -550,7 +550,7 @@ def display_data():
             print()
 
             rank_list_2 = pickle.load(
-                open("data_for_plot/dim_{}/mat_{}/rank_list_{}_1e-06.p".format(dim, material, kind_list[kind]), "rb"))
+                open("data_for_plot/time/dim_{}/mat_{}/rank_list_{}_1e-06.p".format(dim, material, kind_list[kind]), "rb"))
 
             print("dim={}, material={}, kind={}, err_tol=1e-06 ".format(dim, material, kind_list[kind]))
             print("N list {} ".format(N_list))
@@ -558,12 +558,26 @@ def display_data():
             print()
 
 
+    for material in [0,3, 2, 4]:
+        for dim in [2, 3]:
+            kind = kinds['{}'.format(dim)]
+
+            N_list = pickle.load(
+                open("data_for_plot/time/dim_{}/mat_{}/N_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+            rank_list = pickle.load(
+                open("data_for_plot/time/dim_{}/mat_{}/full_solution_rank_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
+
+            print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
+            print("N list {} ".format(N_list))
+            print("full solution rank list {} ".format(rank_list))
+
+            print()
 if __name__ == '__main__':
     # data used in plot_time have to be genereted first by experiment_time_efficiency.py
-    plot_time()
+    #plot_time()
 
 ##  data used in plot_error, plot_memory() and plot_residuals() have to be genereted first by diffusion_comparison.py
 #   plot_error()
 #   plot_memory()
 #   plot_residuals()
-#   display_data()
+    display_data()
