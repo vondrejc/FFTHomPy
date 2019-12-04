@@ -30,8 +30,8 @@ for material in [2, 4]:
 
         full_time_list = [None]*len(N_list)
         sparse_time_list = [[None]*len(N_list), [None]*len(N_list)]
-        rank_list =  [[None]*len(N_list), [None]*len(N_list)]
-        memory_list =  [[None]*len(N_list), [None]*len(N_list)]
+        rank_list = [[None]*len(N_list), [None]*len(N_list)]
+        memory_list = [[None]*len(N_list), [None]*len(N_list)]
 
         for i, N in enumerate(N_list):
             # PARAMETERS ##############################################################
@@ -88,16 +88,22 @@ for material in [2, 4]:
                         memory_list[counter][i]=resS.Fu.memory/resP.Fu.val.size # memory efficiency
                         print("sparse solver time:",sparse_time_list[counter])
                         print("full solver time:",full_time_list)
-                        print("rank:",rank_list[counter] )
+                        print("rank:",rank_list[counter])
                         break
 
         print("sparse solver time:",sparse_time_list)
         print("full solver time:",full_time_list)
         print("rank:",rank_list)
 
-        pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[0],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[1],        open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p').format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p"
+                                 .format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p"
+                                         .format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
+                                               .format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
+                                               .format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(rank_list[0], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
+                                       .format(data_folder,dim, material,kind_list[kind]), "wb"))
+        pickle.dump(rank_list[1], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
+                                       .format(data_folder,dim, material,kind_list[kind]), "wb"))

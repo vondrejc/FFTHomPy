@@ -1,10 +1,6 @@
-
-
-import numpy as np
 import os
 import pickle
 
-from ffthompy import Struct
 from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
                                             homog_Ga_sparse, homog_GaNi_sparse)
 from examples.sparse.setting import get_material_coef, kind_list, get_default_parameters
@@ -74,10 +70,16 @@ for dim in [2,3]:
                     resS_GaNi = homog_GaNi_sparse(Aganis, Agas, pars_sparse)
                     sols_GaNi_Spar.append(resS_GaNi.AH)
 
-                pickle.dump( sols_Ga_Spar ,  open( "{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p".format(data_folder,dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
-                pickle.dump( sols_GaNi_Spar ,open( "{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p".format(data_folder,dim,material,kind,N,pars_sparse.solver['method']), "wb"  ) )
+                pickle.dump(sols_Ga_Spar, open("{}/dim_{}/mat_{}/sols_Ga_Spar_{}_{}_{}.p"
+                                               .format(data_folder, dim, material, kind, N,
+                                                       pars_sparse.solver['method']), "wb"))
+                pickle.dump(sols_GaNi_Spar, open("{}/dim_{}/mat_{}/sols_GaNi_Spar_{}_{}_{}.p"
+                                                 .format(data_folder, dim, material, kind, N,
+                                                         pars_sparse.solver['method']), "wb"))
 
-                pickle.dump( sols_Ga,   open( "{}/dim_{}/mat_{}/sols_Ga_{}.p".format(data_folder,dim, material,N) , "wb"))
-                pickle.dump( sols_GaNi, open("{}/dim_{}/mat_{}/sols_GaNi_{}.p".format(data_folder,dim, material,N), "wb"))
+                pickle.dump(sols_Ga, open("{}/dim_{}/mat_{}/sols_Ga_{}.p"
+                                          .format(data_folder, dim, material, N), "wb"))
+                pickle.dump(sols_GaNi, open("{}/dim_{}/mat_{}/sols_GaNi_{}.p"
+                                            .format(data_folder, dim, material, N), "wb"))
 
 plot_error()

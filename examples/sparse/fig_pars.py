@@ -19,38 +19,39 @@ def set_pars(mpl):
     return fig_par
 
 def set_labels():
-    lines =  {'Gafull': 'bo-',
-              'GaNifull': '--',
-              'Gacano': 'bx-',
-              'Gatucker': 'ro-',
-              'Gatt': 'kv-',
+    lines={'Gafull': 'bo-',
+           'GaNifull': '--',
+           'Gacano': 'bx-',
+           'Gatucker': 'ro-',
+           'Gatt': 'kv-',
 
-              'GaSparse': 'rx-',
-              'GaSparse_2': 'ro-',
-              'GaSparse_3': 'r<-',
-              'GaSparse_4': 'r*-',
-              'GaSparse_5': 'rd-',
-              'GaSparse_6': 'rv-',
-              'GaSparse_7': 'r^-',
+           'GaSparse': 'rx-',
+           'GaSparse_2': 'ro-',
+           'GaSparse_3': 'r<-',
+           'GaSparse_4': 'r*-',
+           'GaSparse_5': 'rd-',
+           'GaSparse_6': 'rv-',
+           'GaSparse_7': 'r^-',
 
-              'full': '--',
-              'mem_cano':   ['bx--','bo--','bx--','bv--','bo--','bx--','b<--'],
-              'mem_tucker': ['rx--', 'ro--', 'rx--', 'rv--', 'ro--', 'rx--', 'r<--'],
-              'mem_tt':     ['kx-', 'ko-', 'kx--', 'kv--', 'ko--', 'kx--', 'k<--'],
+           'full': '--',
+           'mem_cano':   ['bx--','bo--','bx--','bv--','bo--','bx--','b<--'],
+           'mem_tucker': ['rx--', 'ro--', 'rx--', 'rv--', 'ro--', 'rx--', 'r<--'],
+           'mem_tt':     ['kx-', 'ko-', 'kx--', 'kv--', 'ko--', 'kx--', 'k<--'],
 
-              'Ga_cano': ['bx-', 'bo-', 'bx-', 'bv-', 'bo-', 'bx-', 'b<-'],
-              'Ga_tucker': ['rx-', 'ro-', 'rx-', 'rv-', 'ro-', 'rx-', 'r<-'],
-              'Ga_tt': ['kx-', 'ko-','kx--', 'kv-', 'ko-', 'kx-', 'k<-'],
+           'Ga_cano': ['bx-', 'bo-', 'bx-', 'bv-', 'bo-', 'bx-', 'b<-'],
+           'Ga_tucker': ['rx-', 'ro-', 'rx-', 'rv-', 'ro-', 'rx-', 'r<-'],
+           'Ga_tt': ['kx-', 'ko-','kx--', 'kv-', 'ko-', 'kx-', 'k<-'],
 
-              'GaNi_cano': ['bx--', 'bo--', 'bx--', 'bv--', 'bo--', 'bx--', 'b<--'],
-              'GaNi_tucker': ['rx--', 'ro--', 'rx--', 'rv--', 'ro--', 'rx--', 'r<--'],
-              'GaNi_tt': ['kx--', 'ko--', 'kx--', 'kv--', 'ko--', 'kx--', 'k<--'],
+           'GaNi_cano': ['bx--', 'bo--', 'bx--', 'bv--', 'bo--', 'bx--', 'b<--'],
+           'GaNi_tucker': ['rx--', 'ro--', 'rx--', 'rv--', 'ro--', 'rx--', 'r<--'],
+           'GaNi_tt': ['kx--', 'ko--', 'kx--', 'kv--', 'ko--', 'kx--', 'k<--'],
 
 
-              'Ga': ['-','x-','<-','|-','^-','x-','o-', '<-', 'v-','^-','d-',],
-              'GaNi': ['--', 'x--', '<--', '|--', '^--', 'x--', 'o--', '<--', 'v--', '^--', 'd--' ],
+           'Ga': ['-','x-','<-','|-','^-','x-','o-', '<-', 'v-','^-','d-',],
+           'GaNi': ['--', 'x--', '<--', '|--', '^--', 'x--', 'o--', '<--', 'v--', '^--', 'd--'],
 
-              }
+           }
+
     labels = {'full': 'Full',
               'sparse': 'Sparse',
               'Gafull': 'Ga Full',
@@ -71,7 +72,7 @@ def set_labels():
 
               'GaNitt': 'GaNi TT',
               'GaNittN': 'TT N=',
-                        }
+              }
     return lines, labels
 
 def copy_files(src, dest, files='all'):

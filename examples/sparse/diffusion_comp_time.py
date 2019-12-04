@@ -86,6 +86,9 @@ for dim in [2,3]:
     print("full solver time:",full_time_list)
     print("rank:",rank_list)
 
-    pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
-    pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
-    pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p".format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p"
+                             .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p"
+                                     .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p"
+                                       .format(data_folder,dim, material,kind_list[kind]), "wb"))
