@@ -1,11 +1,11 @@
 import os
 import pickle
 
-from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
-                                            homog_GaNi_full_potential,
-                                            homog_Ga_sparse,
-                                            homog_GaNi_sparse)
-from examples.sparse.setting import get_material_coef, kind_list, get_default_parameters
+from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential,
+                                                    homog_GaNi_full_potential,
+                                                    homog_Ga_sparse,
+                                                    homog_GaNi_sparse)
+from examples.lowRankTensorApproximations.setting import get_material_coef, kind_list, get_default_parameters
 
 
 kinds = {'2': 0,
@@ -86,12 +86,12 @@ for material in [2, 4]:
                         rank_list[counter][i]=r
                         sparse_time_list[counter][i]=resS.time
                         memory_list[counter][i]=resS.Fu.memory/resP.Fu.val.size # memory efficiency
-                        print("sparse solver time:",sparse_time_list[counter])
+                        print("tensorsLowRank solver time:",sparse_time_list[counter])
                         print("full solver time:",full_time_list)
                         print("rank:",rank_list[counter])
                         break
 
-        print("sparse solver time:",sparse_time_list)
+        print("tensorsLowRank solver time:",sparse_time_list)
         print("full solver time:",full_time_list)
         print("rank:",rank_list)
 

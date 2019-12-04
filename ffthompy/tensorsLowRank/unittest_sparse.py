@@ -2,21 +2,21 @@
 import unittest
 import numpy as np
 from numpy.linalg import norm
-from ffthompy.sparse.objects import SparseTensor
-from ffthompy.sparse.objects import CanoTensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
+from ffthompy.tensorsLowRank.objects import CanoTensor
 
 from ffthompy import PrintControl, Timer
 from ffthompy.tensors import Tensor
-from examples.sparse.setting import get_default_parameters, get_material_coef
-from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
-                                            homog_Ga_sparse, homog_GaNi_sparse)
+from examples.lowRankTensorApproximations.setting import get_default_parameters, get_material_coef
+from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
+                                                    homog_Ga_sparse, homog_GaNi_sparse)
 
 import timeit
 
 prt=PrintControl()
 
 
-class Test_sparse(unittest.TestCase):
+class Test_tensorsLowRank(unittest.TestCase):
 
     def setUp(self):
         self.T2d=np.random.rand(5, 10)
@@ -220,15 +220,15 @@ class Test_sparse(unittest.TestCase):
         self.assertTrue(norm(vqf_full.T -v1fft)/norm(v1fft) < 3*tol)
 
 #        qtt_fft_time= timeit.timeit('vqf= vqtt.fourier() ', number=50,
-#              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
+#              setup="from ffthompy.tensorsLowRank.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1));  v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
 #        print("QTT FFT time:",qtt_fft_time)
 
         tt_fft_time= timeit.timeit('v1f= v1tt.fourier()', number=10,
-              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; v1tt= SparseTensor(kind='tt', val=v1,eps=1e-6 )")
+              setup="from ffthompy.tensorsLowRank.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; v1tt= SparseTensor(kind='tt', val=v1,eps=1e-6 )")
         print("  TT FFT time:",tt_fft_time)
 
         qtt_fft_time= timeit.timeit('vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ', number=10,
-              setup="from ffthompy.sparse.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
+              setup="from ffthompy.tensorsLowRank.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )")
         print("QTT FFT time:",qtt_fft_time)
 
         self.assertTrue(qtt_fft_time < 0.1*tt_fft_time)

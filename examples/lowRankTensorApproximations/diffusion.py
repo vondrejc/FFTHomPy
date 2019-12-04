@@ -1,10 +1,10 @@
 from __future__ import division, print_function
 
 import numpy as np
-from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
-                                            homog_Ga_sparse, homog_GaNi_sparse)
+from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
+                                                    homog_Ga_sparse, homog_GaNi_sparse)
 
-from examples.sparse.setting import get_material_coef, get_default_parameters
+from examples.lowRankTensorApproximations.setting import get_material_coef, get_default_parameters
 
 
 # PARAMETERS ##############################################################

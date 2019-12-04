@@ -1,10 +1,10 @@
 import numpy as np
 from ffthompy.materials import Material
-from ffthompy.sparse.objects import SparseTensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
 from ffthompy.trigpol import Grid
 
 
-class SparseMaterial(Material):
+class LowRankMaterial(Material):
 
     def __init__(self, material_conf, kind='tt'):
         Material.__init__(self, material_conf)

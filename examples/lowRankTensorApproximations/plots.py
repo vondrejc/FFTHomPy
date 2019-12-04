@@ -3,7 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import os
-from examples.sparse.fig_pars import set_labels, set_pars
+from examples.lowRankTensorApproximations.fig_pars import set_labels, set_pars
 
 os.nice(19)
 
@@ -539,7 +539,7 @@ def display_data():
             print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
             print("N list {} ".format(N_list))
             print("rank list {} ".format(rank_list))
-            print("sparse time list {} ".format(sparse_time_list))
+            print("tensorsLowRank time list {} ".format(sparse_time_list))
             print("full time list {} ".format(full_time_list))
             print()
 

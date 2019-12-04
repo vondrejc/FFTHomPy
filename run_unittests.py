@@ -82,7 +82,7 @@ if __name__ == "__main__":
     from ffthompy.mechanics.unittest_matcoef import Test_matcoef
     from ffthompy.general.unittest_solver import Test_solvers
     from ffthompy.unittest_materials import Test_materials
-    from ffthompy.sparse.unittest_sparse import Test_sparse
+    from ffthompy.tensorsLowRank.unittest_sparse import Test_tensorsLowRank
 
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_main))
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(Test_matcoef))
     suite.addTest(unittest.makeSuite(Test_solvers))
     suite.addTest(unittest.makeSuite(Test_materials))
-    suite.addTest(unittest.makeSuite(Test_sparse))
+    suite.addTest(unittest.makeSuite(Test_tensorsLowRank))
 
     runner=unittest.TextTestRunner()
     runner.run(suite)

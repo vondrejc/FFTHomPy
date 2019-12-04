@@ -1,38 +1,38 @@
 import numpy as np
 from tt.core.vector import vector
-from ffthompy.sparse.objects.tucker import Tucker
-from ffthompy.sparse.objects.canoTensor import CanoTensor
-from ffthompy.sparse.objects.tensorTrain import TensorTrain
-from ffthompy.sparse.objects.tensors import fft_form_default
+from ffthompy.tensorsLowRank.objects.tucker import Tucker
+from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
+from ffthompy.tensorsLowRank.objects.tensorTrain import TensorTrain
+from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 
 
 def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None,
                  Fourier=False, name='unnamed', vectorObj=None, fft_form=fft_form_default):
     """
-    A uniform wrapper of different sparse tensor format
+    A uniform wrapper of different tensorsLowRank tensor format
 
-    :param kind: type of sparse tensor, can be 'cano','tucker' or 'tt', or more variants (see the code).
+    :param kind: type of tensorsLowRank tensor, can be 'cano','tucker' or 'tt', or more variants (see the code).
     :type kind: string
 
     :param val: a full tensor to be approximated
     :type val: n-D array
 
-    :param core: core for canonical, tucker or TT sparse tensor
+    :param core: core for canonical, tucker or TT tensorsLowRank tensor
     :type core: 1-D array for canonical tensor, n-D arary for tucker, list of arrays for TT.
 
-    :param basis: basis for canonical or tucker sparse tensor.
+    :param basis: basis for canonical or tucker tensorsLowRank tensor.
     :type basis: list of arrays.
 
     :param eps: approximation accuracy.
     :type eps: float.
 
-    :param rank: rank of the cano and tucker sparse tensor, maximum rank of TT sparse tensor.
+    :param rank: rank of the cano and tucker tensorsLowRank tensor, maximum rank of TT tensorsLowRank tensor.
     :type rank: int for cano and TT, list of int for tucker.
 
     :param vectorObj: a TTPY vector class object, to be cast into tensorTrain object.
     :type vectorObj:  TTPY vector
 
-    :returns: object of sparse tensor.
+    :returns: object of tensorsLowRank tensor.
     """
     if type(rank) is list or type(rank) is np.ndarray :
         rmax=max(rank)

@@ -1,6 +1,6 @@
 import numpy as np
 from ffthompy import Timer
-from ffthompy.sparse.objects import SparseTensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
 
 def linear_solver(method, Afun, B, par):
     if method in ['Richardson','richardson','r','R']:
@@ -20,8 +20,8 @@ def cheby2TERM(Afun, B, x0=None, par={}, callback=None):
     Parameters
     ----------
     Afun : a function, represnting linear function A in the system Ax =B
-    B : sparse tensor representing vector B in the right-hand side of linear system
-    x0 : sparse tensor representing initial approximation of solution of linear system
+    B : tensorsLowRank tensor representing vector B in the right-hand side of linear system
+    x0 : tensorsLowRank tensor representing initial approximation of solution of linear system
     par : dict
           parameters of the method
     callback :

@@ -21,10 +21,10 @@ _*
 *.py[cod]
 data/*
 
-examples/sparse/data_for_plot/
+examples/lowRankTensorApproximations/data_for_plot/
 
 \.idea/
 
 *.png
 
-examples/sparse/Dishis\.py
+examples/lowRankTensorApproximations/Dishis\.py

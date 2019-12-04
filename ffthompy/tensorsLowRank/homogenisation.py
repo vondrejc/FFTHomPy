@@ -4,9 +4,9 @@ import ffthompy.tensors.projection as proj
 from ffthompy.general.solver import linear_solver
 from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
 from ffthompy.trigpol import mean_index
-from ffthompy.sparse.solver import linear_solver as linear_solver_lowrank
-from ffthompy.sparse.projection import grad_tensor as sgrad_tensor
-from ffthompy.sparse.objects import SparseTensor
+from ffthompy.tensorsLowRank.solver import linear_solver as linear_solver_lowrank
+from ffthompy.tensorsLowRank.projection import grad_tensor as sgrad_tensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
 import itertools
 
 
@@ -168,7 +168,7 @@ def homog_Ga_sparse(Agas, pars):
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
     Aniso=getattr(pars, 'Aniso', np.zeros([dim,dim]))
 
-    # creating constant field in sparse tensor
+    # creating constant field in tensorsLowRank tensor
     Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
     Es=Es.fourier().enlarge(Nbar).fourier()
 
@@ -232,7 +232,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
 
     Aniso=getattr(pars, 'Aniso', np.zeros([dim,dim]))
 
-    # creating constant field in sparse tensor
+    # creating constant field in tensorsLowRank tensor
     Es=SparseTensor(name='E', kind=pars.kind, val=np.ones(dim*(3,)), rank=1)
     Es=Es.fourier().enlarge(N).fourier()
 
@@ -319,7 +319,7 @@ def calculate_AH_sparse(Agas, Aniso, FGX, method='full', rank=None, tol=None):
             AH+=(Aga*FGXf[i])*FGXf[i]
             for j in range(FGX.__len__()):
                 AH+=(Aniso[i,j]*FGXf[i])*FGXf[j]
-    elif method in ['sparse']:
+    elif method in ['tensorsLowRank']:
         assert(np.linalg.norm(Aniso)<1e-12)
         for ii in range(FGX.__len__()):
             AH+=(Agas*FGX[ii]).truncate(rank=rank, tol=tol).scal(FGX[ii])

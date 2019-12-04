@@ -2,7 +2,7 @@ import numpy as np
 from ffthompy.tensors.objects import TensorFuns
 import itertools
 from copy import deepcopy as copy
-from ffthompy.sparse.fft1 import fft, ifft, fftc, icfft, cfftc, icfftc, srfft,sirfft
+from ffthompy.tensorsLowRank.fft1 import fft, ifft, fftc, icfft, cfftc, icfftc, srfft,sirfft
 
 fft_form_default='sr' # scipy rfft
 
@@ -20,7 +20,7 @@ def multiply(A, B, *args, **kwargs):
     return C
 
 
-class SparseTensorFuns(TensorFuns):
+class LowRankTensorFuns(TensorFuns):
 
     def mean_index(self):
         if self.fft_form in [0, 'sr']:

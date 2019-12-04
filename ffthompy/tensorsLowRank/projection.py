@@ -1,6 +1,6 @@
 import numpy as np
 from ffthompy.trigpol import Grid
-from ffthompy.sparse.objects import SparseTensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
 
 def grad_tensor(N, Y, kind='TensorTrain'):
     assert(kind.lower() in ['cano','canotensor','tucker','tt','tensortrain'])

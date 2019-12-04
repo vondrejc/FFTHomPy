@@ -1,9 +1,9 @@
 import numpy as np
 
-from ffthompy.sparse.objects.canoTensor import CanoTensor
-from ffthompy.sparse.decompositions import HOSVD, nModeProduct, new_expand_dims
+from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
+from ffthompy.tensorsLowRank.decompositions import HOSVD, nModeProduct, new_expand_dims
 from ffthompy.tensors import Tensor
-from ffthompy.sparse.objects.tensors import fft_form_default
+from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 from numpy.linalg import norm
 from numpy import newaxis
 import warnings

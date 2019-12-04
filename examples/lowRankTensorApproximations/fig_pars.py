@@ -53,7 +53,7 @@ def set_labels():
            }
 
     labels = {'full': 'Full',
-              'sparse': 'Sparse',
+              'tensorsLowRank': 'Sparse',
               'Gafull': 'Ga Full',
               'Gacano': 'Ga CP',
               'Gatucker': 'Ga Tucker',

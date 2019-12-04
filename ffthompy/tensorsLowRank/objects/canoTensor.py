@@ -1,11 +1,11 @@
 import numpy as np
 from numpy import newaxis
-from ffthompy.sparse.objects.tensors import SparseTensorFuns
+from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns
 from ffthompy.tensors import Tensor
-from ffthompy.sparse.objects.tensors import fft_form_default
-from ffthompy.sparse.decompositions import fast_qr
+from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
+from ffthompy.tensorsLowRank.decompositions import fast_qr
 
-class CanoTensor(SparseTensorFuns):
+class CanoTensor(LowRankTensorFuns):
     kind='cano'
 
     def __init__(self, name='unnamed', val=None, core=None, basis=None, orthogonal=False,

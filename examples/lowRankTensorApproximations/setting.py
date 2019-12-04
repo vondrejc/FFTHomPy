@@ -1,7 +1,7 @@
 import numpy as np
 from ffthompy import Struct, Timer
 from ffthompy.materials import Material
-from ffthompy.sparse.materials import SparseMaterial
+from ffthompy.tensorsLowRank.materials import LowRankMaterial
 
 try:
     from uq.decomposition import KL_Fourier
@@ -16,13 +16,13 @@ def get_default_parameters(dim, N, material, kind):
     pars=Struct(dim=dim, # number of dimensions (works for 2D and 3D)
             N=dim*(N,), # number of voxels (assumed equal for all directions)
             Y=np.ones(dim), # size of periodic cell
-            recover_sparse=1, # recalculate full material coefficients from sparse one
+            recover_sparse=1, # recalculate full material coefficients from tensorsLowRank one
             solver=dict(tol=1e-8,
                         maxiter=50),
             )
     pars_sparse=pars.copy()
     pars_sparse.update(Struct(debug=False,
-                              kind=kind_list[kind], # type of sparse tensor: 'cano', 'tucker', or 'tt'
+                              kind=kind_list[kind], # type of tensorsLowRank tensor: 'cano', 'tucker', or 'tt'
                               precond_rank=10,
                               N=dim*(N,),
                               rhs_tol=1e-8,
@@ -45,7 +45,7 @@ def get_material_coef(material, pars, pars_sparse, ga=True):
 
     # generating material coefficients
     mat=Material(mat_conf)
-    mats=SparseMaterial(mat_conf, pars_sparse.kind)
+    mats=LowRankMaterial(mat_conf, pars_sparse.kind)
 
     Agani=mat.get_A_GaNi(pars.N, primaldual='primal')
     Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)

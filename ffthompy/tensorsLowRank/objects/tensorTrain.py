@@ -5,13 +5,13 @@ from numpy import reshape, dot
 from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 from ffthompy.tensors import Tensor
-from ffthompy.sparse.objects.tensors import SparseTensorFuns
+from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns
 from tt.core.vector import vector
-from ffthompy.sparse.objects.tensors import fft_form_default
+from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 from functools import reduce
 
 
-class TensorTrain(vector, SparseTensorFuns):
+class TensorTrain(vector, LowRankTensorFuns):
     kind='tt'
 
     def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',

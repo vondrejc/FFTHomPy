@@ -1,18 +1,18 @@
 Numerical experiments 
 ========
-Folder [examples/sparse](#examples/sparse) contains files working with low-rank tensor implementation of scalar homogenisation problem described in paper:
+Folder [examples/lowRankTensorApproximations](#examples/lowRankTensorApproximations) contains files working with low -rank tensor implementation of scalar homogenisation problem described in paper:
 
- - J. Vondřejc, Liu, D, Ladecký, M., and Matthies, H. G.: *FFT-Based Homogenisation Accelerated by Low-Rank Approximations.* 2019. arXiv:1902.07455
+ - J. Vondřejc, Liu, D, Ladecký, M., and Matthies, H. G.: *FFT-Based Homogenisation Accelerated by Low-Rank Tensor Approximations.* 2019. arXiv:1902.07455
 
 ## Model problem
 In file [diffusion.py](#diffusion.py) a model scalar elliptic homogenisation problem described in section 2.1. of the paper is implemented.
 For predefined:
 
- -  dimension (dim= 2 or 3),
+ - dimension (dim= 2 or 3),
  - grid size (N= odd number),
- - material (material = 0 - square inclusion, 1 - pyramid inclusion, 2 - stochastic material, 3 - square inclusion with anisotropic material,
+ - material (material=0 - square inclusion, 1 - pyramid inclusion, 2 - stochastic material, 3 - square inclusion with anisotropic material,
          4 - stochastic material with anisotropy),
- - low-rank tensor format (kind= 0-canonical, 1- Tucker, 2- Tensor-Train)
+ - low-rank tensor format (kind=0 - canonical, 1 - Tucker, 2 - Tensor-Train)
   
  [diffusion.py](#diffusion.py) compute one element of homogenised material property of the material (see section 2.2. of the paper).
  The problem solution is computed by two different approaches: 

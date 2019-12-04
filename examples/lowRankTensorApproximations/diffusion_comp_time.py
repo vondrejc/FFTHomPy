@@ -2,11 +2,11 @@ import os
 import pickle
 
 from ffthompy import Struct
-from ffthompy.sparse.homogenisation import (homog_Ga_full_potential,
-                                            homog_Ga_sparse,)
-from examples.sparse.setting import get_material_coef, getMat_conf, get_default_parameters
+from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential,
+                                                    homog_Ga_sparse, )
+from examples.lowRankTensorApproximations.setting import get_material_coef, getMat_conf, get_default_parameters
 
-from ffthompy.sparse.materials import SparseMaterial
+from ffthompy.tensorsLowRank.materials import LowRankMaterial
 
 kinds = {'2': 0,
          '3': 2,}
@@ -47,7 +47,7 @@ for dim in [2,3]:
         full_time_list[i]=resP_Ga.time
 
         # PARAMETERS FOR SPARSE SOLVER s#########################
-        alp=3 # multiplier to increase the discretisation grid for sparse solver,
+        alp=3 # multiplier to increase the discretisation grid for tensorsLowRank solver,
             # which enables to achieve the same level of accuracy as the full solver.
         pars.update(Struct(N=dim*(alp*N,),)) # number of voxels (assumed equal for all directions)
         # ----------------------------
@@ -61,7 +61,7 @@ for dim in [2,3]:
             # PROBLEM DEFINITION ######################################################
             # generating material coefficients
             pars, pars_sparse, mat_conf=getMat_conf(material, pars, pars_sparse)
-            mats=SparseMaterial(mat_conf, pars_sparse.kind)
+            mats=LowRankMaterial(mat_conf, pars_sparse.kind)
             Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal',
                                k=pars_sparse.matrank)
 
@@ -77,12 +77,12 @@ for dim in [2,3]:
                 rank_list[i]=r
                 sparse_time_list[i]=resS_Ga.time
                 memory_list[i]=resS_Ga.Fu.memory/resP_Ga.Fu.val.size # memory efficiency
-                print("sparse solver time:",sparse_time_list)
+                print("tensorsLowRank solver time:",sparse_time_list)
                 print("full solver time:",full_time_list)
                 print("rank:",rank_list)
                 break
 
-    print("sparse solver time:",sparse_time_list)
+    print("tensorsLowRank solver time:",sparse_time_list)
     print("full solver time:",full_time_list)
     print("rank:",rank_list)
 
