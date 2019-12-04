@@ -5,97 +5,16 @@ from numpy.linalg import norm
 from ffthompy.sparse.objects import SparseTensor
 from ffthompy.sparse.objects import CanoTensor
 
-from ffthompy import Struct
-from ffthompy.materials import Material
-from ffthompy.tensors import matrix2tensor
-from ffthompy.sparse.homogenisation import homog_Ga_full_potential, homog_Ga_sparse
-from ffthompy.sparse.materials import SparseMaterial
+from ffthompy import PrintControl, Timer
 from ffthompy.tensors import Tensor
+from examples.sparse.setting import get_default_parameters, get_material_coef
+from ffthompy.sparse.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
+                                            homog_Ga_sparse, homog_GaNi_sparse)
 
 import timeit
 
-def run_full_and_sparse_solver(kind='tt', N=15, rank=10):
+prt=PrintControl()
 
-    """
-    Run  full CG solver and sparse solver and return two solutions
-    kind: type of sparse tensor format.
-    """
-    # PARAMETERS ##############################################################
-    dim=3
-    N=N
-    material=1
-    pars=Struct(kind=kind, # type of sparse tensor
-                dim=dim, # number of dimensions (works for 2D and 3D)
-                N=dim*(N,), # number of voxels (assumed equal for all directions)
-                Y=np.ones(dim),
-                Amax=10., # material contrast
-                maxiter=10,
-                tol=None,
-                rank=rank,
-                solver={'tol':1e-4}
-                )
-
-    pars_sparse=pars.copy()
-    if dim==2:
-        pars_sparse.update(Struct(N=dim*(1*N,),))
-    elif dim==3:
-        pars_sparse.update(Struct(N=dim*(1*N,),))
-
-    # auxiliary operator
-    Nbar=lambda N: 2*np.array(N)-1
-
-    # PROBLEM DEFINITION ######################################################
-    if material in [0]:
-        mat_conf={'inclusions': ['square', 'otherwise'],
-                  'positions': [0.*np.ones(dim), ''],
-                  'params': [0.6*np.ones(dim), ''], # size of sides
-                  'vals': [10*np.eye(dim), 1.*np.eye(dim)],
-                  'Y': np.ones(dim),
-                  'P': pars.N,
-                  'order': 0, }
-
-    elif material in [1]:
-        mat_conf={'inclusions': ['pyramid', 'all'],
-                  'positions': [0.*np.ones(dim), ''],
-                  'params': [0.8*np.ones(dim), ''], # size of sides
-                  'vals': [10*np.eye(dim), 1.*np.eye(dim)],
-                  'Y': np.ones(dim),
-                  'P': pars.N,
-                  'order': 1, }
-        pars_sparse.update(Struct(matrank=2))
-    else:
-        raise
-
-    mat=Material(mat_conf)
-    mats=SparseMaterial(mat_conf, pars_sparse.kind)
-
-    Agani=matrix2tensor(mat.get_A_GaNi(pars.N, primaldual='primal'))
-#    Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
-
-    Aga=matrix2tensor(mat.get_A_Ga(Nbar(pars.N), primaldual='primal'))
-    Agas=mats.get_A_Ga(Nbar(pars_sparse.N), primaldual='primal', k=2)
-
-    pars_sparse.update(Struct(alpha=0.5*(Agani[0, 0].min()+Agani[0, 0].max())))
-
-#    stdout_backup=sys.stdout
-#    sys.stdout=open(os.devnull, "w") # stop screen output
-
-    # print('\n== Full solution with potential by CG (Ga) ===========')
-    resP=homog_Ga_full_potential(Aga, pars)
-    # print('homogenised properties (component 11) = {}'.format(resP.AH))
-
-    # print('\n== SPARSE Richardson solver with preconditioner =======================')
-    # resS=homog_sparse(Agas, pars_sparse)
-    # print('homogenised properties (component 11) = {}'.format(resS.AH))
-
-
-#    print('\n== SPARSE Richardson solver with preconditioner =======================')
-    resS=homog_Ga_sparse(Agas, pars_sparse)
-#    print('homogenised properties (component 11) = {}'.format(resS.AH))
-
-#    sys.stdout=stdout_backup # # restore screen output
-
-    return resP.AH, resS.AH
 
 class Test_sparse(unittest.TestCase):
 
@@ -108,6 +27,44 @@ class Test_sparse(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_sparse_solver(self):
+        print('\nChecking homogenisation with low-rank tensor approximations...')
+
+        tic=Timer('homogenisation')
+        N=5
+        for dim, material, kind in [(2,0,0), (2,3,1), (3,1,1), (3,0,2)]:
+            print('dim={}, material={}, kind={}'.format(dim, material, kind))
+            pars, pars_sparse=get_default_parameters(dim, N, material, kind)
+            pars_sparse.debug=True
+            pars_sparse.solver.update(dict(rank=5, maxiter=10))
+
+            prt.disable()
+
+            Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
+
+            if material in [0, 3]:
+                resP_Ga=homog_Ga_full_potential(Aga, pars)
+                resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
+
+            if material in [1, 2, 4]:
+                resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
+                resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+
+            prt.enable()
+
+            if material in [0, 3]:
+                self.assertAlmostEqual(resP_Ga.Fu.mean(), 0)
+                self.assertAlmostEqual(resS_Ga.Fu.mean(), 0)
+                self.assertAlmostEqual(np.abs(resP_Ga.AH-resS_Ga.AH), 0, delta=5e-3)
+
+            if material in [1, 2, 4]:
+                self.assertAlmostEqual(resP_GaNi.Fu.mean(), 0)
+                self.assertAlmostEqual(resS_GaNi.Fu.mean(), 0)
+                self.assertAlmostEqual(np.abs(resP_GaNi.AH-resS_GaNi.AH), 0, delta=5e-3)
+
+        tic.measure()
+        print('...ok')
 
     def test_canoTensor(self):
         print('\nChecking canonical tensor...')
@@ -157,38 +114,37 @@ class Test_sparse(unittest.TestCase):
         for opt in [0,'c']:
 
             a=SparseTensor(kind='cano', val=self.T2d, fft_form=opt)
-            T = Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form=opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt).val- T.fourier(copy=True).val), 0)
+            T=Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt).val-T.fourier(copy=True).val), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
 
-
             a=SparseTensor(kind='tucker', val=self.T3d, fft_form=opt)
-            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)- T.fourier(copy=True)), 0)
+            T=Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)-T.fourier(copy=True)), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
 
             a=SparseTensor(kind='tt', val=self.T3d, fft_form=opt)
-            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)- T.fourier(copy=True).val), 0)
+            T=Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=opt)-T.fourier(copy=True).val), 0)
             self.assertEqual(norm(a.fourier().fourier(real_output=True).full().val.imag), 0)
         # checking shifting fft_forms
         sparse_opt='sr'
-        for full_opt in [0,'c']:
+        for full_opt in [0, 'c']:
 
-            a=SparseTensor(kind='cano', val=self.T2d, fft_form= sparse_opt)
-            T = Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form= full_opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
-            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
+            a=SparseTensor(kind='cano', val=self.T2d, fft_form=sparse_opt)
+            T=Tensor(val=self.T2d, order=0, N=self.T2d.shape, Fourier=False, fft_form=full_opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)-T.fourier(copy=True)), 0)
+            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm(), 0)
 
-            a=SparseTensor(kind='tucker', val=self.T3d, fft_form= sparse_opt)
-            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form= full_opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
-            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
+            a=SparseTensor(kind='tucker', val=self.T3d, fft_form=sparse_opt)
+            T=Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=full_opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)-T.fourier(copy=True)), 0)
+            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm(), 0)
 
-            a=SparseTensor(kind='tt', val=self.T3d, fft_form= sparse_opt)
-            T = Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form= full_opt)
-            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)- T.fourier(copy=True)), 0)
-            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm() , 0)
+            a=SparseTensor(kind='tt', val=self.T3d, fft_form=sparse_opt)
+            T=Tensor(val=self.T3d, order=0, N=self.T3d.shape, Fourier=False, fft_form=full_opt)
+            self.assertAlmostEqual(norm(a.fourier().full(fft_form=full_opt)-T.fourier(copy=True)), 0)
+            self.assertAlmostEqual((a.fourier().set_fft_form(full_opt)-a.set_fft_form(full_opt).fourier()).norm(), 0)
 
         print('...ok')
 
@@ -239,22 +195,22 @@ class Test_sparse(unittest.TestCase):
         L2=4
         L3=5
         tol=1e-6
-        #v=np.random.rand(2**L1,2**L2)
-        v=np.array(list(range(1,2**(L1+L2+L3)+1)))
+        # v=np.random.rand(2**L1,2**L2)
+        v=np.array(list(range(1, 2**(L1+L2+L3)+1)))
         v=np.sin(v)/v # to increase the rank
 
-        v1=np.reshape(v,(2**L1,2**L2,2**L3),order='F')
-        #vFFT= DFT.fftnc(v, [2**L1, 2**L2])
-        #start = time.clock()
-        v1fft= np.fft.fftn(v1)/2**(L1+L2+L3)
-        #print("FFT time:     ", (time.clock() - start))
+        v1=np.reshape(v, (2**L1, 2**L2, 2**L3), order='F')
+        # vFFT= DFT.fftnc(v, [2**L1, 2**L2])
+        # start = time.clock()
+        v1fft=np.fft.fftn(v1)/2**(L1+L2+L3)
+        # print("FFT time:     ", (time.clock() - start))
 
-        vq= np.reshape(v,[2]*(L1+L2+L3),order='F') # a quantic tensor
-        vqtt= SparseTensor(kind='tt', val=vq) # a qtt
+        vq=np.reshape(v, [2]*(L1+L2+L3), order='F') # a quantic tensor
+        vqtt=SparseTensor(kind='tt', val=vq) # a qtt
 
-        #start = time.clock()
-        vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol)
-        #print("QTT_FFT time: ", (time.clock() - start))
+        # start = time.clock()
+        vqf=vqtt.qtt_fft([L1, L2, L3], tol=tol)
+        # print("QTT_FFT time: ", (time.clock() - start))
 
         vqf_full=vqf.full().reshape((2**L3,2**L2,2**L1),order='F')
 
@@ -316,7 +272,7 @@ class Test_sparse(unittest.TestCase):
             self.assertAlmostEqual(np.dot(cr[i], cr[i].T).any(), I.any())
 
         aSubTrain=c.tt_chunk(0,1)
-        co,ru=aSubTrain.orthogonalise(direction='rl',r_output=True)
+        co, ru=aSubTrain.orthogonalise(direction='rl', r_output=True)
         cr=co.to_list(co)
         for i in range(co.d):
             cr[i]=np.reshape(cr[i], (co.r[i],-1))
@@ -325,27 +281,6 @@ class Test_sparse(unittest.TestCase):
 
         print('...ok')
 
-#    def test_sparse_solver(self):
-#        print('\nChecking sparse solver ...')
-#
-#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=7)
-#
-#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
-#
-#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=7)
-#
-#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<5e-3)
-#
-#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tt', N=11, rank=10)
-#
-#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
-#
-#        full_sol, sparse_sol=run_full_and_sparse_solver(kind='tucker', N=11, rank=10)
-#
-#        self.assertTrue(abs(full_sol-sparse_sol)/full_sol<1e-3)
-#
-#        print('...ok')
-    #@unittest.skip("The testing is too slow.")
     def test_mean(self):
         print('\nChecking method mean() ...')
         a=SparseTensor(kind='cano', val=self.T2d)

@@ -57,6 +57,7 @@ class PrintControl():
 
     def enable(self):
         if self.flag:
+            sys.stdout.close()
             sys.stdout = sys.__stdout__
 
 class Timer():
