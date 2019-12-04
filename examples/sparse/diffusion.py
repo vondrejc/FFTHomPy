@@ -15,6 +15,7 @@ kind=0 # from kind_list=['cano','tucker','tt']
 
 pars, pars_sparse=get_default_parameters(dim, N, material, kind)
 pars_sparse.debug=True
+pars_sparse.solver.update(dict(rank=10))
 
 print('== format={}, N={}, dim={}, material={}, rank={} ===='.format(pars_sparse.kind, N, dim,
                                                                      material,
