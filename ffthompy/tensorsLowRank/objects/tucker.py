@@ -1,6 +1,7 @@
 import numpy as np
 
 from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
+from ffthompy.tensorsLowRank.decompositions import fast_qr
 from ffthompy.tensorsLowRank.decompositions import HOSVD, nModeProduct, new_expand_dims
 from ffthompy.tensors import Tensor
 from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
@@ -170,8 +171,6 @@ class Tucker(CanoTensor):
             if fast:
                 if self.order>3:
                     warnings.warn('The Tucker fast truncation is not implemented for Tucker with dim > 3, running normal truncation.')
-                elif np.any(self.r >= 10*self.N):
-                    warnings.warn('The Tucker fast truncation is not fast for tensors with rank much larger than mode sizes, running normal truncation.')
                 elif np.any(tol) is None and np.any(rank) is None:
                     warnings.warn('No target rank of tol specified,  running normal truncation.')
                 else:
@@ -196,7 +195,11 @@ class Tucker(CanoTensor):
             # orthogonalise the basis
 
             for i in range(0, self.order):
-                Q, R=np.linalg.qr(basis[i].T, 'reduced')
+                if fast:
+                    Q, R=fast_qr(basis[i].T)
+                else:
+                    Q, R=np.linalg.qr(basis[i].T, 'reduced')
+
                 newBasis.append(Q.T)
                 core=nModeProduct(core, R.real, i)
 
