@@ -50,7 +50,7 @@ def subTensor(T, k=None, index=None):
     :type index: list
     :returns: numpy.ndarray -- a sub-tensor .
     """
-    if k.any()==None and index.any()==None:
+    if k.any() is None and index.any() is None:
         return T
     elif index is not None:
         return T[np.ix_(*index)]
@@ -110,7 +110,7 @@ def HOSVD(A, k=None, tol=None):
 
     return S, U
 
-def fast_qr( A ):
+def fast_qr(A):
     """
     This is a recursive partioned QR. about two times faster than QR for tall matrices
     """
@@ -118,7 +118,7 @@ def fast_qr( A ):
     if N < M:
         Q, R =qr(A)  # not tall matrices, use normal qr
 
-    elif M>16 :  # the minimal partition size is 32
+    elif M>16: # the minimal partition size is 32
         R=np.zeros((M,M))
 
         k= np.ceil(M/2).astype(int)
@@ -128,7 +128,7 @@ def fast_qr( A ):
 
         qb, R[k:, k:]=fast_qr(A[:,k:]-np.dot(qa, R[:k,k:]))
 
-        Q = np.hstack(( qa, qb))
+        Q = np.hstack((qa, qb))
     else: # reach the smallest partition size, no more partitions, use normal qr
         Q, R =qr(A)
 

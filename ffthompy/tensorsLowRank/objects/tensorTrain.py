@@ -57,7 +57,6 @@ class TensorTrain(vector, LowRankTensorFuns):
     def dim(self):
         return self.d
 
-
     def fourier(self, real_output=False):
         "(inverse) discrete Fourier transform"
 
@@ -108,8 +107,8 @@ class TensorTrain(vector, LowRankTensorFuns):
         """
         Enhance the tensor size from N to M, by repeating all elements by M/N times.
         """
-        #if isinstance(M, int):
-         #   M=M*np.ones((self.order,), dtype=int)
+        # if isinstance(M, int):
+        # M=M*np.ones((self.order,), dtype=int)
         M = np.array(M)
         if M is self.N:
             return self
@@ -150,7 +149,7 @@ class TensorTrain(vector, LowRankTensorFuns):
             cl_new[i]=np.zeros([self.r[i], M[i], self.r[i+1]], dtype=dtype)
             cl_new[i][:, ibeg[i]:iend[i], :]=cl[i]
 
-        res=self.from_list(cl_new,  fft_form=self.fft_form)
+        res=self.from_list(cl_new, fft_form=self.fft_form)
         res.name=self.name+"_enlarged"
         res.Fourier=self.Fourier
 
@@ -290,7 +289,7 @@ class TensorTrain(vector, LowRankTensorFuns):
     def truncate(self, tol=None, rank=None, fast=False):
         if np.any(tol) is None and np.any(rank) is None:
             return self
-        elif np.any(tol) is None and np.all(rank>=max(self.r))==True :
+        elif np.any(tol) is None and np.all(rank>=max(self.r)) is True:
             return self
         else:
             if tol is None: tol=1e-14
@@ -306,7 +305,7 @@ class TensorTrain(vector, LowRankTensorFuns):
                     if rank < r[i] or tol > 1e-14:
                         nrm=norm(cr[i-1],axis=1).squeeze()
                         if i>1: nrm=norm(nrm, axis=0).squeeze()
-                        #print(nrm)
+                        # print(nrm)
                         if tol > 1e-14:
                             select_ind = np.argwhere(nrm >= (1e-3)*tol*np.sum(nrm)).squeeze()
                         else:
@@ -473,17 +472,10 @@ class TensorTrain(vector, LowRankTensorFuns):
 
 if __name__=='__main__':
 
-
-
-
-    print()
-    print('----testing "Fourier" function ----')
-    print()
+    print('\n----testing "Fourier" function ----\n')
 
     v1=np.random.rand(50,23,10)
     v2=np.random.rand(50,23,10)
-
-
 
 #    v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
     t1=TensorTrain(val=v1, rmax=99999)

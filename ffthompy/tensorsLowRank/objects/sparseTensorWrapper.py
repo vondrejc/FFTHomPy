@@ -34,13 +34,13 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
 
     :returns: object of tensorsLowRank tensor.
     """
-    if type(rank) is list or type(rank) is np.ndarray :
+    if type(rank) is list or type(rank) is np.ndarray:
         rmax=max(rank)
         r=min(rank)
     else:
         rmax=r=rank
 
-    if kind.lower() in ['cano','canotensor'] :
+    if kind.lower() in ['cano', 'canotensor']:
         return CanoTensor(name=name, val=val, core=core,basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=r, tol=eps)
     elif kind.lower() in ['tucker']:
         return Tucker(name=name, val=val, core=core, basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=rank, tol=eps)
@@ -60,17 +60,13 @@ if __name__=='__main__':
     v1 = np.random.rand(3, 3,3)
 
     tt = SparseTensor(kind='tt', val=v1)
-   # tt.fourier()
+    # tt.fourier()
     print((tt.full()))
     tt.repeat(6)
 
     print((tt.full()))
 
-
-
-    print()
-    print('----testing wrapper function ----')
-    print()
+    print('\n----testing wrapper function ----\n')
 
     v1=np.random.rand(20, 30)
 
@@ -110,6 +106,5 @@ if __name__=='__main__':
     v1=np.random.rand(20, 30)
     cano=SparseTensor(kind='CAno', val=v1)
     print(cano)
-
 
     print('END')

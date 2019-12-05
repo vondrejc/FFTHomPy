@@ -106,9 +106,9 @@ class CanoTensor(LowRankTensorFuns):
 
             select_ind = np.squeeze(select_ind)
 
-            self.core = np.take(self.core, select_ind )
-            self.basis[0] = np.take(self.basis[0], select_ind, axis=0 )
-            self.basis[1] = np.take(self.basis[1], select_ind, axis=0 )
+            self.core=np.take(self.core, select_ind)
+            self.basis[0]=np.take(self.basis[0], select_ind, axis=0)
+            self.basis[1]=np.take(self.basis[1], select_ind, axis=0)
 
             qa, ra=fast_qr(self.basis[0].T)
             qb, rb=fast_qr(self.basis[1].T)
@@ -120,7 +120,6 @@ class CanoTensor(LowRankTensorFuns):
         core=np.dot(core, rb.T.real)
 
         u, s, vt=np.linalg.svd(core,full_matrices=False)
-
 
         newA=np.dot(qa, u)
         newB=np.dot(vt, qb.T)
@@ -152,11 +151,11 @@ class CanoTensor(LowRankTensorFuns):
         else:
             coeff=np.kron(self.core, Y.core)
             newBasis=[None]*self.order
-            if self.Fourier and self.fft_form=='sr': #product of scipy rfft tensors need a special multiplication
+            if self.Fourier and self.fft_form=='sr': # product of scipy rfft tensors need a special multiplication
                 for d in range(0, self.order):
                     B=np.empty((self.r*Y.r, self.N[d]))
                     B[:,0]=np.kron(self.basis[d][:,0],Y.basis[d][:,0])
-                    if self.N[d]%2 != 0:
+                    if self.N[d] % 2 != 0:
                         ar=self.basis[d][:,1::2]
                         ai=self.basis[d][:,2::2]
                         br=Y.basis[d][:,1::2]
@@ -209,7 +208,7 @@ class CanoTensor(LowRankTensorFuns):
 
         if rank is not None:
             if rank>=self.r:
-                #print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
+                # print ("Warning: Rank of the truncation not smaller than the original rank, truncation aborted!")
                 return self
 
         self=self.orthogonalise(rank=rank, tol=tol, fast=fast)
@@ -219,8 +218,8 @@ class CanoTensor(LowRankTensorFuns):
 
         if tol is not None:
             # determine the truncation rank so that core terms smaller than the tol is discarded.
-            #rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
-            rank=np.searchsorted( -np.abs(core), -tol)+1
+            # rank=np.searchsorted(np.cumsum(np.abs(core))/np.sum(np.abs(core)), 1.0-tol)+1
+            rank=np.searchsorted(-np.abs(core), -tol) + 1
         # truncation
         core=core[:rank]
         for ii in range(self.order):
@@ -251,7 +250,7 @@ class CanoTensor(LowRankTensorFuns):
                 newObj=self.set_fft_form('c',copy=True)
             elif self.Fourier and not normal_domain:
                 newObj=self
-                #The Fourier basis is not orthogonal
+                # The Fourier basis is not orthogonal
                 newObj.orthogonal=False
             else:
                 newObj=self
@@ -273,7 +272,7 @@ class CanoTensor(LowRankTensorFuns):
         val=self.core.copy()
 
         for k in range(self.order):
-            if self.Fourier and normal_domain: #want the mean in normal domain
+            if self.Fourier and normal_domain: # want the mean in normal domain
                 basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
             else:
                 basis_mean[k]=np.mean(self.basis[k], axis=1)
@@ -294,7 +293,7 @@ class CanoTensor(LowRankTensorFuns):
             return self
 
         r=self.r
-        if isinstance(r, int) :
+        if isinstance(r, int):
             r=r*np.ones((self.order,), dtype=int)
         if self.fft_form in ['c']:
             ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
@@ -323,8 +322,8 @@ class CanoTensor(LowRankTensorFuns):
         N=np.array(self.N)
         assert(np.all(np.less(M, N)))
         if self.fft_form in ['c']:
-            ibeg=np.fix(np.array(N-M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
-            iend=np.fix(np.array(N+M+(M%2), dtype=np.float)/2).astype(dtype=np.int)
+            ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+            iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
         elif self.fft_form in ['sr']:
             ibeg=np.zeros(N.shape).astype(dtype=np.int)
             iend=M
@@ -351,7 +350,7 @@ class CanoTensor(LowRankTensorFuns):
 
     def __rmul__(self, X):
 
-        if isinstance(X, np.float) or isinstance(X, np.int) :
+        if isinstance(X, np.float) or isinstance(X, np.int):
             R=self.copy()
             R.core=X*self.core
         else:
@@ -392,7 +391,7 @@ class CanoTensor(LowRankTensorFuns):
         # and Hadamard product of 'sr' FFT tensor is doned as common tensor.
         # these two functions could be combined later.
         assert(self.Fourier==Y.Fourier)
-        #product = self*Y ## cannot use this because normal mul() treat 'sr' type differently
+        # product = self*Y ## cannot use this because normal mul() treat 'sr' type differently
 
         core=np.kron(self.core, Y.core)
         newBasis=[None]*self.order
@@ -417,7 +416,7 @@ class CanoTensor(LowRankTensorFuns):
             M=M*np.ones((self.order,), dtype=int)
 
         M = np.array(M)
-        if ((M.astype(float)/self.N)%1).any()!=0 :
+        if ((M.astype(float)/self.N) % 1).any() != 0:
             raise NotImplementedError("M is not a multiple of the old size N")
 
         res=self.copy()
@@ -466,7 +465,9 @@ class CanoTensor(LowRankTensorFuns):
         keys=('name','core','basis','orthogonal','Fourier','r', 'N','fft_form')
         return self._copy(keys, **kwargs)
 
+
 if __name__=='__main__':
+
 #    N=[10,20]
 #    a = CanoTensor(name='a', r=3, N=N, randomise=True)
 #    b = CanoTensor(name='b', r=3, N=N, randomise=True)
@@ -478,7 +479,6 @@ if __name__=='__main__':
 #    c2 = a.full()+b.full()
 #    print(np.linalg.norm(c.full()-c2))
 #    # multiplication
-#
 #    c = a*b
 #    c2 = a.full()*b.full()
 #    print(np.linalg.norm(c.full()-c2))
@@ -494,12 +494,11 @@ if __name__=='__main__':
     # creat matrix for test
     S1=np.sin(x[np.newaxis, :]+y[:, np.newaxis])*(x[np.newaxis, :]+y[:, np.newaxis])
     S2=np.cos(2*x[np.newaxis, :]-y[:, np.newaxis])*(2*x[np.newaxis, :]-y[:, np.newaxis])
-    #S1 = np.dot(np.reshape(x,(M,1)), np.reshape(y,(1,N))) + np.dot(np.sin(np.reshape(x,(M,1))), np.reshape(y,(1,N))**2)
+    # S1 = np.dot(np.reshape(x,(M,1)), np.reshape(y,(1,N))) + np.dot(np.sin(np.reshape(x,(M,1))), np.reshape(y,(1,N))**2)
 
     # factorize the matrix
     u1, s1, vt1=np.linalg.svd(S1, full_matrices=0)
     u2, s2, vt2=np.linalg.svd(S2, full_matrices=0)
-
 
     # construct  canoTensors with the normalized basis and the corresponding coefficients core
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
@@ -507,7 +506,6 @@ if __name__=='__main__':
 
     print((a.norm(ord='fro')))
     print((a.norm(ord='core')))
-
 
 #     N=[100,101]
 #     a=CanoTensor(name='a', r=50, N=N, randomise=True)
@@ -522,7 +520,6 @@ if __name__=='__main__':
     print()
     print("(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add)))
     print("add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add)))
-
 
     # multiplication
 
@@ -564,15 +561,14 @@ if __name__=='__main__':
 #    print "Tensor of 1D FFT costs: %f"%t1
 #    print "n-D FFT costs         : %f"%t2
 
-
     N1=6
     N2=8
 
-    T1=np.random.rand(N1,N2)
-    T2=np.random.rand(N1,N2)
+    T1=np.random.rand(N1, N2)
+    T2=np.random.rand(N1, N2)
 
-    a = CanoTensor(val=T1,name='a' )
-    b = CanoTensor(val=T2,name='b' )
+    a=CanoTensor(val=T1, name='a')
+    b=CanoTensor(val=T2, name='b')
     c=a*b
     print(c)
 
@@ -585,15 +581,14 @@ if __name__=='__main__':
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
 
-    print((np.mean(c.full().val) - c.mean()))
-    print((np.mean(c.full().val) - c.fourier().mean()))
-
+    print((np.mean(c.full().val)-c.mean()))
+    print((np.mean(c.full().val)-c.fourier().mean()))
 
     cf=c.set_fft_form('c').fourier().set_fft_form('sr')
 
     cf2=c.set_fft_form('sr').fourier()
 
-    print(( (cf-cf2).norm()))
+    print(((cf-cf2).norm()))
 
     ### test Fourier Hadamard product #####
     af=a.set_fft_form('c').fourier()
@@ -606,7 +601,7 @@ if __name__=='__main__':
 
     afbf2=af2*bf2
 
-    print(( (afbf.fourier()-afbf2.fourier()).norm()))
+    print(((afbf.fourier()-afbf2.fourier()).norm()))
 
     print(c)
     print((c.fourier()))
@@ -615,22 +610,22 @@ if __name__=='__main__':
     print(cf)
     print((cf.fourier()))
 
-## test inner product
+# # test inner product
     N1=200
     N2=500
 
-    T1=np.random.rand(N1,N2)
-    T2=np.random.rand(N1,N2)
+    T1=np.random.rand(N1, N2)
+    T2=np.random.rand(N1, N2)
 
-    a = CanoTensor(val=T1,name='a' )
-    b = CanoTensor(val=T2,name='b' )
+    a=CanoTensor(val=T1, name='a')
+    b=CanoTensor(val=T2, name='b')
 
     M1=np.sum((T1*T2))
     M2=a.inner(b)
 
-    print(("inner product error is:",M1-M2))
+    print(("inner product error is:", M1-M2))
 
-### test accuracy of scalor product
+# ## test accuracy of scalor product
 #    N1=1000
 #    N2=500
 #
@@ -647,7 +642,6 @@ if __name__=='__main__':
 #    M2=c.mean()
 #
 #    print(M1-M2)
-
 
 #    ### test enlarge#####
 #    n=5
@@ -678,21 +672,15 @@ if __name__=='__main__':
 #
 #    print(tfli.full().val.real)
 
-
-
-
 ### test Fourier #####
-
 
     ### test full ###
 
-
 #    print (np.linalg.norm(c.full()-T1*T2))
-##    print (np.linalg.norm(c.full2()-T1*T2))
+# #    print (np.linalg.norm(c.full2()-T1*T2))
 #
 #    T=Tensor(val=T1*T2, order=0, Fourier=False)
 #
 #    print (np.linalg.norm(c.fourier().full(fft_form=full_fft_form_default).val- T.set_fft_form(fft_form=full_fft_form_default).fourier().val ))
-
 
     print('END')

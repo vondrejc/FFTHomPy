@@ -290,7 +290,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         a=SparseTensor(kind='tucker', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
         self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
-#
+
         a=SparseTensor(kind='tt', val=self.T3d)
         self.assertAlmostEqual(np.mean(self.T3d), a.mean())
         self.assertAlmostEqual(np.mean(self.T3d), a.fourier().mean())
