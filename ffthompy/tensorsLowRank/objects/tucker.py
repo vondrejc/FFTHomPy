@@ -119,7 +119,7 @@ class Tucker(CanoTensor):
     def __mul__(self, Y):
         """element-wise multiplication of two Tucker tensors"""
 
-        if isinstance(Y, float) or isinstance(Y, int) or np.isscalar(Y) :
+        if isinstance(Y, float) or isinstance(Y, int) or np.isscalar(Y):
             R=self.copy()
             R.core=self.core*Y
             return R
@@ -131,11 +131,11 @@ class Tucker(CanoTensor):
             assert((self.N==Y.N).any())
             newCore=np.kron(self.core, Y.core)
             newBasis=[None]*self.order
-            if self.Fourier and self.fft_form=='sr': #product of scipy rfft tensors need a special multiplication
+            if self.Fourier and self.fft_form=='sr': # product of scipy rfft tensors need a special multiplication
                 for d in range(0, self.order):
                     B=np.empty((self.r[d]*Y.r[d], self.N[d]))
                     B[:,0]=np.kron(self.basis[d][:,0],Y.basis[d][:,0])
-                    if self.N[d]%2 != 0:
+                    if self.N[d] % 2 != 0:
                         ar=self.basis[d][:,1::2]
                         ai=self.basis[d][:,2::2]
                         br=Y.basis[d][:,1::2]
@@ -177,7 +177,7 @@ class Tucker(CanoTensor):
                 else:
                     ratio=10 # keep ratio-times more bases than the target rank before the optimal truncation
                     for i in range(self.order):
-                        nrm=norm( basis[i],axis=1)
+                        nrm=norm(basis[i], axis=1)
                         basis[i]/= nrm[:, np.newaxis] # normalize the basis
                         core*=new_expand_dims(nrm,np.setdiff1d(range(self.order), i))
 
@@ -240,22 +240,20 @@ class Tucker(CanoTensor):
         if np.any(tol) is None and np.any(rank) is None:
             # print ("Warning: No truncation criteria input, truncation aborted!")
             return self
-        elif np.any(tol) is None and np.all(rank>=self.r) is True :
+        elif np.any(tol) is None and np.all(rank>=self.r) is True:
             # print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self
 
-        if isinstance(rank, int) or np.isscalar(rank) :
+        if isinstance(rank, int) or np.isscalar(rank):
             rank=rank*np.ones((self.order,), dtype=int)
 
-
-        if isinstance(tol, float) :
+        if isinstance(tol, float):
             tol=tol*np.ones((self.order,))
 
         new_obj=self.orthogonalise(rank=rank, tol=tol, fast=fast)
 
         basis=list(new_obj.basis)
         core=new_obj.core
-
 
         # to determine the rank of truncation
         if np.any(tol) is not None:
@@ -267,7 +265,7 @@ class Tucker(CanoTensor):
                 sorted_norm.append(np.sum(abs(core), axis=tuple(np.setdiff1d(ind, i))))
                 rank[i]=np.searchsorted(np.cumsum(sorted_norm[i])/np.sum(sorted_norm[i]), 1.0-tol[i])+1
 
-        rank = np.minimum(rank, self.r)
+        rank = np.minimum(np.minimum(rank, self.r), self.N)
         L=[None]*self.order
         for d in range(self.order):
             L[d]=list(range(rank[d]))
@@ -311,10 +309,10 @@ class Tucker(CanoTensor):
                 # sometime, e.g. for "sr" type FFT tensor, to keep
                 # aligned with its inner product definition for iterative solver,
                 # its norm is not kept the same as its normal domain counterpart.
-                newObj=self.set_fft_form('c',copy=True)
+                newObj=self.set_fft_form('c', copy=True)
             elif self.Fourier and not normal_domain:
                 newObj=self
-                #The Fourier basis is not orthogonal
+                # The Fourier basis is not orthogonal
                 newObj.orthogonal=False
             else:
                 newObj=self
@@ -336,12 +334,12 @@ class Tucker(CanoTensor):
         mean_kronecker=1
 
         for k in range(self.order):
-            if self.Fourier and normal_domain: #want the mean in normal domain
+            if self.Fourier and normal_domain: # want the mean in normal domain
                 basis_mean[k]=self.basis[k][:,self.mean_index()[k]].real
             else:
                 basis_mean[k]=np.mean(self.basis[k], axis=1)
 
-            mean_kronecker = np.kron(mean_kronecker,basis_mean[k] )
+            mean_kronecker = np.kron(mean_kronecker,basis_mean[k])
 
         return np.sum(mean_kronecker*self.core.ravel())
 
@@ -352,12 +350,7 @@ class Tucker(CanoTensor):
 
 if __name__=='__main__':
 
-    print()
-    print('----testing "repeat" function ----')
-    print()
-
-
-
+    print('\n----testing "repeat" function ----\n')
 
     N1=10 # warning: in 3d multiplication too large N number could kill the machine.
     N2=20
@@ -370,14 +363,14 @@ if __name__=='__main__':
 #    z=np.linspace(-np.pi, np.pi, N3)
 #    #this is a rank-1 tensor
 #    T=np.sin(x[:,newaxis,newaxis]+y[newaxis,:, newaxis] + z[ newaxis, newaxis, :] )
-    T=np.random.random((N1, N2, N3 ))
+    T=np.random.random((N1, N2, N3))
     t1=Tucker(val=T,)
     t2=Tucker(val=(T*T))
 
     print(t1)
     print(t2)
 
-    #ta=t1+t2+t1+t2+t1+t2+t1+t2+t1+t2
+    # ta=t1+t2+t1+t2+t1+t2+t1+t2+t1+t2
     t=t1*t2
     print(t)
 

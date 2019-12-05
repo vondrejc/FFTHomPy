@@ -56,12 +56,12 @@ class Test_tensorsLowRank(unittest.TestCase):
             if material in [0, 3]:
                 self.assertAlmostEqual(resP_Ga.Fu.mean(), 0)
                 self.assertAlmostEqual(resS_Ga.Fu.mean(), 0)
-                self.assertAlmostEqual(np.abs(resP_Ga.AH-resS_Ga.AH), 0, delta=5e-3)
+                self.assertAlmostEqual(np.abs(resP_Ga.AH-resS_Ga.AH), 0, delta=1e-4)
 
             if material in [1, 2, 4]:
                 self.assertAlmostEqual(resP_GaNi.Fu.mean(), 0)
                 self.assertAlmostEqual(resS_GaNi.Fu.mean(), 0)
-                self.assertAlmostEqual(np.abs(resP_GaNi.AH-resS_GaNi.AH), 0, delta=5e-3)
+                self.assertAlmostEqual(np.abs(resP_GaNi.AH-resS_GaNi.AH), 0, delta=1e-4)
 
         tic.measure()
         print('...ok')

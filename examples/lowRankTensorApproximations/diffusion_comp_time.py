@@ -7,6 +7,10 @@ from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential,
 from examples.lowRankTensorApproximations.setting import get_material_coef, getMat_conf, get_default_parameters
 
 from ffthompy.tensorsLowRank.materials import LowRankMaterial
+import itertools
+
+
+print('running time-comparison for material with square inclusion...')
 
 kinds = {'2': 0,
          '3': 2,}
@@ -15,11 +19,10 @@ N_lists = {'2': [45,135,405,1215],
            '3': [5,15,45,135,175]}
 
 kind_list=['cano','tucker','tt']
-material=3 # 0 or 3
 
 data_folder = "data_for_plot/time"
 
-for dim in [2,3]:
+for dim, material in itertools.product([2,3], [0,3]):
     if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
         os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
 
@@ -92,3 +95,5 @@ for dim in [2,3]:
                                      .format(data_folder,dim, material,kind_list[kind]), "wb"))
     pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p"
                                        .format(data_folder,dim, material,kind_list[kind]), "wb"))
+
+print('END')

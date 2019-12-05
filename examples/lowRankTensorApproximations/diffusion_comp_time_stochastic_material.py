@@ -6,7 +6,10 @@ from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential,
                                                     homog_Ga_sparse,
                                                     homog_GaNi_sparse)
 from examples.lowRankTensorApproximations.setting import get_material_coef, kind_list, get_default_parameters
+import itertools
 
+
+print('running time-comparison for stochastic material...')
 
 kinds = {'2': 0,
          '3': 2,}
@@ -19,91 +22,91 @@ method=1 # 0-Ga, 1-GaNi
 
 data_folder = "data_for_plot/time"
 
-for material in [2, 4]:
-    for dim in [2, 3]:
+for dim, material in itertools.product([2, 3], [2, 4]):
+    if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
+        os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
 
-        if not os.path.exists('{}/dim_{}/mat_{}/'.format(data_folder,dim, material)):
-            os.makedirs('{}/dim_{}/mat_{}/'.format(data_folder,dim, material))
+    N_list = N_lists['{}'.format(dim)]
+    kind=kinds['{}'.format(dim)]
 
-        N_list = N_lists['{}'.format(dim)]
-        kind=kinds['{}'.format(dim)]
+    full_time_list = [None]*len(N_list)
+    sparse_time_list = [[None]*len(N_list), [None]*len(N_list)]
+    rank_list = [[None]*len(N_list), [None]*len(N_list)]
+    memory_list = [[None]*len(N_list), [None]*len(N_list)]
 
-        full_time_list = [None]*len(N_list)
-        sparse_time_list = [[None]*len(N_list), [None]*len(N_list)]
-        rank_list = [[None]*len(N_list), [None]*len(N_list)]
-        memory_list = [[None]*len(N_list), [None]*len(N_list)]
+    for i, N in enumerate(N_list):
+        # PARAMETERS ##############################################################
+        pars, pars_sparse=get_default_parameters(dim, N, material, kind)
+        pars.solver.update(dict(tol=1e-6))
 
-        for i, N in enumerate(N_list):
-            # PARAMETERS ##############################################################
-            pars, pars_sparse=get_default_parameters(dim, N, material, kind)
-            pars.solver.update(dict(tol=1e-6))
+        # generating material coefficients
+        if method in ['Ga',0]:
+            Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
+            print('\n== Full solution with potential by CG (Ga) ===========')
+            resP_Ga=homog_Ga_full_potential(Aga, pars)
+            print('mean of solution={}'.format(resP_Ga.Fu.mean()))
+            print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+            full_time_list[i]=resP_Ga.time
+        elif method in ['GaNi',1]:
+            Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse, ga=False)
+            print('\n== Full solution with potential by CG (GaNi)===========')
+            resP=homog_GaNi_full_potential(Agani, Aga, pars)
+            print('mean of solution={}'.format(resP.Fu.mean()))
+            print('homogenised properties (component 11) = {}'.format(resP.AH))
+        else:
+            raise ValueError()
 
-            # generating material coefficients
-            if method in ['Ga',0]:
-                Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
-                print('\n== Full solution with potential by CG (Ga) ===========')
-                resP_Ga=homog_Ga_full_potential(Aga, pars)
-                print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-                print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
-                full_time_list[i]=resP_Ga.time
-            elif method in ['GaNi',1]:
-                Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse, ga=False)
-                print('\n== Full solution with potential by CG (GaNi)===========')
-                resP=homog_GaNi_full_potential(Agani, Aga, pars)
-                print('mean of solution={}'.format(resP.Fu.mean()))
-                print('homogenised properties (component 11) = {}'.format(resP.AH))
-            else:
-                raise ValueError()
+        full_time_list[i]=resP.time
 
-            full_time_list[i]=resP.time
+        for counter, err_tol in enumerate(err_tol_list):
 
-            for counter, err_tol in enumerate(err_tol_list):
+            for r in range(4, N+1, 2):
+                pars_sparse.solver.update(dict(rank=r)) # rank of solution vector
 
-                for r in range(4, N+1, 2):
-                    pars_sparse.solver.update(dict(rank=r)) # rank of solution vector
+                print('\n== format={}, N={}, dim={}, material={}, rank={}, err_tol={} ===='.format(pars_sparse.kind,
+                    N, dim, material, pars_sparse.solver['rank'], err_tol))
 
-                    print('\n== format={}, N={}, dim={}, material={}, rank={}, err_tol={} ===='.format(pars_sparse.kind,
-                        N, dim, material, pars_sparse.solver['rank'], err_tol))
+                # PROBLEM DEFINITION ######################################################
+                if method in ['Ga',0]:
+                    print('\n== SPARSE solver with preconditioner (Ga) =======================')
+                    resS=homog_Ga_sparse(Agas, pars_sparse)
+                    print('mean of solution={}'.format(resS.Fu.mean()))
+                    print('homogenised properties (component 11) = {}'.format(resS.AH))
+                    print('norm(resP)={}'.format(resS.solver['norm_res']))
+                elif method in ['GaNi',1]:
+                    print('\n== SPARSE solver with preconditioner (GaNi) =======================')
+                    resS=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
+                    print('mean of solution={}'.format(resS.Fu.mean()))
+                    print('homogenised properties (component 11) = {}'.format(resS.AH))
+                    print('iterations={}'.format(resS.solver['kit']))
+                    print('norm(resP)={}'.format(resS.solver['norm_res']))
+                    print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
+                    print("solution discrepancy", (resS.AH - resP.AH)/resP.AH)
 
-                    # PROBLEM DEFINITION ######################################################
-                    if method in ['Ga',0]:
-                        print('\n== SPARSE solver with preconditioner (Ga) =======================')
-                        resS=homog_Ga_sparse(Agas, pars_sparse)
-                        print('mean of solution={}'.format(resS.Fu.mean()))
-                        print('homogenised properties (component 11) = {}'.format(resS.AH))
-                        print('norm(resP)={}'.format(resS.solver['norm_res']))
-                    elif method in ['GaNi',1]:
-                        print('\n== SPARSE solver with preconditioner (GaNi) =======================')
-                        resS=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-                        print('mean of solution={}'.format(resS.Fu.mean()))
-                        print('homogenised properties (component 11) = {}'.format(resS.AH))
-                        print('iterations={}'.format(resS.solver['kit']))
-                        print('norm(resP)={}'.format(resS.solver['norm_res']))
-                        print('memory efficiency = {0}/{1} = {2}'.format(resS.Fu.memory, resP.Fu.val.size, resS.Fu.memory/resP.Fu.val.size))
-                        print("solution discrepancy", (resS.AH - resP.AH)/resP.AH)
+                if (resS.AH - resP.AH)/resP.AH <= err_tol:
+                    rank_list[counter][i]=r
+                    sparse_time_list[counter][i]=resS.time
+                    memory_list[counter][i]=resS.Fu.memory/resP.Fu.val.size # memory efficiency
+                    print("tensorsLowRank solver time:",sparse_time_list[counter])
+                    print("full solver time:",full_time_list)
+                    print("rank:",rank_list[counter])
+                    break
 
-                    if (resS.AH - resP.AH)/resP.AH <= err_tol:
-                        rank_list[counter][i]=r
-                        sparse_time_list[counter][i]=resS.time
-                        memory_list[counter][i]=resS.Fu.memory/resP.Fu.val.size # memory efficiency
-                        print("tensorsLowRank solver time:",sparse_time_list[counter])
-                        print("full solver time:",full_time_list)
-                        print("rank:",rank_list[counter])
-                        break
+    print("tensorsLowRank solver time:",sparse_time_list)
+    print("full solver time:",full_time_list)
+    print("rank:",rank_list)
 
-        print("tensorsLowRank solver time:",sparse_time_list)
-        print("full solver time:",full_time_list)
-        print("rank:",rank_list)
+    pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p"
+                             .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p"
+                                     .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
+                                           .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
+                                           .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(rank_list[0], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
+                                   .format(data_folder,dim, material,kind_list[kind]), "wb"))
+    pickle.dump(rank_list[1], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
+                                   .format(data_folder,dim, material,kind_list[kind]), "wb"))
 
-        pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p"
-                                 .format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(full_time_list, open("{}/dim_{}/mat_{}/full_time_list_{}.p"
-                                         .format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[0], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
-                                               .format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(sparse_time_list[1], open(("{}/dim_{}/mat_{}/sparse_time_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
-                                               .format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[0], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[0])+'.p')
-                                       .format(data_folder,dim, material,kind_list[kind]), "wb"))
-        pickle.dump(rank_list[1], open(("{}/dim_{}/mat_{}/rank_list_{}_"+"{:.0e}".format(err_tol_list[1])+'.p')
-                                       .format(data_folder,dim, material,kind_list[kind]), "wb"))
+print('END')
