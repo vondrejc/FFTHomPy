@@ -391,3 +391,12 @@ def div_tensor(N, Y=None, fft_form=fft_form_default):
     hGrad=grad_tensor(N, Y=Y, fft_form=fft_form)
     hGrad.multype='div'
     return hGrad
+
+def outer(X, Y):
+    assert(np.allclose(X.N, Y.N))
+    Xpshp=np.prod(X.shape)
+    Ypshp=np.prod(Y.shape)
+    val=np.einsum('i...,j...->ij...', X.val.reshape((Xpshp,)+X.N), Y.val.reshape((Ypshp,)+X.N))
+    XoY=X.copy(name='outer({},{})'.format(X.name, Y.name), order=X.order+Y.order,
+               val=val.reshape(X.shape+Y.shape+X.N))
+    return XoY
