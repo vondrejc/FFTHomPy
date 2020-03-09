@@ -76,12 +76,14 @@ class TensorFuns(Representation):
             ss+='{0}val = \n{1}'.format(skip, str(self.val))
         return ss
 
-    def get_N_real(self, N):
+    @staticmethod
+    def get_N_real(N):
         N_rfft=np.copy(N)
-        N_rfft[-1]=int(np.fix(N[-1]/2)+1)
+        N_rfft[-1]=int(np.fix(N[-1]/2)+1) # N[-1]//2+1
         return tuple(N_rfft)
 
-    def get_N(self, N_rfft):
+    @staticmethod
+    def get_N(N_rfft):
         N=np.copy(N_rfft)
         N[-1]=N_rfft[-1]*2-1
         return tuple(N)
@@ -101,7 +103,10 @@ class Tensor(TensorFuns):
             self.val=val
             self.order=int(order)
             self.shape=self.val.shape[:order]
-            self.N=tuple(np.array(N, dtype=np.int))
+            if fft_form in ['r'] and Fourier:
+                self.N=tuple(np.array(N, dtype=np.int))
+            else:
+                self.N=self.val.shape[order:]
             self._set_fft(fft_form)
 
         elif shape is not None and N is not None: # define: shape + N
