@@ -33,8 +33,8 @@ depends on the following numerical libraries:
 
 The code is based on the following papers, where you can find more theoretical information.
 
-- J. Vondřejc, D. Liu, M. Ladecký, and H.G. Matthies: *FFT-Based Homogenisation Accelerated by Low-Rank Tensor Approximations.* 2019. arXiv:1902.07455
-- J. Vondřejc, T.W.J. de Geus: Energy-based comparison between the Fourier--Galerkin method and the finite element method. Journal of Computational and Applied Mathematics. 2019. https://doi.org/10.1016/j.cam.2019.112585
+- J. Vondřejc, D. Liu, M. Ladecký, and H.G. Matthies: *FFT-Based Homogenisation Accelerated by Low-Rank Tensor Approximations.* Computer Methods in Applied Mechanics and Engineering, 364, pp. 112890, 2020. https://doi.org/10.1016/j.cma.2020.112890
+- J. Vondřejc, T.W.J. de Geus: Energy-based comparison between the Fourier--Galerkin method and the finite element method. Journal of Computational and Applied Mathematics. 374, pp. 112585, 2020. https://doi.org/10.1016/j.cam.2019.112585
 - J. Zeman, T. W. J. de Geus, J. Vondřejc, R. H. J. Peerlings, and M. G. D. Geers: *A finite element perspective on non-linear FFT-based micromechanical simulations.* International Journal for Numerical Methods in Engineering, 111 (10), pp. 903-926, 2017. arXiv:1601.05970
 - N. Mishra, J. Vondřejc, J. Zeman: *A comparative study on low-memory iterative solvers for FFT-based homogenization of periodic media.* Journal of Computational Physics, 321, pp. 151-168, 2016. arXiv:1508.02045
 - J. Vondřejc: *Improved guaranteed computable bounds on homogenized properties of periodic media by Fourier-Galerkin method with exact integration.* International Journal for Numerical Methods in Engineering, 107 (13), pp.~1106-1135, 2016. arXiv:1412.2033
