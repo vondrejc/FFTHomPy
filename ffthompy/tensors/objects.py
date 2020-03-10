@@ -7,7 +7,7 @@ import numpy as np
 from ffthompy.general.base import Representation
 from ffthompy.trigpol import mean_index, fft_form_default, get_Nodd
 from ffthompy.mechanics.matcoef import ElasticTensor
-from ffthompy.trigpol import enlarge, decrease, get_inverse
+from ffthompy.trigpol import enlarge, decrease, get_inverse, Grid
 from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn
 import itertools
 from copy import copy
@@ -90,7 +90,7 @@ class TensorFuns(Representation):
 
 
 class Tensor(TensorFuns):
-    keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin')
+    keys=('name','val','order','Y','N','multype','Fourier','fft_form','origin') # default keys
 
     def __init__(self, name='', val=None, order=None, shape=None, N=None, Y=None,
                  multype='scal', Fourier=False, fft_form=fft_form_default, origin=0):
@@ -220,8 +220,9 @@ class Tensor(TensorFuns):
     def __call__(self, *args, **kwargs):
         return self.__mul__(*args, **kwargs)
 
-    def __mul__(self, Y, *args, **kwargs):
-        multype=self.multype
+    def __mul__(self, Y, multype=None, *args, **kwargs):
+        if multype is None:
+            multype=self.multype
         X=self
         assert(X.Fourier==Y.Fourier)
         assert(X.fft_form==Y.fft_form)
@@ -238,7 +239,10 @@ class Tensor(TensorFuns):
         elif multype in ['div']:
             return einsum('i...,i...->...', X, Y)
         else:
-            raise ValueError()
+            try:
+                return einsum(multype, X, Y)
+            except:
+                raise ValueError()
 
     def inv(self):
         assert(self.Fourier is False)
@@ -464,8 +468,8 @@ class Tensor(TensorFuns):
 
     def decrease(self, M):
         """
-        It enlarges a trigonometric polynomial by adding zeros to the Fourier
-        coefficients with high frequencies.
+        As a dual to enlarge, it project/reduces a trigonometric polynomial by
+        removing Fourier coefficients with high frequencies.
         """
         assert(self.Fourier)
         if np.allclose(self.N, M):
@@ -505,6 +509,29 @@ class Tensor(TensorFuns):
         if not Fourier:
             Y=Y.fourier()
         return Y
+
+    def subfield(self, Y=None, M=None):
+        """
+        Return the subfield of the tensor depending either on the PUC size (Y) or
+        number of points M. This is useful e.g. for stochastic computations to avoid correlation
+        because of periodicity. As default, the subfield in the middle of the domain is taken.
+        """
+        N=np.array(self.N)
+
+        if Y is None and M is None:
+            raise ValueError('Either Y or M has to be specified.')
+        elif Y is not None:
+            M=np.ceil(Y/self.Y*N).astype(np.int)
+        elif M is not None:
+            M=np.ceil(M).astype(np.int)
+        elif Y is None and M is None:
+            raise ValueError('Only one of Y and M can be specified.')
+
+        ind=[slice(None) for i in range(self.shape.__len__())]
+        beg=np.round((N-M)/2).astype(np.int)
+        ind=tuple(ind+[slice(beg[i], beg[i]+M[i]) for i in range(self.dim)])
+        val=self[ind]
+        return self.copy(val=val)
 
     def plot(self, ind=slice(None), N=None, filen=None, ptype='imshow'):
         if N is None:
