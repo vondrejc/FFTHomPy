@@ -129,16 +129,16 @@ class TensorTrain(vector, LowRankTensorFuns):
     def enlarge(self, M):
         assert(self.Fourier is True)
 
-        M=np.array(M, dtype=np.int)
+        M=np.array(M, dtype=int)
         N=np.array(self.n)
 
         if np.allclose(M, N):
             return self
         if self.fft_form in ['c']:
-            ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-            iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+            ibeg=np.ceil(np.array(M-N, dtype=float)/2).astype(dtype=int)
+            iend=np.ceil(np.array(M+N, dtype=float)/2).astype(dtype=int)
         elif self.fft_form in ['sr']:
-            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            ibeg=np.zeros(N.shape).astype(dtype=int)
             iend=N
 
         cl=self.to_list(self)
@@ -158,14 +158,14 @@ class TensorTrain(vector, LowRankTensorFuns):
     def decrease(self, M):
         assert(self.Fourier is True)
 
-        M=np.array(M, dtype=np.int)
+        M=np.array(M, dtype=int)
         N=np.array(self.n)
         assert(np.any(np.less(M, N)))
         if self.fft_form in ['c']:
-            ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-            iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+            ibeg=np.trunc(np.array(N-M+(M % 2), dtype=float)/2).astype(dtype=int)
+            iend=np.trunc(np.array(N+M+(M % 2), dtype=float)/2).astype(dtype=int)
         elif self.fft_form in ['sr']:
-            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            ibeg=np.zeros(N.shape).astype(dtype=int)
             iend=M
 
         cl=self.to_list(self)
@@ -287,9 +287,9 @@ class TensorTrain(vector, LowRankTensorFuns):
         return self._repr(keys)
 
     def truncate(self, tol=None, rank=None, fast=False):
-        if np.any(tol) is None and np.any(rank) is None:
+        if tol is None and rank is None:
             return self
-        elif np.any(tol) is None and np.all(rank>=max(self.r)) is True:
+        elif tol is None and np.all(np.asarray(rank) >= max(self.r)):
             return self
         else:
             if tol is None: tol=1e-14
@@ -329,7 +329,7 @@ class TensorTrain(vector, LowRankTensorFuns):
             return res
 
     def orthogonalise(self, direction='lr', r_output=False):
-        """Orthogonalise the list of cores of a TT. If direction is 'lr' it does a left to right sweep of qr decompositions,
+        """Orthogonalise the list of cores of a TT. If direction == 'lr' it does a left to right sweep of qr decompositions,
         makes the TT "left orthogonal", i.e. if the i-th core is reshaped to shape (r[i]*n[i],r[i+1]), it has orthogonal columns.
         While with direction 'rl' the TT would be made "right orthogonal", i.e. if the i-th core is reshaped to
         shape (r[i], n[i]*r[i+1]), it has orthogonal rows.

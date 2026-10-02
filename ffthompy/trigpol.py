@@ -14,10 +14,10 @@ class Grid():
         ZNl[i][j]\in\set{Z} : -N[i]/2 <= ZNl[i] < N[i]/2
         """
         ZNl = []
-        N = np.atleast_1d(np.array(N, dtype=np.int))
+        N = np.atleast_1d(np.array(N, dtype=int))
         for m in range(N.size):
-            ZNl.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5),
-                                 dtype=np.int))
+            ZNl.append(np.arange(np.trunc(-N[m]/2.), np.trunc(N[m]/2.+0.5),
+                                 dtype=int))
         if fft_form in ['r',0]:
             return [np.fft.ifftshift(val) for val in ZNl]
         else:
@@ -31,10 +31,10 @@ class Grid():
         """
         xil = []
         for m in np.arange(np.size(N)):
-            xil.append(np.arange(np.fix(-N[m]/2.), np.fix(N[m]/2.+0.5))/Y[m])
+            xil.append(np.arange(np.trunc(-N[m]/2.), np.trunc(N[m]/2.+0.5))/Y[m])
         if fft_form in ['r',]:
             xil=[np.fft.ifftshift(xi) for xi in xil]
-            xil[-1] = xil[-1][:int(np.fix(N[-1]/2)+1)]
+            xil[-1] = xil[-1][:int(np.trunc(N[-1]/2)+1)]
         elif fft_form in [0]:
             xil = [np.fft.ifftshift(xi) for xi in xil]
         return xil
@@ -63,7 +63,7 @@ class Grid():
         coord = np.zeros(np.hstack([d, N]))
         for ii in np.arange(d):
             x = Y[ii]*ZNl[ii]/N[ii]
-            Nshape = np.ones(d, dtype=np.int)
+            Nshape = np.ones(d, dtype=int)
             Nshape[ii] = N[ii]
             Nrep = np.copy(N)
             Nrep[ii] = 1
@@ -90,7 +90,7 @@ class TrigPolBasis(Grid):
         ZNl = self.get_ZNl(self.N)[0]
         x_nodes = ZNl*self.Y/self.N
         vals = np.zeros_like(x_nodes)
-        ind = self.order + np.fix(self.N/2)
+        ind = self.order + np.trunc(self.N/2)
         vals[ind] = 1
         return x_nodes, vals
 
@@ -175,16 +175,16 @@ def enlarge(xN, M):
     M : array like
         number of grid points
     """
-    M = np.array(M, dtype=np.float)
-    N = np.array(xN.shape, dtype=np.float)
+    M = np.array(M, dtype=float)
+    N = np.array(xN.shape, dtype=float)
     if np.allclose(M, N):
         return xN
 
-    ibeg = np.ceil((M-N)/2).astype(dtype=np.int)
-    iend = np.ceil((M+N)/2).astype(dtype=np.int)
+    ibeg = np.ceil((M-N)/2).astype(dtype=int)
+    iend = np.ceil((M+N)/2).astype(dtype=int)
 
     slc=[slice(ibeg[i],iend[i],1) for i in range(N.size)]
-    xM = np.zeros(M.astype(dtype=np.int), dtype=xN.dtype)
+    xM = np.zeros(M.astype(dtype=int), dtype=xN.dtype)
     xM[tuple(slc)]=xN
     return xM
 
@@ -205,10 +205,10 @@ def decrease(xN, M):
     M : array like
         number of grid points
     """
-    M = np.array(M, dtype=np.float)
-    N = np.array(xN.shape, dtype=np.float)
-    ibeg = np.fix((N-M+(M % 2))/2).astype(dtype=np.int)
-    iend = np.fix((N+M+(M % 2))/2).astype(dtype=np.int)
+    M = np.array(M, dtype=float)
+    N = np.array(xN.shape, dtype=float)
+    ibeg = np.trunc((N-M+(M % 2))/2).astype(dtype=int)
+    iend = np.trunc((N+M+(M % 2))/2).astype(dtype=int)
 
     slc=[slice(ibeg[i],iend[i],1) for i in range(N.size)]
     return xN[tuple(slc)]
@@ -219,6 +219,6 @@ def get_Nodd(N):
 
 def mean_index(N, fft_form=fft_form_default):
     if fft_form in [0, 'r']:
-        return tuple(np.zeros_like(N, dtype=np.int))
+        return tuple(np.zeros_like(N, dtype=int))
     elif fft_form in ['c']:
-        return tuple(np.array(np.fix(np.array(N)/2), dtype=np.int))
+        return tuple(np.array(np.trunc(np.array(N)/2), dtype=int))

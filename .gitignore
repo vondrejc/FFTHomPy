@@ -6,7 +6,12 @@
 docs/_build/
 
 # auxiliary
-*test*
+__pycache__/
+.pytest_cache/
+.venv/
+*.egg-info/
+dist/
+build/
 *.eps
 *.pdf
 *.pkl

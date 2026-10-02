@@ -171,7 +171,7 @@ class Tucker(CanoTensor):
             if fast:
                 if self.order>3:
                     warnings.warn('The Tucker fast truncation is not implemented for Tucker with dim > 3, running normal truncation.')
-                elif np.any(tol) is None and np.any(rank) is None:
+                elif tol is None and rank is None:
                     warnings.warn('No target rank of tol specified,  running normal truncation.')
                 else:
                     ratio=10 # keep ratio-times more bases than the target rank before the optimal truncation
@@ -182,7 +182,7 @@ class Tucker(CanoTensor):
 
                     for i in range(self.order):
                         slice_norm=norm(core,axis=tuple(np.setdiff1d(range(self.order), i)))
-                        if np.any(tol) is not None:
+                        if tol is not None:
                             select_ind = np.argwhere(slice_norm >= (1e-3)*tol[i]*np.sum(slice_norm)).squeeze()
                         else:
                             trun_rank = np.minimum(ratio*rank[i],self.r[i])
@@ -240,10 +240,10 @@ class Tucker(CanoTensor):
 #        if fast:
 #            warnings.warn('The fast truncation is not implemented for Tucker.')
 
-        if np.any(tol) is None and np.any(rank) is None:
+        if tol is None and rank is None:
             # print ("Warning: No truncation criteria input, truncation aborted!")
             return self
-        elif np.any(tol) is None and np.all(rank>=self.r) is True:
+        elif tol is None and np.all(np.asarray(rank) >= self.r):
             # print ("Warning: Truncation rank not smaller than the original ranks, truncation aborted!")
             return self
 
@@ -259,7 +259,7 @@ class Tucker(CanoTensor):
         core=new_obj.core
 
         # to determine the rank of truncation
-        if np.any(tol) is not None:
+        if tol is not None:
             rank=np.zeros((self.order), dtype=int)
             # determine the truncation rank so that (1.0-tol)*100% of the norm of the core in that direction  is perserved.
             sorted_norm=[]
@@ -377,16 +377,16 @@ if __name__=='__main__':
     t=t1*t2
     print(t)
 
-    start = time.clock()
+    start = time.perf_counter()
     tt=t.truncate(rank=2, fast=False)
-    print("time is {}".format(time.clock() - start))
+    print("time is {}".format(time.perf_counter() - start))
 
 #    print(tt)
     print((t-tt).norm())
 
-    start = time.clock()
+    start = time.perf_counter()
     tt2=t.truncate(rank=2, fast=True)
-    print("time is {}".format(time.clock() - start))
+    print("time is {}".format(time.perf_counter() - start))
 
     print((t-tt2).norm())
 #    # this is a rank-2 tensor

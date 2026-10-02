@@ -4,6 +4,12 @@ from ffthompy.general.base import Timer
 from ffthompy.matvecs import VecTri
 from ffthompy.tensors import Tensor
 import scipy.sparse.linalg as spslin
+from inspect import signature
+
+
+def _scipy_tolerance(solver, tolerance):
+    """Accept the tolerance keyword used by the installed SciPy release."""
+    return {'rtol' if 'rtol' in signature(solver).parameters else 'tol': tolerance}
 
 def linear_solver(Afun, B, ATfun=None, x0=None, par=None,
                   solver=None, callback=None):
@@ -29,26 +35,30 @@ def linear_solver(Afun, B, ATfun=None, x0=None, par=None,
         if isinstance(x0, np.ndarray):
             x0vec=x0.ravel()
         else:
-            x0vec=x0.vec()
+            x0vec=np.asarray(x0.vec()).ravel()
 
         if solver in ['scipy.sparse.linalg.cg','scipy_cg']:
             Afun.define_operand(B)
-            Afunvec = spslin.LinearOperator(Afun.matshape, matvec=Afun.matvec,
+            Afunvec = spslin.LinearOperator(Afun.matshape,
+                                            matvec=lambda x: np.asarray(Afun.matvec(x)).ravel(),
                                             dtype=np.float64)
-            xcol, info = spslin.cg(Afunvec, B.vec(), x0=x0vec,
-                                   tol=par['tol'], maxiter=par['maxiter'],
+            xcol, info = spslin.cg(Afunvec, np.asarray(B.vec()).ravel(), x0=x0vec,
+                                   **_scipy_tolerance(spslin.cg, par['tol']),
+                                   maxiter=par['maxiter'],
                                    M=None, callback=callback)
             info = {'info': info}
         elif solver in ['scipy.sparse.linalg.bicg','scipy_bicg']:
             Afun.define_operand(B)
             ATfun.define_operand(B)
-            Afunvec = spslin.LinearOperator(Afun.shape, matvec=Afun.matvec,
-                                            rmatvec=ATfun.matvec, dtype=np.float64)
-            xcol, info = spslin.bicg(Afunvec, B.vec(), x0=x0.vec(),
-                                     tol=par['tol'], maxiter=par['maxiter'],
+            Afunvec = spslin.LinearOperator(Afun.matshape,
+                                            matvec=lambda x: np.asarray(Afun.matvec(x)).ravel(),
+                                            rmatvec=lambda x: np.asarray(ATfun.matvec(x)).ravel(),
+                                            dtype=np.float64)
+            xcol, info = spslin.bicg(Afunvec, np.asarray(B.vec()).ravel(), x0=x0vec,
+                                     **_scipy_tolerance(spslin.bicg, par['tol']),
+                                     maxiter=par['maxiter'],
                                      M=None, callback=callback)
-        res = dict()
-        res['info'] = info
+            info = {'info': info}
         x = B.empty_like(name='x')
         x.val = np.reshape(xcol, B.val.shape)
     else:

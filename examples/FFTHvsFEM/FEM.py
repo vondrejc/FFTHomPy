@@ -6,7 +6,7 @@ from fenics import (Constant, FunctionSpace, UnitSquareMesh, UnitCubeMesh, inner
 
 # PARAMETERS
 dim   = 2   # dimension (works for 2D and 3D)
-N     = 5*np.ones(dim, dtype=np.int) # number of voxels (assumed equal for all directions)
+N     = 5*np.ones(dim, dtype=int) # number of voxels (assumed equal for all directions)
 phase = 10. # material contrast
 order = 1   # polynomial order in FE space
 

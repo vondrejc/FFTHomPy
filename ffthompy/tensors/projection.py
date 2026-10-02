@@ -5,7 +5,7 @@ import itertools
 
 def scalar(N, Y, fft_form=fft_form_default):
     dim = np.size(N)
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
 
     xi = Grid.get_freq(N, Y, fft_form=fft_form)
     N_fft=tuple(xi[i].size for i in range(dim))
@@ -31,13 +31,13 @@ def scalar(N, Y, fft_form=fft_form_default):
     return G0l, G1l, G2l
 
 def elasticity_small_strain(N, Y, fft_form=fft_form_default):
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
     dim = N.size
     assert(dim==3)
     freq = Grid.get_freq(N, Y, fft_form=fft_form)
     N_fft=tuple(freq[i].size for i in range(dim))
-    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N_fft]))
-    delta  = lambda i,j: np.float(i==j)
+    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=int), N_fft]))
+    delta  = lambda i,j: float(i==j)
 
     for i, j, k, l in itertools.product(list(range(dim)), repeat=4):
         for x, y, z in np.ndindex(*N_fft):
@@ -51,13 +51,13 @@ def elasticity_small_strain(N, Y, fft_form=fft_form_default):
     return Ghat_tensor
 
 def elasticity_large_deformation(N, Y, fft_form=fft_form_default):
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
     dim = N.size
     assert(dim==3)
     freq = Grid.get_freq(N, Y, fft_form=fft_form)
     N_fft=tuple(freq[i].size for i in range(dim))
-    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=np.int), N_fft]))
-    delta  = lambda i,j: np.float(i==j)
+    Ghat = np.zeros(np.hstack([dim*np.ones(4, dtype=int), N_fft]))
+    delta  = lambda i,j: float(i==j)
 
     for i, j, k, l in itertools.product(list(range(dim)), repeat=4):
         for x, y, z in np.ndindex(*N_fft):

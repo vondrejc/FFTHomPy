@@ -42,7 +42,7 @@ class LowRankMaterial(Material):
             hAM=FAs.decrease(Nbar)
         elif np.all(np.less(P, Nbar)):
             factor=np.ceil(np.array(Nbar, dtype=np.float64)/P)
-            hAM0per=tile(FAs, 2*np.array(factor, dtype=np.int)-1)
+            hAM0per=tile(FAs, 2*np.array(factor, dtype=int)-1)
             hAM=hAM0per.decrease(Nbar)
 
         WFAs=(Wraw*hAM).fourier(real_output=True)
@@ -91,7 +91,7 @@ def get_weights_con(h, Nbar, Y, kind):
     ZN2l=Grid.get_ZNl(Nbar, fft_form='c')
     Wphi=[]
     for ii in np.arange(dim):
-        Nshape=np.ones(dim, dtype=np.int)
+        Nshape=np.ones(dim, dtype=int)
         Nshape[ii]=Nbar[ii]
         Nrep=np.copy(Nbar)
         Nrep[ii]=1
@@ -126,7 +126,7 @@ def get_weights_lin(h, Nbar, Y, kind):
     ZN2l=Grid.get_ZNl(Nbar, fft_form='c')
     Wphi=[]
     for ii in np.arange(d):
-        Nshape=np.ones(d, dtype=np.int)
+        Nshape=np.ones(d, dtype=int)
         Nshape[ii]=Nbar[ii]
         Nrep=np.copy(Nbar)
         Nrep[ii]=1

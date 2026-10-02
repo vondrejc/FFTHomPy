@@ -88,7 +88,7 @@ class DFT(TensorFuns):
         DTM=np.zeros([self.pN(), self.pN()], dtype=np.complex128)
         for ii, kk in enumerate(itertools.product(*tuple(ZN_output))):
             for jj, ll in enumerate(itertools.product(*tuple(ZN_input))):
-                DTM[ii, jj]=DFTcoef(np.array(kk, dtype=np.float),
+                DTM[ii, jj]=DFTcoef(np.array(kk, dtype=float),
                                       np.array(ll), N)
 
         DTMd=npmatlib.zeros([proddN, proddN], dtype=np.complex128)
@@ -242,11 +242,11 @@ def grad(X):
     freq=Grid.get_freq(X.N, X.Y, fft_form=X.fft_form)
     strfreq='xyz'
     coef=2*np.pi*1j
-    val=np.empty((X.dim,)+X.shape+X.N_fft, dtype=np.complex)
+    val=np.empty((X.dim,)+X.shape+X.N_fft, dtype=complex)
 
     for ii in range(X.dim):
         mul_str='{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
-        val[ii]=np.einsum(mul_str, coef*freq[ii], FX.val, dtype=np.complex)
+        val[ii]=np.einsum(mul_str, coef*freq[ii], FX.val, dtype=complex)
 
     if X.shape==(1,):
         gX.val=np.squeeze(val)
@@ -281,7 +281,7 @@ def div(X):
 
     for ii in range(X.dim):
         mul_str='{0},...{1}->...{1}'.format(strfreq[ii], strfreq[:dim])
-        dX.val+=np.einsum(mul_str, coef*freq[ii], FX.val[ii], dtype=np.complex)
+        dX.val+=np.einsum(mul_str, coef*freq[ii], FX.val[ii], dtype=complex)
 
     if not X.Fourier:
         iF=DFT(N=X.N, inverse=True, fft_form=dX.fft_form)
@@ -302,13 +302,13 @@ def potential_scalar(x, freq, mean_index):
     assert(dim==len(x.shape)-1)
     strfreq='xyz'
     coef=2*np.pi*1j
-    val=np.empty(x.shape[1:], dtype=np.complex)
+    val=np.empty(x.shape[1:], dtype=complex)
     for d in range(0, dim):
-        factor=np.zeros_like(freq[d], dtype=np.complex)
-        inds=np.setdiff1d(np.arange(factor.size, dtype=np.int), mean_index[d])
+        factor=np.zeros_like(freq[d], dtype=complex)
+        inds=np.setdiff1d(np.arange(factor.size, dtype=int), mean_index[d])
         factor[inds]=1./(coef*freq[d][inds])
         val[mean_index[:d]]=np.einsum('x,{0}->{0}'.format(strfreq[:dim-d]),
-                                      factor, x[d][mean_index[:d]], dtype=np.complex)
+                                      factor, x[d][mean_index[:d]], dtype=complex)
     return val
 
 def potential(X, small_strain=False):
@@ -372,7 +372,7 @@ def grad_tensor(N, Y=None, fft_form=fft_form_default):
     if Y is None:
         Y = np.ones_like(N)
     # scalar valued versions of gradient and divergence
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
     dim = N.size
 
     freq = Grid.get_xil(N, Y, fft_form=fft_form)

@@ -35,9 +35,9 @@ C += np.einsum('ij,...->ij...', 1*np.eye(dim), 1-phi)
 
 # tensor products / (inverse) Fourier transform / frequencies
 dot = lambda A, B: np.einsum('ij...,j...->i...', A, B)
-fft = lambda x, N: np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N))/np.prod(np.array(N))
-ifft = lambda x, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x), N))*np.prod(np.array(N))
-freq_fun = lambda N: np.arange(np.fix(-N/2.), np.fix(N/2.+0.5))
+fft = lambda x, N: np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N, axes=tuple(range(-len(N), 0))))/np.prod(np.array(N))
+ifft = lambda x, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x), N, axes=tuple(range(-len(N), 0))))*np.prod(np.array(N))
+freq_fun = lambda N: np.arange(np.trunc(-N/2.), np.trunc(N/2.+0.5))
 freq = [freq_fun(n) for n in dN]
 
 def get_weights(h): # calculation of integral weights of rectangular function
@@ -51,8 +51,8 @@ def get_weights(h): # calculation of integral weights of rectangular function
 def decrease(val, dN): # auxiliary function to remove unnecesary Fourier freq.
     dN=np.array(dN)
     N=np.array(val.shape[-dN.size:])
-    ibeg = np.array(np.fix((N-dN+(dN % 2))/2), dtype=np.int)
-    iend = np.array(np.fix((N+dN+(dN % 2))/2), dtype=np.int)
+    ibeg = np.array(np.trunc((N-dN+(dN % 2))/2), dtype=int)
+    iend = np.array(np.trunc((N+dN+(dN % 2))/2), dtype=int)
     if dN.size==2:
         return val[:,:,ibeg[0]:iend[0],ibeg[1]:iend[1]]
     elif dN.size==3:
@@ -66,7 +66,7 @@ elif P > dN:
     hCex = decrease(hC0, dN)
 elif P < dN:
     factor = np.max(np.ceil(np.array(dN) / np.array(P)))
-    hCper = np.tile(hC0, int(2*factor-1)*np.ones(dim, dtype=np.int))
+    hCper = np.tile(hC0, int(2*factor-1)*np.ones(dim, dtype=int))
     hCex = decrease(hCper, dN)
 Cex = ifft(np.einsum('ij...,...->ij...', hCex, get_weights(1./np.array(P))), dN).real
 
@@ -96,14 +96,14 @@ A  = lambda x: dot(Cex, x.reshape(vec_shape))
 GA = lambda x: G(A(x))
 
 # initiate strain/stress (2nd order tensor for each grid point)
-X = np.zeros(vec_shape, dtype=np.float)
+X = np.zeros(vec_shape, dtype=float)
 x = X.reshape(-1)
 # macroscopic value
 E = np.zeros_like(X); E[0] = 1.
 b = -GA(E.reshape(-1))
 
 # iterative solution of the linear system
-Alinoper = LinearOperator(shape=(x.size, x.size), matvec=GA, dtype=np.float)
+Alinoper = LinearOperator(shape=(x.size, x.size), matvec=GA, dtype=float)
 x, info = cg(A=Alinoper, b=b, x0=X.reshape(-1)) # conjugate gradients
 state = x.reshape(vec_shape) + E
 flux = dot(Cex, state)

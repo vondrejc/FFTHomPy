@@ -121,8 +121,7 @@ A.name='material'
 print(A)
 
 print("""
-The values of material coefficients are stored in 'self.val', which is
-'numpy.ndarray' object of shape = (D, D) + tuple(N)
+The values of material coefficients are stored in 'self.val', which == 'numpy.ndarray' object of shape = (D, D) + tuple(N)
 here D=d*(d+1)/2 is a number of components of elasticity matrix in
 engineering notation, so
 A.val.shape =""")

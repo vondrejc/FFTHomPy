@@ -5,9 +5,9 @@ from functions import get_matinc, material_coef_at_grid_points, enlarge, square_
 
 # PARAMETERS
 dim   = 2 # dimension (works for 2D and 3D)
-N     = 5*np.ones(dim, dtype=np.int) # number of grid points
+N     = 5*np.ones(dim, dtype=int) # number of grid points
 phase = 10. # material contrast
-assert(np.array_equal(N % 2, np.ones(dim, dtype=np.int)))
+assert(np.array_equal(N % 2, np.ones(dim, dtype=int)))
 
 # auxiliary values
 ndof  = dim*np.prod(N) # number of degrees-of-freedom
@@ -26,7 +26,7 @@ for i,j in itertools.product(range(dim),repeat=2):
 Agani  = material_coef_at_grid_points(N, phase)
 dot    = lambda A,v: np.einsum('ij...,j...  ->i...',A,v)
 fft    = lambda V, N: np.fft.fftshift(np.fft.fftn (np.fft.ifftshift(V),N)) / np.prod(N)
-ifft   = lambda V, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(V),N)) * np.prod(N)
+ifft   = lambda V, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(V), N, axes=tuple(range(-len(N), 0)))) * np.prod(N)
 G_fun  = lambda V: np.real(ifft(dot(Ghat,fft(V, N)), N)).reshape(-1)
 A_fun  = lambda v: dot(Agani,v.reshape(vec_shape))
 GA_fun = lambda v: G_fun(A_fun(v))
@@ -52,7 +52,7 @@ Aga = np.einsum('ij...,...->ij...', mat+inc,   char_square) \
 
 # interpolation/projection of microscopic field on double grid
 Fe = fft(np.reshape(e, vec_shape), N)
-Fe2 = np.zeros((dim,)+tuple(dN), dtype=np.complex)
+Fe2 = np.zeros((dim,)+tuple(dN), dtype=complex)
 for di in range(dim):
     Fe2[di]=enlarge(Fe[di], dN)
 e2 = ifft(Fe2, dN).real

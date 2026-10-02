@@ -24,7 +24,7 @@ class CanoTensor(LowRankTensorFuns):
                 self.core=s
                 self.r=self.core.shape[0]
 
-                self.N=np.empty(self.order, dtype=np.int)
+                self.N=np.empty(self.order, dtype=int)
                 for ii in range(self.order):
                     self.N[ii]=self.basis[ii].shape[1]
             else:
@@ -41,7 +41,7 @@ class CanoTensor(LowRankTensorFuns):
 
             self.r=basis[0].shape[0] # since all basis share the same r
 
-            self.N=np.empty(self.order, dtype=np.int)
+            self.N=np.empty(self.order, dtype=int)
             for ii in range(self.order):
                 self.N[ii]=basis[ii].shape[1]
         else:
@@ -286,7 +286,7 @@ class CanoTensor(LowRankTensorFuns):
         dtype=self.basis[0].dtype
         assert(self.Fourier)
 
-        M=np.array(M, dtype=np.int)
+        M=np.array(M, dtype=int)
         N=np.array(self.N)
 
         if np.allclose(M, N):
@@ -296,10 +296,10 @@ class CanoTensor(LowRankTensorFuns):
         if isinstance(r, int):
             r=r*np.ones((self.order,), dtype=int)
         if self.fft_form in ['c']:
-            ibeg=np.ceil(np.array(M-N, dtype=np.float)/2).astype(dtype=np.int)
-            iend=np.ceil(np.array(M+N, dtype=np.float)/2).astype(dtype=np.int)
+            ibeg=np.ceil(np.array(M-N, dtype=float)/2).astype(dtype=int)
+            iend=np.ceil(np.array(M+N, dtype=float)/2).astype(dtype=int)
         elif self.fft_form in ['sr']:
-            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            ibeg=np.zeros(N.shape).astype(dtype=int)
             iend=N
 
         basis=[]
@@ -318,14 +318,14 @@ class CanoTensor(LowRankTensorFuns):
     def decrease(self, M):
         assert(self.Fourier is True)
 
-        M=np.array(M, dtype=np.int)
+        M=np.array(M, dtype=int)
         N=np.array(self.N)
         assert(np.all(np.less(M, N)))
         if self.fft_form in ['c']:
-            ibeg=np.fix(np.array(N-M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
-            iend=np.fix(np.array(N+M+(M % 2), dtype=np.float)/2).astype(dtype=np.int)
+            ibeg=np.trunc(np.array(N-M+(M % 2), dtype=float)/2).astype(dtype=int)
+            iend=np.trunc(np.array(N+M+(M % 2), dtype=float)/2).astype(dtype=int)
         elif self.fft_form in ['sr']:
-            ibeg=np.zeros(N.shape).astype(dtype=np.int)
+            ibeg=np.zeros(N.shape).astype(dtype=int)
             iend=M
 
         basis=[]
@@ -350,7 +350,7 @@ class CanoTensor(LowRankTensorFuns):
 
     def __rmul__(self, X):
 
-        if isinstance(X, np.float) or isinstance(X, np.int):
+        if isinstance(X, float) or isinstance(X, int):
             R=self.copy()
             R.core=X*self.core
         else:

@@ -14,7 +14,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
         if pp['kind'] in ['GaNi', 'gani']:
             order_name = ''
             Nname = ''
-            if A.name is not 'A_GaNi':
+            if A.name != 'A_GaNi':
                 A = mat.get_A_GaNi(pb.solve['N'], primaldual)
 
         elif pp['kind'] in ['Ga', 'ga']:
@@ -40,7 +40,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
 
         AH = assembly_matrix(A, solutions)
 
-        if primaldual is 'primal':
+        if primaldual == 'primal':
             matrices[name] = AH
         else:
             matrices[name] = np.linalg.inv(AH)

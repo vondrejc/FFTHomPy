@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from copy import copy, deepcopy
-import collections
+from collections.abc import Callable
 
 
 def get_base_dir():
@@ -33,7 +33,7 @@ class Representation():
 
         for key in keys:
             attr=getattr(self, key)
-            if isinstance(attr, collections.Callable):
+            if isinstance(attr, Callable):
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr()), (nstr-key.__len__())*' ')
             else:
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
@@ -68,11 +68,11 @@ class Timer():
 
     def start(self):
         self.vals = []
-        self.ttin = [time.process_time(), time.clock(), time.time()]
+        self.ttin = [time.process_time(), time.perf_counter(), time.time()]
 
     def measure(self, print_time=True):
         self.vals.append([time.process_time()-self.ttin[0],
-                          time.clock()-self.ttin[1],
+                          time.perf_counter()-self.ttin[1],
                           time.time()-self.ttin[2]])
         if print_time:
             print(self)

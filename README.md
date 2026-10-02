@@ -19,15 +19,23 @@ Tutorials can be found in a folder '/tutorial'.
 
 ## Requirements and installation
 
-No special installation is required. However, the folder with the code has to be in the python path.
+The current development version is `1.0.4.dev0`. It supports Python 3.11–3.14
+with NumPy 1.26.4 or newer and SciPy 1.11.4 or newer. uv selects releases
+compatible with the chosen Python version, including the latest NumPy and
+SciPy on Python 3.14. Install the package and run its tests with
+[uv](https://docs.astral.sh/uv/):
 
-The code is optimised for [Python](https://www.python.org) (version 3.6) and
-depends on the following numerical libraries:
-- [NumPy](http://www.numpy.org) (version 1.16) and
-- [SciPy](https://www.scipy.org) (version 1.3) for scientific computing as well as on the
-- [Matplotlib](https://matplotlib.org/) (version 3.1) for plotting
-- [StoPy](https://github.com/vondrejc/StoPy) for uncertainty quantification
-- [ttpy](https://github.com/oseledets/ttpy) Python implementation of the Tensor Train (TT)-Toolbox
+```sh
+uv sync
+uv run pytest
+```
+
+For plotting, use `uv sync --extra plot`. The Tensor Train functionality
+requires the legacy [ttpy](https://pypi.org/project/ttpy/) package, which is
+not installed by default; its tests are skipped when it is unavailable.
+The stochastic material examples additionally require
+[StoPy](https://github.com/vondrejc/StoPy). The package and its core tests do
+not require either of these legacy dependencies.
 
 ## References
 
@@ -41,4 +49,3 @@ The code is based on the following papers, where you can find more theoretical i
 - J. Vondřejc, J. Zeman, I. Marek: *Guaranteed upper-lower bounds on homogenized properties by FFT-based Galerkin method.* Computer Methods in Applied Mechanics and Engineering, 297, pp. 258–291, 2015. arXiv:1404.3614
 - J. Vondřejc, J. Zeman, I. Marek: *An FFT-based Galerkin method for homogenization of periodic media.* Computers and Mathematics with Applications, 68, pp. 156-173, 2014. arXiv:1311.0089
 - J. Zeman, J. Vondřejc, J. Novák and I. Marek: *Accelerating a FFT-based solver for numerical homogenization of periodic media by conjugate gradients.* Journal of Computational Physics, 229 (21), pp. 8065-8071, 2010. arXiv:1004.1122
-

@@ -1,5 +1,4 @@
 import numpy as np
-import scipy as sp
 from ffthompy.trigpol import Grid, get_Nodd, mean_index, fft_form_default
 from ffthompy.matvecs import Matrix
 from ffthompy.tensors import Tensor
@@ -33,7 +32,7 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         fft_form_r=False
 
     d = np.size(N)
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
     if NyqNul:
         Nred = get_Nodd(N)
     else:
@@ -52,7 +51,7 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
 
     ind_center = mean_index(Nred, fft_form=fft_form)
     for m in np.arange(d): # diagonal components
-        Nshape = np.ones(d, dtype=np.int)
+        Nshape = np.ones(d, dtype=int)
         Nshape[m] = Nred[m]
         Nrep = np.copy(Nred)
         Nrep[m] = 1
@@ -63,11 +62,11 @@ def scalar(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
 
     for m in np.arange(d): # upper diagonal components
         for n in np.arange(m+1, d):
-            NshapeM = np.ones(d, dtype=np.int)
+            NshapeM = np.ones(d, dtype=int)
             NshapeM[m] = Nred[m]
             NrepM = np.copy(Nred)
             NrepM[m] = 1
-            NshapeN = np.ones(d, dtype=np.int)
+            NshapeN = np.ones(d, dtype=int)
             NshapeN[n] = Nred[n]
             NrepN = np.copy(Nred)
             NrepN[n] = 1
@@ -129,7 +128,7 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
         fft_form_r=False
 
     xi = Grid.get_xil(N, Y, fft_form=fft_form)
-    N = np.array(N, dtype=np.int)
+    N = np.array(N, dtype=int)
     d = N.size
     D = int(d*(d+1)/2)
 
@@ -145,7 +144,7 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
     num = np.zeros(np.hstack([d, d, Nred]))
     norm2_xi = np.zeros(Nred)
     for mm in np.arange(d): # diagonal components
-        Nshape = np.ones(d, dtype=np.int)
+        Nshape = np.ones(d, dtype=int)
         Nshape[mm] = Nred[mm]
         Nrep = np.copy(Nred)
         Nrep[mm] = 1
@@ -160,11 +159,11 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
 
     for m in np.arange(d): # upper diagonal components
         for n in np.arange(m+1, d):
-            NshapeM = np.ones(d, dtype=np.int)
+            NshapeM = np.ones(d, dtype=int)
             NshapeM[m] = Nred[m]
             NrepM = np.copy(Nred)
             NrepM[m] = 1
-            NshapeN = np.ones(d, dtype=np.int)
+            NshapeN = np.ones(d, dtype=int)
             NshapeN[n] = Nred[n]
             NrepN = np.copy(Nred)
             NrepN[n] = 1
@@ -216,15 +215,15 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default):
                 G1h[m+3][n+3] = num[m][m]*num[n][n]/norm4_xi
         for m in np.arange(d):
             for n in np.arange(d):
-                ind = sp.setdiff1d(np.arange(d), [n])
+                ind = np.setdiff1d(np.arange(d), [n])
                 S[m][n+3] = (0 == (m == n))*2**.5*num[ind[0]][ind[1]]/norm2_xi
                 G1h[m][n+3] = 2**.5*num[m][m]*num[ind[0]][ind[1]]/norm4_xi
                 W[m][n] = num[m][m]/norm2_xi
                 W[n+3][m] = 2**.5*num[ind[0]][ind[1]]/norm2_xi
         for m in np.arange(d):
             for n in np.arange(d):
-                ind_m = sp.setdiff1d(np.arange(d), [m])
-                ind_n = sp.setdiff1d(np.arange(d), [n])
+                ind_m = np.setdiff1d(np.arange(d), [m])
+                ind_n = np.setdiff1d(np.arange(d), [n])
                 G1h[m+3][n+3] = 2*num[ind_m[0]][ind_m[1]] \
                     * num[ind_n[0]][ind_n[1]] / norm4_xi
     # symmetrization

@@ -1,5 +1,6 @@
 
 import unittest
+from importlib.util import find_spec
 import numpy as np
 from numpy.linalg import norm
 from ffthompy.tensorsLowRank.objects import SparseTensor
@@ -18,6 +19,11 @@ prt=PrintControl()
 
 class Test_tensorsLowRank(unittest.TestCase):
 
+    @staticmethod
+    def require_tt():
+        if find_spec('tt') is None:
+            raise unittest.SkipTest('Tensor Train tests require the legacy ttpy package')
+
     def setUp(self):
         self.T2d=np.random.rand(5, 10)
         self.T2dOther=np.random.rand(*self.T2d.shape)
@@ -29,6 +35,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         pass
 
     def test_sparse_solver(self):
+        self.require_tt()
         print('\nChecking homogenisation with low-rank tensor approximations...')
 
         tic=Timer('homogenisation')
@@ -96,6 +103,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         print('...ok')
 
     def test_tensorTrain(self):
+        self.require_tt()
         print('\nChecking TT ...')
 
         a=SparseTensor(kind='tt', val=self.T3d)
@@ -109,6 +117,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         print('...ok')
 
     def test_Fourier(self):
+        self.require_tt()
         print('\nChecking Fourier functions ...')
 
         for opt in [0,'c']:
@@ -149,6 +158,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         print('...ok')
 
     def test_Fourier_truncation(self):
+        self.require_tt()
         print('\nChecking TT truncation in Fourier domain ...')
         N = np.random.randint(20,50, size=3)
         a=np.arange(1,np.prod(N)+1).reshape(N)
@@ -236,6 +246,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         print('...ok')
 
     def test_orthogonalise(self):
+        self.require_tt()
         print('\nChecking orthogonalization functions ...')
 
         a=SparseTensor(kind='cano', val=self.T2d)
@@ -282,6 +293,7 @@ class Test_tensorsLowRank(unittest.TestCase):
         print('...ok')
 
     def test_mean(self):
+        self.require_tt()
         print('\nChecking method mean() ...')
         a=SparseTensor(kind='cano', val=self.T2d)
         self.assertAlmostEqual(np.mean(self.T2d), a.mean())

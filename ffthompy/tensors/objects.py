@@ -79,7 +79,7 @@ class TensorFuns(Representation):
     @staticmethod
     def get_N_real(N):
         N_rfft=np.copy(N)
-        N_rfft[-1]=int(np.fix(N[-1]/2)+1) # N[-1]//2+1
+        N_rfft[-1]=int(np.trunc(N[-1]/2)+1) # N[-1]//2+1
         return tuple(N_rfft)
 
     @staticmethod
@@ -104,30 +104,30 @@ class Tensor(TensorFuns):
             self.order=int(order)
             self.shape=self.val.shape[:order]
             if fft_form in ['r'] and Fourier:
-                self.N=tuple(np.array(N, dtype=np.int))
+                self.N=tuple(np.array(N, dtype=int))
             else:
                 self.N=self.val.shape[order:]
             self._set_fft(fft_form)
 
         elif shape is not None and N is not None: # define: shape + N
-            self.N=tuple(np.array(N, dtype=np.int))
+            self.N=tuple(np.array(N, dtype=int))
             self._set_fft(fft_form)
-            self.shape=tuple(np.array(shape, dtype=np.int))
+            self.shape=tuple(np.array(shape, dtype=int))
             self.order=len(self.shape)
 
             if not self.Fourier:
-                self.val=np.zeros(self.shape+self.N, dtype=np.float)
+                self.val=np.zeros(self.shape+self.N, dtype=float)
             else:
-                self.val=np.zeros(self.shape+self.N_fft, dtype=np.complex)
+                self.val=np.zeros(self.shape+self.N_fft, dtype=complex)
 
         else:
             raise ValueError('Initialization of Tensor.')
 
         self.dim=self.N.__len__()
         if Y is None:
-            self.Y=np.ones(self.dim, dtype=np.float)
+            self.Y=np.ones(self.dim, dtype=float)
         else:
-            self.Y=np.array(Y, dtype=np.float)
+            self.Y=np.array(Y, dtype=float)
 
         # definition of __mul__ operation
         self.multype=multype
@@ -453,14 +453,14 @@ class Tensor(TensorFuns):
                     val=np.concatenate((0.5*N0,C,0.5*N2.conj()), axis=ax)
 
             # enlarging the centered part with odd N
-            M = np.array(M, dtype=np.float)
-            N = np.array(val.shape[self.order:], dtype=np.float)
+            M = np.array(M, dtype=float)
+            N = np.array(val.shape[self.order:], dtype=float)
 
-            ibeg = np.ceil((M-N)/2).astype(np.int)
-            iend = np.ceil((M+N)/2).astype(np.int)
+            ibeg = np.ceil((M-N)/2).astype(int)
+            iend = np.ceil((M+N)/2).astype(int)
 
             slc=self.order*[slice(None)]+[slice(ibeg[i],iend[i],1) for i in range(N.size)]
-            newval = np.zeros(self.shape+tuple(M.astype(np.int)), dtype=self.val.dtype)
+            newval = np.zeros(self.shape+tuple(M.astype(int)), dtype=self.val.dtype)
             newval[tuple(slc)]=val
 
             R=self.copy(val=newval, N=M, fft_form='c')
@@ -521,14 +521,14 @@ class Tensor(TensorFuns):
         if Y is None and M is None:
             raise ValueError('Either Y or M has to be specified.')
         elif Y is not None:
-            M=np.ceil(Y/self.Y*N).astype(np.int)
+            M=np.ceil(Y/self.Y*N).astype(int)
         elif M is not None:
-            M=np.ceil(M).astype(np.int)
+            M=np.ceil(M).astype(int)
         elif Y is None and M is None:
             raise ValueError('Only one of Y and M can be specified.')
 
         ind=[slice(None) for i in range(self.shape.__len__())]
-        beg=np.round((N-M)/2).astype(np.int)
+        beg=np.round((N-M)/2).astype(int)
         ind=tuple(ind+[slice(beg[i], beg[i]+M[i]) for i in range(self.dim)])
         val=self[ind]
         return self.copy(val=val)
@@ -636,7 +636,7 @@ def scalar_product(y, x):
     return scal
 
 if __name__=='__main__':
-    N=np.array([4,4], dtype=np.int)
+    N=np.array([4,4], dtype=int)
     M=2*N
     u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
     u.randomize()

@@ -67,9 +67,9 @@ class Material():
             shape_funs = self.get_shape_functions(Nbar)
             val = np.zeros(self.conf['vals'][0].shape + shape_funs[0].shape)
             for ii in range(len(self.conf['inclusions'])):
-                if primaldual is 'primal':
+                if primaldual == 'primal':
                     Aincl = self.conf['vals'][ii]
-                elif primaldual is 'dual':
+                elif primaldual == 'dual':
                     Aincl = np.linalg.inv(self.conf['vals'][ii])
                 val += np.einsum('ij...,k...->ijk...', Aincl, shape_funs[ii])
             name = 'A_Ga'
@@ -80,7 +80,7 @@ class Material():
             coord = Grid.get_coordinates(P, self.Y)
             vals = self.evaluate(coord)
 
-            if primaldual is 'dual':
+            if primaldual == 'dual':
                 vals = vals.inv()
 
             h = self.Y/P
@@ -98,7 +98,7 @@ class Material():
                     hAM = decrease(hAM0, Nbar)
                 elif np.all(np.less(P, Nbar)):
                     factor = np.ceil(np.array(Nbar, dtype=np.float64)/2/P)
-                    hAM0per = np.tile(hAM0, 2*np.array(factor, dtype=np.int)+1)
+                    hAM0per = np.tile(hAM0, 2*np.array(factor, dtype=int)+1)
                     hAM = decrease(hAM0per, Nbar)
                 else:
                     msg = """This combination of double N (%s) and P (%s) "
@@ -118,7 +118,7 @@ class Material():
         """
         coord = Grid.get_coordinates(N, self.Y)
         A = self.evaluate(coord, tensor=tensor)
-        if primaldual is 'dual':
+        if primaldual == 'dual':
             A = A.inv()
         return A.shift()
 
@@ -127,7 +127,7 @@ class Material():
         Returns stiffness matrix for exact integration scheme for individual
         inclusions (square, circle, etc.).
         """
-        N2 = np.array(N2, dtype=np.int)
+        N2 = np.array(N2, dtype=int)
         inclusions = self.conf['inclusions']
         params = self.conf['params']
         positions = self.conf['positions']
@@ -224,7 +224,7 @@ class Material():
         topos = []
 
         # periodically enlarge coordinates
-        N = np.array(coord.shape[1:], dtype=np.int)
+        N = np.array(coord.shape[1:], dtype=int)
         cop = np.empty(np.hstack([dim, 3*N]))
         mapY = np.array([-1, 0, 1])
         for dd in np.arange(dim):
@@ -234,7 +234,7 @@ class Material():
             Nrep[dd] = 1
             vec = np.repeat(mapY*self.Y[dd], N[dd])
             Ymat = np.tile(np.reshape(vec, Nshape), Nrep)
-            cop[dd] = np.tile(coord[dd], 3*np.ones(dim, dtype=np.int)) + Ymat
+            cop[dd] = np.tile(coord[dd], 3*np.ones(dim, dtype=int)) + Ymat
 
         mapY = np.array([-1, 0, 1])
         Yiter = mapY[np.newaxis]
@@ -315,13 +315,13 @@ class Material():
 
 
 def get_shift_inclusion(N, h, Y):
-    N = np.array(N, dtype=np.int)
-    Y = np.array(Y, dtype=np.float)
+    N = np.array(N, dtype=int)
+    Y = np.array(Y, dtype=float)
     dim = N.size
     ZN = Grid.get_ZNl(N)
     SS = np.ones(N, dtype=np.complex128)
     for ii in np.arange(dim):
-        Nshape = np.ones(dim, dtype=np.int)
+        Nshape = np.ones(dim, dtype=int)
         Nshape[ii] = N[ii]
         Nrep = N
         Nrep[ii] = 1
@@ -350,7 +350,7 @@ def get_weights_con(h, Nbar, Y):
     ZN2l = Grid.get_ZNl(Nbar, fft_form='c')
     Wphi = np.ones(Nbar) / meas_puc
     for ii in np.arange(dim):
-        Nshape = np.ones(dim, dtype=np.int)
+        Nshape = np.ones(dim, dtype=int)
         Nshape[ii] = Nbar[ii]
         Nrep = np.copy(Nbar)
         Nrep[ii] = 1
@@ -380,7 +380,7 @@ def get_weights_lin(h, Nbar, Y):
     ZN2l = Grid.get_ZNl(Nbar, fft_form='c')
     Wphi = np.ones(Nbar) / meas_puc
     for ii in np.arange(d):
-        Nshape = np.ones(d, dtype=np.int)
+        Nshape = np.ones(d, dtype=int)
         Nshape[ii] = Nbar[ii]
         Nrep = np.copy(Nbar)
         Nrep[ii] = 1
@@ -409,7 +409,7 @@ def get_weights_circ(r, Nbar, Y):
     meas_puc = np.prod(Y)
     circ = 0
     for m in range(d):
-        Nshape = np.ones(d, dtype=np.int)
+        Nshape = np.ones(d, dtype=int)
         Nshape[m] = Nbar[m]
         Nrep = np.copy(Nbar)
         Nrep[m] = 1

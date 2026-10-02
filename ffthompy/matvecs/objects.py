@@ -128,7 +128,7 @@ class VecTri(FieldFun, Grid):
                 self.val=np.zeros(self.dN())
                 for m in np.arange(self.d):
                         self.val[m]=kwargs['macroval'][m]
-            elif valtype is 'ones':
+            elif valtype == 'ones':
                 self.name='ones'
                 self.val=np.ones(self.dN())
             elif valtype in ['random', 'rand']:
@@ -284,7 +284,7 @@ class VecTri(FieldFun, Grid):
                     val[m]=enlarge(self.val[m], M)
             return VecTri(name=self.name, val=val, Fourier=self.Fourier)
         elif np.all(np.less(M, self.N)):
-            val=np.zeros(np.hstack([self.d, M]), dtype=np.complex)
+            val=np.zeros(np.hstack([self.d, M]), dtype=complex)
             if self.Fourier is False:
                 Fval=DFT.fftnc(self.val, self.N)
             else:
@@ -610,9 +610,9 @@ class Matrix(FieldFun):
 
     def get_shifted_submatrix(self, ss=None):
         if ss is None:
-            ss=np.zeros(self.d, dtype=np.int)
+            ss=np.zeros(self.d, dtype=int)
         else:
-            ss=np.array(ss, dtype=np.int)
+            ss=np.array(ss, dtype=int)
         ind0=np.arange(0, self.N[0], 2)+1
         ind1=np.arange(0, self.N[1], 2)+1
         SM=Matrix(N=self.N/2)
@@ -763,7 +763,7 @@ class DFT(FieldFun):
         DTM=np.zeros([self.pN(), self.pN()], dtype=np.complex128)
         for ii, kk in enumerate(itertools.product(*tuple(ZNl))):
             for jj, ll in enumerate(itertools.product(*tuple(ZNl))):
-                DTM[ii, jj]=DFTcoef(np.array(kk, dtype=np.float),
+                DTM[ii, jj]=DFTcoef(np.array(kk, dtype=float),
                                       np.array(ll), N)
 
         DTMd=npmatlib.zeros([proddN, proddN], dtype=np.complex128)
@@ -788,7 +788,7 @@ class DFT(FieldFun):
         """
 #         return fft.fftshift(fft.fftn(fft.ifftshift(x), N))/np.prod(N)
         ax=tuple(np.setdiff1d(list(range(x.ndim)), list(range(x.ndim-N.__len__())), assume_unique=True))
-        return fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)/np.prod(N)
+        return fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N, axes=ax), ax)/np.prod(N)
 
     @staticmethod
     def ifftnc(Fx, N):
@@ -797,7 +797,7 @@ class DFT(FieldFun):
         """
 #         return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N))*np.prod(N)
         ax=tuple(np.setdiff1d(list(range(Fx.ndim)), list(range(Fx.ndim-N.__len__())), assume_unique=True))
-        return fft.fftshift(fft.ifftn(fft.ifftshift(Fx, ax), N), ax).real*np.prod(N)
+        return fft.fftshift(fft.ifftn(fft.ifftshift(Fx, ax), N, axes=ax), ax).real*np.prod(N)
 
 class LinOper():
     """
@@ -1173,8 +1173,8 @@ def enlargeF(xN, M):
     M : array like
         number of grid points
     """
-    N=np.array(xN.shape, dtype=np.int)
-    M=np.array(M, dtype=np.int)
+    N=np.array(xN.shape, dtype=int)
+    M=np.array(M, dtype=int)
     return np.real(DFT.ifftnc(enlarge(DFT.fftnc(xN, N), M), M))
 
 
@@ -1210,7 +1210,7 @@ def curl_norm(e, Y):
         Fe.append(np.zeros(N))
         xiM.append(np.zeros(N))
 
-    ind_mean=tuple(np.fix(N/2))
+    ind_mean=tuple(np.trunc(N/2))
     curl=[]
     e0=[]
     for m in np.arange(3):
@@ -1244,7 +1244,7 @@ def div_norm(j, Y):
     """
     N=np.array(np.shape(j[0]))
     d=np.size(N)
-    ind_mean=tuple(np.fix(N/2))
+    ind_mean=tuple(np.trunc(N/2))
     xil=VecTri.get_xil(N, Y)
     R=0
     j0=np.zeros(d)

@@ -12,7 +12,7 @@ import itertools
 
 def homog_Ga_full(Aga, pars):
     Nbar=Aga.N
-    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    N=np.array((np.array(Nbar)+1)/2, dtype=int)
     dim=Nbar.__len__()
     Y=np.ones(dim)
     _, Ghat, _=proj.scalar(N, Y)
@@ -41,7 +41,7 @@ def homog_Ga_full(Aga, pars):
 def homog_Ga_full_potential(Aga, pars):
 
     Nbar=Aga.N # double grid number
-    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    N=np.array((np.array(Nbar)+1)/2, dtype=int)
 
     dim=Nbar.__len__()
 
@@ -163,7 +163,7 @@ class Material_law():
 def homog_Ga_sparse(Agas, pars):
     debug=getattr(pars, 'debug', False)
     Nbar=Agas.N
-    N=np.array((np.array(Nbar)+1)/2, dtype=np.int)
+    N=np.array((np.array(Nbar)+1)/2, dtype=int)
     dim=Nbar.__len__()
     hGrad_s=sgrad_tensor(N, pars.Y, kind=pars.kind)
     Aniso=getattr(pars, 'Aniso', np.zeros([dim,dim]))

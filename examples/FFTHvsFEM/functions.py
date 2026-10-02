@@ -47,13 +47,13 @@ def enlarge(xN, M):
         number of grid points
     """
     xM = np.zeros(M, dtype=xN.dtype)
-    M = np.array(M, dtype=np.float)
-    N = np.array(xN.shape, dtype=np.float)
+    M = np.array(M, dtype=float)
+    N = np.array(xN.shape, dtype=float)
     if np.allclose(M, N):
         return xN
     dim = N.size
-    ibeg = np.ceil((M-N)/2).astype(dtype=np.int)
-    iend = np.ceil((M+N)/2).astype(dtype=np.int)
+    ibeg = np.ceil((M-N)/2).astype(dtype=int)
+    iend = np.ceil((M+N)/2).astype(dtype=int)
     if dim == 3:
         xM[ibeg[0]:iend[0], ibeg[1]:iend[1], ibeg[2]:iend[2]] = xN
     elif dim == 2:

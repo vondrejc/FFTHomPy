@@ -23,9 +23,9 @@ def scalar(problem):
     # Fourier projections
     _, hG1N, hG2N = proj.scalar(pb.solve['N'], pb.Y, NyqNul=True, tensor=True)
 
-    if pb.solve['kind'] is 'GaNi':
+    if pb.solve['kind'] == 'GaNi':
         Nbar = pb.solve['N']
-    elif pb.solve['kind'] is 'Ga':
+    elif pb.solve['kind'] == 'Ga':
         Nbar = 2*pb.solve['N'] - 1
         hG1N = hG1N.enlarge(Nbar)
         hG2N = hG2N.enlarge(Nbar)
@@ -45,12 +45,12 @@ def scalar(problem):
         # material coefficients
         mat = Material(pb.material)
 
-        if pb.solve['kind'] is 'GaNi':
+        if pb.solve['kind'] == 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
-        elif pb.solve['kind'] is 'Ga':
+        elif pb.solve['kind'] == 'Ga':
             A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
 
-        if primaldual is 'primal':
+        if primaldual == 'primal':
             GN = G1N
         else:
             GN = G2N
@@ -106,9 +106,9 @@ def elasticity(problem):
     _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb.solve['N'], pb.Y, NyqNul=True)
     del _
 
-    if pb.solve['kind'] is 'GaNi':
+    if pb.solve['kind'] == 'GaNi':
         Nbar = pb.solve['N']
-    elif pb.solve['kind'] is 'Ga':
+    elif pb.solve['kind'] == 'Ga':
         Nbar = 2*pb.solve['N'] - 1
         hG1hN = hG1hN.enlarge(Nbar)
         hG1sN = hG1sN.enlarge(Nbar)
@@ -130,12 +130,12 @@ def elasticity(problem):
         # material coefficients
         mat = Material(pb.material)
 
-        if pb.solve['kind'] is 'GaNi':
+        if pb.solve['kind'] == 'GaNi':
             A = mat.get_A_GaNi(pb.solve['N'], primaldual)
-        elif pb.solve['kind'] is 'Ga':
+        elif pb.solve['kind'] == 'Ga':
             A = mat.get_A_Ga(Nbar=Nbar, primaldual=primaldual)
 
-        if primaldual is 'primal':
+        if primaldual == 'primal':
             GN = G1N
         else:
             GN = G2N

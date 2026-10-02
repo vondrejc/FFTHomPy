@@ -22,7 +22,7 @@ class Test_solvers(unittest.TestCase):
         print('\nChecking projections...')
         dim=2
         n=5
-        N = n*np.ones(dim, dtype=np.int)
+        N = n*np.ones(dim, dtype=int)
 
         hG0N, hG1N, hG2N = scalar(N, Y=np.ones(dim))
         hG0Nt, hG1Nt, hG2Nt = scalar_tensor(N, Y=np.ones(dim))
@@ -36,7 +36,7 @@ class Test_solvers(unittest.TestCase):
         print('\nChecking solvers...')
         dim=2
         n=5
-        N = n*np.ones(dim, dtype=np.int)
+        N = n*np.ones(dim, dtype=int)
 
         _, hG1Nt, _ = scalar_tensor(N, Y=np.ones(dim))
 
@@ -45,7 +45,8 @@ class Test_solvers(unittest.TestCase):
 
         G1N=Operator(name='G1', mat=[[FiN, hG1Nt, FN]])
 
-        A=Tensor(name='A', val=np.einsum('ij,...->ij...', np.eye(dim), 1.+10.*np.random.random(N)),
+        A=Tensor(name='A', val=np.einsum('ij,...->ij...', np.eye(dim),
+                                         1.+10.*np.random.default_rng(0).random(N)),
                  order=2, N=N, multype=21)
 
         E=np.zeros((dim,)+dim*(n,)); E[0] = 1. # set macroscopic loading
@@ -67,8 +68,9 @@ class Test_solvers(unittest.TestCase):
         X,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver='CG')
 
         prt.disable()
-        for solver in ['CG', 'scipy_cg', 'richardson', 'chebyshev']:
-            x,_=linear_solver(Afun=GAfun, B=B, x0=x0, par=par, solver=solver)
+        for solver in ['CG', 'scipy_cg', 'scipy_bicg', 'richardson', 'chebyshev']:
+            x,_=linear_solver(Afun=GAfun, ATfun=GAfun, B=B,
+                              x0=x0, par=par, solver=solver)
             self.assertAlmostEqual(0, norm(X.val-x.val), delta=1e-8, msg=solver)
         prt.enable()
 

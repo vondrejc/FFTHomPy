@@ -5,9 +5,9 @@ from functions import material_coef_at_grid_points, get_matinc, square_weights
 
 # PARAMETERS
 dim   = 2 # dimension (works for 2D and 3D)
-N     = 5*np.ones(dim, dtype=np.int) # number of grid points
+N     = 5*np.ones(dim, dtype=int) # number of grid points
 phase = 10. # material contrast
-assert(np.array_equal(N % 2, np.ones(dim, dtype=np.int)))
+assert(np.array_equal(N % 2, np.ones(dim, dtype=int)))
 
 dN = 2*N-1 # grid value
 vec_shape=(dim,)+tuple(dN) # shape of the vector for storing DOFs
@@ -15,9 +15,9 @@ vec_shape=(dim,)+tuple(dN) # shape of the vector for storing DOFs
 # OPERATORS
 Agani = material_coef_at_grid_points(N, phase)
 dot   = lambda A, B: np.einsum('ij...,j...->i...', A, B)
-fft   = lambda x, N: np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N)) / np.prod(N)
-ifft  = lambda x, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x), N)) * np.prod(N)
-freq  = [np.arange(np.fix(-n/2.), np.fix(n/2.+0.5)) for n in dN]
+fft   = lambda x, N: np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(x), N, axes=tuple(range(-len(N), 0)))) / np.prod(N)
+ifft  = lambda x, N: np.fft.fftshift(np.fft.ifftn(np.fft.ifftshift(x), N, axes=tuple(range(-len(N), 0)))) * np.prod(N)
+freq  = [np.arange(np.trunc(-n/2.), np.trunc(n/2.+0.5)) for n in dN]
 
 # SYSTEM MATRIX for Galerkin approximation with exact integration (FFTH-Ga)
 mat, inc = get_matinc(dim, phase)
@@ -41,11 +41,11 @@ A_fun  = lambda x: dot(Aga, x.reshape(vec_shape))
 GA_fun = lambda x: G_fun(A_fun(x))
 
 # CONJUGATE GRADIENT SOLVER
-X = np.zeros((dim,) + tuple(dN), dtype=np.float)
+X = np.zeros((dim,) + tuple(dN), dtype=float)
 E = np.zeros(vec_shape); E[0] = 1. # macroscopic value
 b = -GA_fun(E.reshape(-1))
 
-Alinoper = LinearOperator(shape=(X.size, X.size), matvec=GA_fun, dtype=np.float)
+Alinoper = LinearOperator(shape=(X.size, X.size), matvec=GA_fun, dtype=float)
 eE, info = cg(A=Alinoper, b=b, x0=X.reshape(-1)) # conjugate gradients
 aux = eE.reshape(vec_shape) + E
 

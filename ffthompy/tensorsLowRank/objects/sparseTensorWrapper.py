@@ -1,8 +1,6 @@
 import numpy as np
-from tt.core.vector import vector
 from ffthompy.tensorsLowRank.objects.tucker import Tucker
 from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
-from ffthompy.tensorsLowRank.objects.tensorTrain import TensorTrain
 from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 
 
@@ -45,6 +43,12 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
     elif kind.lower() in ['tucker']:
         return Tucker(name=name, val=val, core=core, basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=rank, tol=eps)
     elif kind.lower() in ['tt', 'tensortrain']:
+        try:
+            from ffthompy.tensorsLowRank.objects.tensorTrain import TensorTrain
+        except ModuleNotFoundError as exc:
+            if exc.name == 'tt':
+                raise ImportError('Tensor Train support requires the legacy ttpy package') from exc
+            raise
         return TensorTrain(val=val, core=core, eps=eps, rmax=rmax, name=name,
                            Fourier=Fourier, vectorObj=vectorObj,fft_form=fft_form)
     else:

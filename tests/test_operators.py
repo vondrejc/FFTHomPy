@@ -23,7 +23,7 @@ class Test_operators(unittest.TestCase):
     def test_operators(self):
         print('\nChecking operators...')
         for dim, fft_form in itertools.product([2, 3], fft_forms):
-            N=5*np.ones(dim, dtype=np.int)
+            N=5*np.ones(dim, dtype=int)
             F=DFT(N=N, inverse=False, fft_form=fft_form)
             iF=DFT(N=N, inverse=True, fft_form=fft_form)
 
@@ -102,7 +102,7 @@ class Test_operators(unittest.TestCase):
     def test_compatibility(self):
         print('\nChecking compatibility...')
         for dim, fft_form in itertools.product([3], fft_forms):
-            N=5*np.ones(dim, dtype=np.int)
+            N=5*np.ones(dim, dtype=int)
             F=DFT(inverse=False, N=N, fft_form=fft_form)
             iF=DFT(inverse=True, N=N, fft_form=fft_form)
 

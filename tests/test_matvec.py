@@ -15,7 +15,7 @@ class Test_matvec(unittest.TestCase):
         print('\nChecking Matrices...')
         for dim in [2, 3]:
             for n in [4, 5]:
-                N = n*np.ones(dim, dtype=np.int)
+                N = n*np.ones(dim, dtype=int)
                 ur = VecTri(name='rand', dim=2, N=N, valtype='rand')
                 FN = DFT(name='FN', inverse=False, N=N, d=dim)
                 FiN = DFT(name='FiN', inverse=True, N=N, d=dim)
@@ -31,7 +31,7 @@ class Test_matvec(unittest.TestCase):
         print('\nChecking projections...')
         for dim in [2, 3]:
             for n in [5]:
-                N = n*np.ones(dim, dtype=np.int)
+                N = n*np.ones(dim, dtype=int)
                 uN = VecTri(name='rand', dim=dim, N=N, valtype='rand')
                 for i in range(2):
                     msg='dim={0}, n={1}, i={2}'.format(dim, n, i)
