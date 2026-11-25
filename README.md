@@ -30,6 +30,10 @@ uv sync
 uv run pytest
 ```
 
+All tests live in `tests/` and use pytest functions, fixtures, and
+parameterized cases. To run an individual module, use for example
+`uv run pytest tests/test_solver.py`.
+
 For plotting, use `uv sync --extra plot`. The Tensor Train functionality
 requires the legacy [ttpy](https://pypi.org/project/ttpy/) package, which is
 not installed by default; its tests are skipped when it is unavailable.

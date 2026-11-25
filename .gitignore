@@ -22,7 +22,6 @@ output/*
 *~
 _*
 !__*
-!unittest*
 *.py[cod]
 data/*
 

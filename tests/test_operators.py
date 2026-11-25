@@ -1,206 +1,213 @@
-import unittest
-import numpy as np
-from numpy.linalg import norm
-from ffthompy import PrintControl
-import ffthompy.projections as proj
-from ffthompy.tensors import Tensor, DFT, grad, div, symgrad, potential, Operator, grad_div_tensor
-from ffthompy.tensors.projection import scalar, elasticity_small_strain, elasticity_large_deformation
 import itertools
-from copy import copy
 
-prt=PrintControl()
-fft_forms=[0, 'r', 'c']
+import numpy as np
+import pytest
+from numpy.linalg import norm
+
+import ffthompy.projections as proj
+from ffthompy.tensors import (
+    DFT,
+    Operator,
+    Tensor,
+    div,
+    grad,
+    grad_div_tensor,
+    potential,
+    symgrad,
+)
+from ffthompy.tensors.projection import (
+    elasticity_large_deformation,
+    elasticity_small_strain,
+    scalar,
+)
+
+fft_forms = [0, "r", "c"]
 
 
-class Test_operators(unittest.TestCase):
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("fft_form", fft_forms)
+def test_operators(dim, fft_form):
+    N = 5 * np.ones(dim, dtype=int)
+    F = DFT(N=N, inverse=False, fft_form=fft_form)
+    iF = DFT(N=N, inverse=True, fft_form=fft_form)
 
-    def setUp(self):
-        pass
+    # Fourier transform
 
-    def tearDown(self):
-        pass
+    print(F)  # checking representation
 
-    def test_operators(self):
-        print('\nChecking operators...')
-        for dim, fft_form in itertools.product([2, 3], fft_forms):
-            N=5*np.ones(dim, dtype=int)
-            F=DFT(N=N, inverse=False, fft_form=fft_form)
-            iF=DFT(N=N, inverse=True, fft_form=fft_form)
+    u = Tensor(name="u", shape=(), N=N, Fourier=False, fft_form=fft_form).randomize()
+    Fu = F(u)
+    u2 = iF(Fu)
+    assert (u == u2)[1] == pytest.approx(0, rel=0, abs=1e-13), "Fourier transform"
 
-            # Fourier transform
-            prt.disable()
-            print(F) # checking representation
-            prt.enable()
+    fft_formsC = fft_forms.copy()
+    fft_formsC.remove(fft_form)
+    for fft_formc in fft_formsC:
+        FuC = Fu.set_fft_form(fft_formc, copy=True)
+        Fu2 = FuC.set_fft_form(fft_form, copy=True)
+        msg = "Tensor.set_fft_form()"
+        assert Fu.norm() - FuC.norm() == pytest.approx(0, rel=0, abs=1e-13), msg
+        assert norm(Fu.mean() - FuC.mean()) == pytest.approx(0, rel=0, abs=1e-13), msg
+        assert (Fu == Fu2)[1] == pytest.approx(0, rel=0, abs=1e-13), msg
 
-            u=Tensor(name='u', shape=(), N=N, Fourier=False,
-                       fft_form=fft_form).randomize()
-            Fu=F(u)
-            u2=iF(Fu)
-            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13, msg='Fourier transform')
+    # scalar problem
+    u = Tensor(name="u", shape=(1,), N=N, Fourier=False, fft_form=fft_form).randomize()
+    u.val -= np.mean(u.val)
+    Fu = F(u)
+    Fu2 = potential(grad(Fu))
+    assert (Fu == Fu2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "scalar problem, Fourier=True"
+    )
 
-            fft_formsC=copy(fft_forms)
-            fft_formsC.remove(fft_form)
-            for fft_formc in fft_formsC:
-                FuC=Fu.set_fft_form(fft_formc, copy=True)
-                Fu2=FuC.set_fft_form(fft_form, copy=True)
-                msg='Tensor.set_fft_form()'
-                self.assertAlmostEqual(0, Fu.norm()-FuC.norm(), delta=1e-13, msg=msg)
-                self.assertAlmostEqual(0, norm(Fu.mean()-FuC.mean()), delta=1e-13, msg=msg)
-                self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13, msg=msg)
+    u2 = potential(grad(u))
+    assert (u == u2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "scalar problem, Fourier=False"
+    )
 
-            # scalar problem
-            u=Tensor(name='u', shape=(1,), N=N, Fourier=False,
-                       fft_form=fft_form).randomize()
-            u.val-=np.mean(u.val)
-            Fu=F(u)
-            Fu2=potential(grad(Fu))
-            self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13,
-                                   msg='scalar problem, Fourier=True')
+    hG, hD = grad_div_tensor(N, fft_form=fft_form)
+    assert (hD(hG(Fu)) == div(grad(Fu)))[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "scalar problem, Fourier=True"
+    )
 
-            u2=potential(grad(u))
-            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
-                                   msg='scalar problem, Fourier=False')
+    # vectorial problem
+    u = Tensor(name="u", shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
+    u.randomize()
+    u.add_mean(-u.mean())
 
-            hG, hD=grad_div_tensor(N, fft_form=fft_form)
-            self.assertAlmostEqual(0, (hD(hG(Fu))==div(grad(Fu)))[1], delta=1e-13,
-                                   msg='scalar problem, Fourier=True')
+    Fu = F(u)
+    Fu2 = potential(grad(Fu))
+    assert (Fu == Fu2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "vectorial problem, Fourier=True"
+    )
 
-            # vectorial problem
-            u=Tensor(name='u', shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
-            u.randomize()
-            u.add_mean(-u.mean())
+    u2 = potential(grad(u))
+    assert (u == u2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "vectorial problem, Fourier=False"
+    )
 
-            Fu=F(u)
-            Fu2=potential(grad(Fu))
-            self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13,
-                                   msg='vectorial problem, Fourier=True')
+    # 'vectorial problem - symetric gradient
+    Fu2 = potential(symgrad(Fu), small_strain=True)
+    assert (Fu == Fu2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "vectorial - sym, Fourier=True"
+    )
 
-            u2=potential(grad(u))
-            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
-                                   msg='vectorial problem, Fourier=False')
+    u2 = potential(symgrad(u), small_strain=True)
+    assert (u == u2)[1] == pytest.approx(0, rel=0, abs=1e-13), (
+        "vectorial - sym, Fourier=False"
+    )
 
-            # 'vectorial problem - symetric gradient
-            Fu2=potential(symgrad(Fu), small_strain=True)
-            self.assertAlmostEqual(0, (Fu==Fu2)[1], delta=1e-13,
-                                   msg='vectorial - sym, Fourier=True')
+    # matrix version of DFT
+    u = Tensor(name="u", shape=(1,), N=N, Fourier=False, fft_form="c").randomize()
+    F = DFT(N=N, inverse=False, fft_form="c")
+    Fu = F(u)
+    dft = F.matrix(shape=u.shape)
+    Fu2 = dft.dot(u.val.ravel())
+    assert norm(Fu.val.ravel() - Fu2) == pytest.approx(0, rel=0, abs=1e-13)
 
-            u2=potential(symgrad(u), small_strain=True)
-            self.assertAlmostEqual(0, (u==u2)[1], delta=1e-13,
-                                   msg='vectorial - sym, Fourier=False')
 
-            # matrix version of DFT
-            u=Tensor(name='u', shape=(1,), N=N, Fourier=False,
-                       fft_form='c').randomize()
-            F=DFT(N=N, inverse=False, fft_form='c')
-            Fu=F(u)
-            dft=F.matrix(shape=u.shape)
-            Fu2=dft.dot(u.val.ravel())
-            self.assertAlmostEqual(0, norm(Fu.val.ravel()-Fu2), delta=1e-13)
+@pytest.mark.parametrize("dim", [3])
+@pytest.mark.parametrize("fft_form", fft_forms)
+def test_compatibility(dim, fft_form):
+    N = 5 * np.ones(dim, dtype=int)
+    F = DFT(inverse=False, N=N, fft_form=fft_form)
+    iF = DFT(inverse=True, N=N, fft_form=fft_form)
 
-        print('...ok')
+    # scalar problem
+    _, G1l, G2l = scalar(N, Y=np.ones(dim), fft_form=fft_form)
+    P1 = Operator(name="P1", mat=[[iF, G1l, F]])
+    P2 = Operator(name="P2", mat=[[iF, G2l, F]])
+    u = Tensor(name="u", shape=(1,), N=N, Fourier=False, fft_form=fft_form)
+    u.randomize()
 
-    def test_compatibility(self):
-        print('\nChecking compatibility...')
-        for dim, fft_form in itertools.product([3], fft_forms):
-            N=5*np.ones(dim, dtype=int)
-            F=DFT(inverse=False, N=N, fft_form=fft_form)
-            iF=DFT(inverse=True, N=N, fft_form=fft_form)
+    grad_u = grad(u)
+    assert (P1(grad_u) - grad_u).norm() == pytest.approx(0, rel=0, abs=1e-13)
+    assert P2(grad_u).norm() == pytest.approx(0, rel=0, abs=1e-13)
 
-            # scalar problem
-            _, G1l, G2l=scalar(N, Y=np.ones(dim), fft_form=fft_form)
-            P1=Operator(name='P1', mat=[[iF, G1l, F]])
-            P2=Operator(name='P2', mat=[[iF, G2l, F]])
-            u=Tensor(name='u', shape=(1,), N=N, Fourier=False, fft_form=fft_form)
-            u.randomize()
+    e = P1(
+        Tensor(
+            name="u", shape=(dim,), N=N, Fourier=False, fft_form=fft_form
+        ).randomize()
+    )
+    e2 = grad(potential(e))
+    assert (e - e2).norm() == pytest.approx(0, rel=0, abs=1e-13)
 
-            grad_u=grad(u)
-            self.assertAlmostEqual(0, (P1(grad_u)-grad_u).norm(), delta=1e-13)
-            self.assertAlmostEqual(0, P2(grad_u).norm(), delta=1e-13)
+    # vectorial problem
+    hG = elasticity_large_deformation(N=N, Y=np.ones(dim), fft_form=fft_form)
+    P1 = Operator(name="P", mat=[[iF, hG, F]])
+    u = Tensor(name="u", shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
+    u.randomize()
+    grad_u = grad(u)
+    val = (P1(grad_u) - grad_u).norm()
+    assert val == pytest.approx(0, rel=0, abs=1e-13)
 
-            e=P1(Tensor(name='u', shape=(dim,), N=N,
-                          Fourier=False, fft_form=fft_form).randomize())
-            e2=grad(potential(e))
-            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
+    e = Tensor(name="F", shape=(dim, dim), N=N, Fourier=False, fft_form=fft_form)
+    e = P1(e.randomize())
+    e2 = grad(potential(e))
+    assert (e - e2).norm() == pytest.approx(0, rel=0, abs=1e-13)
 
-            # vectorial problem
-            hG=elasticity_large_deformation(N=N, Y=np.ones(dim), fft_form=fft_form)
-            P1=Operator(name='P', mat=[[iF, hG, F]])
-            u=Tensor(name='u', shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
-            u.randomize()
-            grad_u=grad(u)
-            val=(P1(grad_u)-grad_u).norm()
-            self.assertAlmostEqual(0, val, delta=1e-13)
+    # transpose
+    P1TT = P1.transpose().transpose()
+    assert (P1(grad_u) == P1TT(grad_u))[0]
 
-            e=Tensor(name='F', shape=(dim, dim), N=N, Fourier=False, fft_form=fft_form)
-            e=P1(e.randomize())
-            e2=grad(potential(e))
-            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
+    assert (hG == (hG.transpose_left().transpose_left()))[0]
+    assert (hG == (hG.transpose_right().transpose_right()))[0]
 
-            # transpose
-            P1TT=P1.transpose().transpose()
-            self.assertTrue(P1(grad_u)==P1TT(grad_u))
+    # vectorial problem - symetric gradient
+    hG = elasticity_small_strain(N=N, Y=np.ones(dim), fft_form=fft_form)
+    P1 = Operator(name="P", mat=[[iF, hG, F]])
+    u = Tensor(name="u", shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
+    u.randomize()
+    grad_u = symgrad(u)
+    val = (P1(grad_u) - grad_u).norm()
+    assert val == pytest.approx(0, rel=0, abs=1e-13)
 
-            self.assertTrue(hG==(hG.transpose_left().transpose_left()))
-            self.assertTrue(hG==(hG.transpose_right().transpose_right()))
+    e = Tensor(name="strain", shape=(dim, dim), N=N, Fourier=False, fft_form=fft_form)
+    e = P1(e.randomize())
+    e2 = symgrad(potential(e, small_strain=True))
+    assert (e - e2).norm() == pytest.approx(0, rel=0, abs=1e-13)
 
-            # vectorial problem - symetric gradient
-            hG=elasticity_small_strain(N=N, Y=np.ones(dim), fft_form=fft_form)
-            P1=Operator(name='P', mat=[[iF, hG, F]])
-            u=Tensor(name='u', shape=(dim,), N=N, Fourier=False, fft_form=fft_form)
-            u.randomize()
-            grad_u=symgrad(u)
-            val=(P1(grad_u)-grad_u).norm()
-            self.assertAlmostEqual(0, val, delta=1e-13)
+    # means
+    Fu = F(u)
+    E = np.random.random(u.shape)
+    u.set_mean(E)
+    assert norm(u.mean() - E) == pytest.approx(0, rel=0, abs=1e-13)
+    Fu.set_mean(E)
+    assert norm(Fu.mean() - E) == pytest.approx(0, rel=0, abs=1e-13)
 
-            e=Tensor(name='strain', shape=(dim, dim), N=N,
-                     Fourier=False, fft_form=fft_form)
-            e=P1(e.randomize())
-            e2=symgrad(potential(e, small_strain=True))
-            self.assertAlmostEqual(0, (e-e2).norm(), delta=1e-13)
+    # __repr__
 
-            # means
-            Fu=F(u)
-            E=np.random.random(u.shape)
-            u.set_mean(E)
-            self.assertAlmostEqual(0, norm(u.mean()-E), delta=1e-13)
-            Fu.set_mean(E)
-            self.assertAlmostEqual(0, norm(Fu.mean()-E), delta=1e-13)
+    print(P1)
+    print(u)
 
-            # __repr__
-            prt.disable()
-            print(P1)
-            print(u)
-            prt.enable()
-            self.assertAlmostEqual(0, (P1==P1.transpose()), delta=1e-13)
-        print('...ok')
+    assert (P1 == P1.transpose()) == pytest.approx(0, rel=0, abs=1e-13)
 
-    def test_projections(self):
-        print('\nChecking projections...')
 
-        for dim, fft_form in itertools.product([2, 3], fft_forms):
-            N=dim*(5,)
-            Y=np.ones(dim)
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("fft_form", fft_forms)
+def test_projections(dim, fft_form):
 
-            # scalar projections
-            projections = proj.scalar(N, Y, tensor=True, fft_form=fft_form)
+    N = dim * (5,)
+    Y = np.ones(dim)
 
-            for P,Q in itertools.product(projections, repeat=2):
-                if (P==Q)[0]:
-                    self.assertAlmostEqual(0, (P*P-P).norm(), delta=1e-13) # idempotent
-                else:
-                    self.assertAlmostEqual(0, (P*Q).norm(), delta=1e-13) # orthgonality
+    # scalar projections
+    projections = proj.scalar(N, Y, tensor=True, fft_form=fft_form)
 
-            # linear elasticity projections
-            projections = proj.elasticity(N, Y, tensor=True, fft_form=fft_form)
+    for P, Q in itertools.product(projections, repeat=2):
+        if (P == Q)[0]:
+            assert (P * P - P).norm() == pytest.approx(
+                0, rel=0, abs=1e-13
+            )  # idempotent
+        else:
+            assert (P * Q).norm() == pytest.approx(0, rel=0, abs=1e-13)  # orthgonality
 
-            # checking idempotent property
-            for P,Q in itertools.product(projections, repeat=2):
-                if (P==Q)[0]:
-                    self.assertAlmostEqual(0, (P*P-P).norm(), delta=1e-13) # idempotent
-                else:
-                    self.assertAlmostEqual(0, (P*Q).norm(), delta=1e-13) # orthgonality
+    # linear elasticity projections
+    projections = proj.elasticity(N, Y, tensor=True, fft_form=fft_form)
 
-        print('...ok')
-
-if __name__=="__main__":
-    unittest.main()
+    # checking idempotent property
+    for P, Q in itertools.product(projections, repeat=2):
+        if (P == Q)[0]:
+            assert (P * P - P).norm() == pytest.approx(
+                0, rel=0, abs=1e-13
+            )  # idempotent
+        else:
+            assert (P * Q).norm() == pytest.approx(0, rel=0, abs=1e-13)  # orthgonality

@@ -1,61 +1,43 @@
-import unittest
 import numpy as np
+import pytest
 from numpy.linalg import norm
+
 from ffthompy.mechanics.matcoef import ElasticTensor as ET
 
 
-class Test_matcoef(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    @staticmethod
-    def get_rand_sym(dim, ndim):
-        A = np.random.random(ndim*(dim,))
-        if ndim == 2:
-            A = A+A.T
-        else:
-            A = 0.5*(A+np.einsum('ijkl->klij',A))
-            A = 0.5*(A+np.einsum('ijkl->ijlk',A))
-            A = 0.5*(A+np.einsum('ijkl->jikl',A))
-        return A
-
-    def test_mechanics(self):
-        print('\nChecking mechanics...')
-        self._mandel()
-        self._plane()
-        print('...ok')
-
-    def _mandel(self):
-        print("  Mandel's notation")
-        for dim in [2, 3]:
-            for ndim in [2, 4]:
-                A = self.get_rand_sym(dim=dim, ndim=ndim)
-
-                Am = ET.create_mandel(A, ndim=None)
-                self.assertAlmostEqual(0, norm(Am-Am.T))
-                A2 = ET.dispose_mandel(Am, ndim=None)
-                Am2 = ET.create_mandel(A2, ndim=None)
-                self.assertAlmostEqual(0, norm(Am-Am2),
-                                       msg='mandel in dim={0} and ndim={1}'.format(dim, ndim),
-                                       delta=1e-14)
-                self.assertAlmostEqual(0, norm(A-A2),
-                                       msg='mandel in dim={0} and ndim={1}'.format(dim, ndim),
-                                       delta=1e-14)
-
-    def _plane(self):
-        print('  plane strain and stress')
-        A = self.get_rand_sym(dim=3, ndim=4)
-        Am = ET.create_mandel(A)
-        Amplane = ET.get_plane_in_engineering(Am).squeeze()
-
-        Aplane = ET.get_plane_in_tensor(A)
-        Aplanem = ET.create_mandel(Aplane).squeeze()
-        self.assertAlmostEqual(0, norm(Aplanem - Amplane))
+def get_rand_sym(dim, ndim):
+    A = np.random.random(ndim * (dim,))
+    if ndim == 2:
+        A = A + A.T
+    else:
+        A = 0.5 * (A + np.einsum("ijkl->klij", A))
+        A = 0.5 * (A + np.einsum("ijkl->ijlk", A))
+        A = 0.5 * (A + np.einsum("ijkl->jikl", A))
+    return A
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("ndim", [2, 4])
+def test_mandel(dim, ndim):
+    A = get_rand_sym(dim=dim, ndim=ndim)
+
+    Am = ET.create_mandel(A, ndim=None)
+    assert norm(Am - Am.T) == pytest.approx(0, rel=0, abs=5e-8)
+    A2 = ET.dispose_mandel(Am, ndim=None)
+    Am2 = ET.create_mandel(A2, ndim=None)
+    assert norm(Am - Am2) == pytest.approx(0, rel=0, abs=1e-14), (
+        "mandel in dim={0} and ndim={1}".format(dim, ndim)
+    )
+    assert norm(A - A2) == pytest.approx(0, rel=0, abs=1e-14), (
+        "mandel in dim={0} and ndim={1}".format(dim, ndim)
+    )
+
+
+def test_plane():
+    A = get_rand_sym(dim=3, ndim=4)
+    Am = ET.create_mandel(A)
+    Amplane = ET.get_plane_in_engineering(Am).squeeze()
+
+    Aplane = ET.get_plane_in_tensor(A)
+    Aplanem = ET.create_mandel(Aplane).squeeze()
+    assert norm(Aplanem - Amplane) == pytest.approx(0, rel=0, abs=5e-8)
