@@ -1,15 +1,18 @@
-import numpy as np
+import logging
+from functools import reduce
 from operator import mul
 
-from numpy import reshape, dot
-from numpy.linalg import qr, norm, svd
+import numpy as np
+from numpy import dot, reshape
+from numpy.linalg import norm, qr, svd
 from scipy.linalg import rq
-from ffthompy.tensors import Tensor
-from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns
-from seemps.state import MPS, NO_TRUNCATION, Strategy, Truncation, mps_tensor_product
 from seemps.qft import qft_nd_mpo
-from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
-from functools import reduce
+from seemps.state import MPS, NO_TRUNCATION, Strategy, Truncation, mps_tensor_product
+
+from ffthompy.tensors import Tensor
+from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns, fft_form_default
+
+logger = logging.getLogger(__name__)
 
 
 class TensorTrain(LowRankTensorFuns):
@@ -501,8 +504,9 @@ class TensorTrain(LowRankTensorFuns):
             return self._mps.norm()
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    print('\n----testing "Fourier" function ----\n')
+    logger.info('\n----testing "Fourier" function ----\n')
 
     v1=np.random.rand(50,23,10)
     v2=np.random.rand(50,23,10)
@@ -510,10 +514,10 @@ if __name__=='__main__':
 #    v=np.reshape(v1, (2, 3, 4 , 5), order='F') # use 'F' to keep v the same as in matlab
     t1=TensorTrain(val=v1, rmax=99999)
     t2=TensorTrain(val=v2, rmax=99999)
-    print(t1)
+    logger.info('%s', t1)
 
     t=t1*t2
-    print(t)
+    logger.info('%s', t)
 
 
 #    t2=t.truncate(rank=5)
@@ -527,19 +531,19 @@ if __name__=='__main__':
 #    print((t-t5).norm())
 #
     t3=t.truncate(tol=4e-1)
-    print(t3)
+    logger.info('%s', t3)
 
-    print((t-t3).norm())
+    logger.info('%s', (t-t3).norm())
 
     t4=t.truncate(tol=4e-1, fast=True)
-    print(t4)
+    logger.info('%s', t4)
 
-    print((t-t4).norm())
+    logger.info('%s', (t-t4).norm())
 
     t4=t.truncate(rank=5, fast=True)
-    print(t4)
+    logger.info('%s', t4)
 
-    print((t-t4).norm())
+    logger.info('%s', (t-t4).norm())
 
 #
 ##    vfft=np.fft.fftn(v)

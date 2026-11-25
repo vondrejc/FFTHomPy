@@ -1,7 +1,16 @@
+import logging
+
 import numpy as np
+
 from ffthompy import Struct, Timer
 from ffthompy.materials import Material
 from ffthompy.tensorsLowRank.materials import LowRankMaterial
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 try:
     from uq.decomposition import KL_Fourier
@@ -125,7 +134,7 @@ def getMat_conf(material, pars, pars_sparse):
             kl.calc_modes(relerr=0.4)
         ip=np.random.random(kl.modes.n_kl)-0.5
         np.set_printoptions(precision=8)
-        print('ip={}\n'.format(ip.__repr__()))
+        logger.info('ip=%s\n', ip.__repr__())
         if dim==2:
             ip=np.array(
                 [0.24995, 0.009014,-0.004228, 0.266437, 0.345009,-0.29721,-0.291875,-0.125469,
@@ -171,19 +180,19 @@ def getMat_conf(material, pars, pars_sparse):
 
 def recover_Aga(Aga, Agas):
 
-    print('recovering full material tensors for Ga...')
+    logger.info('recovering full material tensors for Ga...')
     Aga.val=np.einsum('ij,...->ij...', np.eye(Aga.dim), Agas.full().val)
 
-    print('Norm of difference in mat properties: {}'.format(np.linalg.norm(Aga.val[0, 0]-Agas.full().val)))
+    logger.info('Norm of difference in mat properties: %s', np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
     return Aga.val
 
 
 def recover_Agani(Agani, Aganis):
 
-    print('recovering full material tensors for GaNi...')
+    logger.info('recovering full material tensors for GaNi...')
     Agani.val=np.einsum('ij,...->ij...', np.eye(Agani.dim), Aganis.full().val)
 
-    print('Norm of difference in mat properties: {}'.format(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val)))
+    logger.info('Norm of difference in mat properties: %s', np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
     return Agani.val
 
 
@@ -194,14 +203,14 @@ def getGaData(mat, mats, pars, pars_sparse):
 
     #
     if np.array_equal(pars.N, pars_sparse.N):
-        print(np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
+        logger.info('%s', np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
 
     if pars.recover_sparse:
-        print('recovering full material tensors...')
+        logger.info('recovering full material tensors...')
         Aga.val=np.einsum('ij,...->ij...', np.eye(pars.dim), Agas.full().val)
 
     if np.array_equal(pars.N, pars_sparse.N):
-        print(np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
+        logger.info('%s', np.linalg.norm(Aga.val[0, 0]-Agas.full().val))
 
     return Aga, Agas
 
@@ -211,13 +220,13 @@ def getGaNiData(mat, mats, pars, pars_sparse):
     Aganis=mats.get_A_GaNi(pars_sparse.N, primaldual='primal', k=pars_sparse.matrank)
 
     if np.array_equal(pars.N, pars_sparse.N):
-        print(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
+        logger.info('%s', np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
 
     if pars.recover_sparse:
-        print('recovering full material tensors...')
+        logger.info('recovering full material tensors...')
         Agani.val=np.einsum('ij,...->ij...', np.eye(pars.dim), Aganis.full().val)
 
     if np.array_equal(pars.N, pars_sparse.N):
-        print(np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
+        logger.info('%s', np.linalg.norm(Agani.val[0, 0]-Aganis.full().val))
 
     return Agani, Aganis

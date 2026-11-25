@@ -1,6 +1,11 @@
+import logging
+
 import numpy as np
-from numpy.linalg import svd, norm, qr
 from numpy import tensordot
+from numpy.linalg import norm, qr, svd
+
+logger = logging.getLogger(__name__)
+
 
 def unfold(T, dim):
     """
@@ -147,23 +152,24 @@ def new_expand_dims(a, axes):
     return a
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     # A = np.random.rand(7,7)
     A=np.arange(49).reshape((7, 7))
-    print(A)
+    logger.info('%s', A)
 
     S, U=HOSVD(A)
-    print(S)
-    print(U)
-    print(norm(A-np.dot(U[0], np.dot(S, U[1].T))))
+    logger.info('%s', S)
+    logger.info('%s', U)
+    logger.info('%s', norm(A-np.dot(U[0], np.dot(S, U[1].T))))
 
     S2, U2=HOSVD(A, 5)
-    print(S2)
-    print(U2)
-    print(norm(A-np.dot(U2[0], np.dot(S2, U2[1].T))))
+    logger.info('%s', S2)
+    logger.info('%s', U2)
+    logger.info('%s', norm(A-np.dot(U2[0], np.dot(S2, U2[1].T))))
 #    S,U=HOSVD2(A)
 #    print S
 #    print U
 #    print norm(A-np.dot(U[0], np.dot(S, U[1].T)))
 
-    print('END')
+    logger.info('END')

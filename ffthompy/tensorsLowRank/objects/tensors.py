@@ -1,8 +1,23 @@
-import numpy as np
-from ffthompy.tensors.objects import TensorFuns
 import itertools
+import logging
 from copy import deepcopy as copy
-from ffthompy.tensorsLowRank.fft1 import fft, ifft, fftc, icfft, cfftc, icfftc, srfft,sirfft
+
+import numpy as np
+
+from ffthompy.tensors.objects import TensorFuns
+from ffthompy.tensorsLowRank.fft1 import (
+    cfftc,
+    fft,
+    fftc,
+    icfft,
+    icfftc,
+    ifft,
+    sirfft,
+    srfft,
+)
+
+logger = logging.getLogger(__name__)
+
 
 fft_form_default='sr' # scipy rfft
 
@@ -77,6 +92,7 @@ class LowRankTensorFuns(TensorFuns):
         return other + self
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     # check multiplication
     r=2
     n=50
@@ -88,5 +104,5 @@ if __name__=='__main__':
     C0 = A*B
     C1s = multiply(As, Bs)
     C1 = np.einsum('ij,ik->jk', C1s[0], C1s[1])
-    print((np.linalg.norm(C0-C1)))
-    print('END')
+    logger.info('%s', np.linalg.norm(C0-C1))
+    logger.info('END')

@@ -1,15 +1,33 @@
+import itertools
+import logging
 import os
 import pickle
 
-from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
-                                                    homog_Ga_sparse, homog_GaNi_sparse)
-from examples.lowRankTensorApproximations.setting import get_material_coef, kind_list, get_default_parameters
-from examples.lowRankTensorApproximations.plots import plot_error, save_experiment_settings
-import itertools
+from examples.lowRankTensorApproximations.plots import (
+    plot_error,
+    save_experiment_settings,
+)
+from examples.lowRankTensorApproximations.setting import (
+    get_default_parameters,
+    get_material_coef,
+    kind_list,
+)
+from ffthompy.tensorsLowRank.homogenisation import (
+    homog_Ga_full_potential,
+    homog_Ga_sparse,
+    homog_GaNi_full_potential,
+    homog_GaNi_sparse,
+)
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 os.nice(19)
 
-print('running comparison residual...')
+logger.info('running comparison residual...')
 #######################################################
 
 Ns = {'2': [1215],
@@ -37,8 +55,7 @@ for dim, material in itertools.product([2, 3], material_list):
         pars_sparse.solver.update(dict(rank=1,  # rank of solution vector
                                        ))
 
-        print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
-                                                                    N, dim, material))
+        logger.info('== format=%s, N=%s, dim=%s, material=%s ====', pars_sparse.kind, N, dim, material)
 
         # get material settings for experiment
         Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
@@ -58,7 +75,7 @@ for dim, material in itertools.product([2, 3], material_list):
         sols_GaNi_Spar = list()
 
         for sol_rank in sol_rank_range_set['{}'.format(dim)]: # rank of solution vector
-            print('solution rank={}'.format(sol_rank))
+            logger.info('solution rank=%s', sol_rank)
             pars_sparse.solver.update(dict(rank=sol_rank))
 
             sols_Ga.append(resP_Ga.AH)
@@ -84,4 +101,4 @@ for dim, material in itertools.product([2, 3], material_list):
 
 plot_error()
 
-print('END')
+logger.info('END')

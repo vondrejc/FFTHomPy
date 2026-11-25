@@ -1,16 +1,28 @@
+import itertools
+import logging
 import os
 import pickle
 
+from examples.lowRankTensorApproximations.setting import (
+    get_default_parameters,
+    get_material_coef,
+    getMat_conf,
+)
 from ffthompy import Struct
-from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential,
-                                                    homog_Ga_sparse, )
-from examples.lowRankTensorApproximations.setting import get_material_coef, getMat_conf, get_default_parameters
-
+from ffthompy.tensorsLowRank.homogenisation import (
+    homog_Ga_full_potential,
+    homog_Ga_sparse,
+)
 from ffthompy.tensorsLowRank.materials import LowRankMaterial
-import itertools
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-print('running time-comparison for material with square inclusion...')
+
+logger.info('running time-comparison for material with square inclusion...')
 
 kinds = {'2': 0,
          '3': 2,}
@@ -43,10 +55,10 @@ for dim, material in itertools.product([2,3], [0,3]):
         # generating material coefficients
         Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
 
-        print('\n== Full solution with potential by CG (Ga) ===========')
+        logger.info('\n== Full solution with potential by CG (Ga) ===========')
         resP_Ga=homog_Ga_full_potential(Aga, pars)
-        print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-        print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+        logger.info('mean of solution=%s', resP_Ga.Fu.mean())
+        logger.info('homogenised properties (component 11) = %s', resP_Ga.AH)
         full_time_list[i]=resP_Ga.time
 
         # PARAMETERS FOR SPARSE SOLVER s#########################
@@ -58,8 +70,7 @@ for dim, material in itertools.product([2,3], [0,3]):
         for r in range(4, N+1, 2):
             pars_sparse.solver.update(dict(rank=r)) # rank of solution vector
 
-            print('== format={}, N={}, dim={}, material={} ===='.format(pars_sparse.kind,
-                                                                        N, dim, material))
+            logger.info('== format=%s, N=%s, dim=%s, material=%s ====', pars_sparse.kind, N, dim, material)
 
             # PROBLEM DEFINITION ######################################################
             # generating material coefficients
@@ -68,26 +79,26 @@ for dim, material in itertools.product([2,3], [0,3]):
             Agas=mats.get_A_Ga(pars_sparse.Nbar(pars_sparse.N), primaldual='primal',
                                k=pars_sparse.matrank)
 
-            print('\n== SPARSE solver with preconditioner (Ga) =======================')
+            logger.info('\n== SPARSE solver with preconditioner (Ga) =======================')
             resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
-            print('mean of solution={}'.format(resS_Ga.Fu.mean()))
-            print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
-            print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
-            print('memory efficiency = {0}/{1} = {2}'.format(resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size))
-            print("solution discrepancy", resS_Ga.AH - resP_Ga.AH)
+            logger.info('mean of solution=%s', resS_Ga.Fu.mean())
+            logger.info('homogenised properties (component 11) = %s', resS_Ga.AH)
+            logger.info('norm(resP)=%s', resS_Ga.solver['norm_res'])
+            logger.info('memory efficiency = %s/%s = %s', resS_Ga.Fu.memory, resP_Ga.Fu.val.size, resS_Ga.Fu.memory/resP_Ga.Fu.val.size)
+            logger.info('solution discrepancy %s', resS_Ga.AH - resP_Ga.AH)
 
             if resS_Ga.AH - resP_Ga.AH <= 0:
                 rank_list[i]=r
                 sparse_time_list[i]=resS_Ga.time
                 memory_list[i]=resS_Ga.Fu.memory/resP_Ga.Fu.val.size # memory efficiency
-                print("tensorsLowRank solver time:",sparse_time_list)
-                print("full solver time:",full_time_list)
-                print("rank:",rank_list)
+                logger.info('tensorsLowRank solver time: %s', sparse_time_list)
+                logger.info('full solver time: %s', full_time_list)
+                logger.info('rank: %s', rank_list)
                 break
 
-    print("tensorsLowRank solver time:",sparse_time_list)
-    print("full solver time:",full_time_list)
-    print("rank:",rank_list)
+    logger.info('tensorsLowRank solver time: %s', sparse_time_list)
+    logger.info('full solver time: %s', full_time_list)
+    logger.info('rank: %s', rank_list)
 
     pickle.dump(N_list, open("{}/dim_{}/mat_{}/N_list_{}.p"
                              .format(data_folder,dim, material,kind_list[kind]), "wb"))
@@ -96,4 +107,4 @@ for dim, material in itertools.product([2,3], [0,3]):
     pickle.dump(sparse_time_list, open("{}/dim_{}/mat_{}/sparse_time_list_{}.p"
                                        .format(data_folder,dim, material,kind_list[kind]), "wb"))
 
-print('END')
+logger.info('END')

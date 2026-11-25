@@ -1,6 +1,11 @@
-import numpy as np
-from ffthompy.general.base import Timer
 import itertools
+import logging
+
+import numpy as np
+
+from ffthompy.general.base import Timer
+
+logger = logging.getLogger(__name__)
 
 
 def postprocess(pb, A, mat, solutions, results, primaldual):
@@ -8,7 +13,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
     The function post-process the results.
     """
     tim = Timer(name='postprocessing')
-    print('\npostprocessing')
+    logger.info('\npostprocessing')
     matrices = {}
     for pp in pb.postprocess:
         if pp['kind'] in ['GaNi', 'gani']:
@@ -36,7 +41,7 @@ def postprocess(pb, A, mat, solutions, results, primaldual):
             ValueError()
 
         name = 'AH_%s%s%s_%s' % (pp['kind'], order_name, Nname, primaldual)
-        print(('calculating: ' + name))
+        logger.info('%s', 'calculating: ' + name)
 
         AH = assembly_matrix(A, solutions)
 

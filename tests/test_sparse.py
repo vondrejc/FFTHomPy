@@ -1,3 +1,4 @@
+import logging
 import timeit
 
 import numpy as np
@@ -17,6 +18,8 @@ from ffthompy.tensorsLowRank.homogenisation import (
     homog_GaNi_sparse,
 )
 from ffthompy.tensorsLowRank.objects import CanoTensor, SparseTensor
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -38,7 +41,7 @@ def test_sparse_solver(dim, material, kind):
 
     tic = Timer("homogenisation")
     N = 5
-    print("dim={}, material={}, kind={}".format(dim, material, kind))
+    logger.debug('dim=%s, material=%s, kind=%s', dim, material, kind)
     pars, pars_sparse = get_default_parameters(dim, N, material, kind)
     pars_sparse.debug = True
     pars_sparse.solver.update(dict(rank=5, maxiter=10))
@@ -275,8 +278,8 @@ def test_qtt_fft():
 
     vqf_full = vqf.full().reshape((2**L3, 2**L2, 2**L1), order="F")
 
-    print("discrepancy:  ", norm(vqf_full.T - v1fft) / norm(v1fft))
-    print("maximum rank of the qtt is:", np.max(vqtt.r))
+    logger.debug('discrepancy:   %s', norm(vqf_full.T - v1fft) / norm(v1fft))
+    logger.debug('maximum rank of the qtt is: %s', np.max(vqtt.r))
 
     assert norm(vqf_full.T - v1fft) / norm(v1fft) < 3 * tol
 
@@ -289,14 +292,14 @@ def test_qtt_fft():
         number=10,
         setup="from ffthompy.tensorsLowRank.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; v1tt= SparseTensor(kind='tt', val=v1,eps=1e-6 )",
     )
-    print("  TT FFT time:", tt_fft_time)
+    logger.debug('  TT FFT time: %s', tt_fft_time)
 
     qtt_fft_time = timeit.timeit(
         "vqf= vqtt.qtt_fft( [L1,L2,L3],tol= tol) ",
         number=10,
         setup="from ffthompy.tensorsLowRank.objects import SparseTensor; import numpy as np; L1=9; L2=8; L3=7; tol=1e-6; v1=np.array(range(1,2**(L1+L2+L3)+1)); v1=np.sin(v1)/v1; vq= np.reshape(v1,[2]*(L1+L2+L3),order='F'); vqtt= SparseTensor(kind='tt', val=vq )",
     )
-    print("QTT FFT time:", qtt_fft_time)
+    logger.debug('QTT FFT time: %s', qtt_fft_time)
 
     assert qtt_fft_time < 0.1 * tt_fft_time
 

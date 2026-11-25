@@ -1,9 +1,14 @@
-import numpy as np
-import ffthompy.applications
-from ffthompy.general.base import get_base_dir, Timer
+import logging
 import os
 import sys
 from copy import deepcopy
+
+import numpy as np
+
+import ffthompy.applications
+from ffthompy.general.base import Timer, get_base_dir
+
+logger = logging.getLogger(__name__)
 
 
 class Problem(object):
@@ -71,7 +76,7 @@ class Problem(object):
         """
         Calculates the problem according to physical model.
         """
-        print('\n==============================')
+        logger.info('\n==============================')
         tim = Timer(name='application')
         if hasattr(ffthompy.applications, self.physics):
             eval('ffthompy.applications.{}(self)'.format(self.physics))
@@ -89,11 +94,11 @@ class Problem(object):
         """
         output = self.output
         if self.physics in ['scalar', 'elasticity']:
-            print('\nHomogenized matrices')
+            logger.info('\nHomogenized matrices')
             for primaldual in self.solve['primaldual']:
                 for key, val in list(output['mat_'+primaldual].items()):
-                    print(key)
-                    print(val)
+                    logger.info('%s', key)
+                    logger.info('%s', val)
 
         if hasattr(self, 'save'):
             if 'data' not in self.save:
@@ -160,4 +165,5 @@ def import_file(file_name):
     return conf
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

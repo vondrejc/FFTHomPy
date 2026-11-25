@@ -3,14 +3,26 @@ This module contains classes and functions representing tensors
 of trigonometric polynomials and relating operators.
 """
 
-import numpy as np
-from ffthompy.general.base import Representation
-from ffthompy.trigpol import mean_index, fft_form_default, get_Nodd
-from ffthompy.mechanics.matcoef import ElasticTensor
-from ffthompy.trigpol import enlarge, decrease, get_inverse, Grid
-from ffthompy.tensors.fft import fftn, ifftn, fftnc, icfftn, rfftn, irfftn
 import itertools
+import logging
 from copy import copy
+
+import numpy as np
+
+from ffthompy.general.base import Representation
+from ffthompy.mechanics.matcoef import ElasticTensor
+from ffthompy.tensors.fft import fftn, fftnc, icfftn, ifftn, irfftn, rfftn
+from ffthompy.trigpol import (
+    Grid,
+    decrease,
+    enlarge,
+    fft_form_default,
+    get_inverse,
+    get_Nodd,
+    mean_index,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class TensorFuns(Representation):
@@ -537,8 +549,9 @@ class Tensor(TensorFuns):
         if N is None:
             N = self.N
 
-        from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import axes3d
+
         from ffthompy.trigpol import Grid
 
         coord=Grid.get_coordinates(N, self.Y)
@@ -636,6 +649,7 @@ def scalar_product(y, x):
     return scal
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     N=np.array([4,4], dtype=int)
     M=2*N
     u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
@@ -645,9 +659,9 @@ if __name__=='__main__':
     Fuc2=Fur.set_fft_form(fft_form='c', copy=True)
     uc=u.set_fft_form(fft_form='c', copy=True)
     Fuc=uc.fourier(copy=True)
-    print(u)
-    print(Fur)
-    print(uc)
-    print(Fuc)
+    logger.info('%s', u)
+    logger.info('%s', Fur)
+    logger.info('%s', uc)
+    logger.info('%s', Fuc)
 
-    print('end')
+    logger.info('end')

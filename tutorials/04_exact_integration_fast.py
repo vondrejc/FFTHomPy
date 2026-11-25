@@ -1,6 +1,14 @@
 from __future__ import division, print_function
 
-print("""
+import logging
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+logger.info("""
 This example shows how to interactively solve a problem of
 FFT-based homogenization with exact integration, which is described in
 J. Vondrejc, Improved guaranteed computable bounds on homogenized properties
@@ -9,7 +17,7 @@ Int. J. Numer. Methods Eng., 2016.
 This publication will be referred as IJNME2016.
 """)
 
-print("""Problem is defined via problem definition with instance 'pb'
+logger.info("""Problem is defined via problem definition with instance 'pb'
 with a following keys:
 
 material : dictionary
@@ -35,14 +43,15 @@ solver : dictionary
 
 import os
 import sys
+
 sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 
 import numpy as np
-from ffthompy.materials import Material
-import ffthompy.projections as proj
-from ffthompy.tensors import DFT, Tensor, Operator, matrix2tensor
-from ffthompy.general.solver import linear_solver
 
+import ffthompy.projections as proj
+from ffthompy.general.solver import linear_solver
+from ffthompy.materials import Material
+from ffthompy.tensors import DFT, Operator, Tensor, matrix2tensor
 
 dim = 2 # topological dimension of a problem
 N = 25*np.ones(dim, dtype=np.int32) # no. of discretisation points
@@ -94,10 +103,10 @@ B = Afun(-EN) # right-hand side of linear system
 X, info = linear_solver(solver='CG', Afun=Afun, B=B,
                         x0=x0, par=pb['solver'], callback=None)
 
-print('homogenised properties (component 11) =', A(X + EN)*(X + EN))
+logger.info('homogenised properties (component 11) = %s', A(X + EN)*(X + EN))
 
 if __name__ == "__main__":
     ## plotting of local fields ##################
     X.plot(ind=0, N=N)
 
-print('END')
+logger.info('END')

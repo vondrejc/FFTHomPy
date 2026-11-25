@@ -1,15 +1,12 @@
 """Regression checks for the shipped examples and tutorials."""
 
-from contextlib import redirect_stdout
-from pathlib import Path
-import os
 import pickle
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from ffthompy.problem import Problem, import_file
-
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = [
@@ -32,9 +29,8 @@ def test_example_regression(input_file, monkeypatch):
     conf = import_file(input_file)
     for conf_problem in conf.problems:
         problem = Problem(conf_problem, conf)
-        with open(os.devnull, "w") as output, redirect_stdout(output):
-            problem.calculate()
-            problem.postprocessing()
+        problem.calculate()
+        problem.postprocessing()
 
         baseline = ROOT / "test_results" / "python3" / f"{Path(input_file).stem}_{problem.name}"
         with baseline.open("rb") as saved:
@@ -49,5 +45,4 @@ def test_example_regression(input_file, monkeypatch):
 def test_tutorial(tutorial, monkeypatch):
     monkeypatch.chdir(ROOT)
     source = ROOT / tutorial
-    with open(os.devnull, "w") as output, redirect_stdout(output):
-        exec(compile(source.read_text(), str(source), "exec"), {"__name__": "test"})
+    exec(compile(source.read_text(), str(source), "exec"), {"__name__": "test"})

@@ -1,6 +1,14 @@
 from __future__ import division, print_function
 
-print("""
+import logging
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+logger.info("""
 Numerical homogenisation based on exact integration, which is described in
 J. Vondrejc, Improved guaranteed computable bounds on homogenized properties
 of periodic media by FourierGalerkin method with exact integration,
@@ -12,9 +20,10 @@ with a square (2D) or cube (3D) inclusion of size 0.6 (side).
 The material is identity I in matrix phase and 11*I in inclusion phase.
 """)
 
-import numpy as np
 import itertools
-from scipy.sparse.linalg import cg, LinearOperator
+
+import numpy as np
+from scipy.sparse.linalg import LinearOperator, cg
 
 dim = 3 # number of spatial dimensions
 N = dim*(5,) # number of discretization points
@@ -81,7 +90,7 @@ Cex2 = np.einsum('ij...,...->ij...', 11*np.eye(dim),   char_square)
 Cex2 += np.einsum('ij...,...->ij...', 1*np.eye(dim), 1.-char_square)
 
 ## checking that the Cex2 is the same
-print('zero check:', np.linalg.norm(Cex-Cex2))
+logger.info('zero check: %s', np.linalg.norm(Cex-Cex2))
 
 Gamma = np.zeros((dim,dim)+ tuple(dN)) # zero initialize
 for i,j in itertools.product(range(dim),repeat=2):
@@ -109,6 +118,6 @@ state = x.reshape(vec_shape) + E
 flux = dot(Cex, state)
 
 AH_11 = np.sum(flux*state)/np.prod(np.array(dN)) # homogenised properties
-print('homogenised coefficient (component 11) =', AH_11)
+logger.info('homogenised coefficient (component 11) = %s', AH_11)
 
-print('END')
+logger.info('END')

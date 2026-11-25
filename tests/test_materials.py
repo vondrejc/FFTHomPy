@@ -1,15 +1,19 @@
+import logging
+
 import numpy as np
 import pytest
 
 from ffthompy.materials import Material
 from ffthompy.mechanics.matcoef import ElasticTensor
 
+logger = logging.getLogger(__name__)
+
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("mat", ["square", "pyramid"])
 def test_operators(dim, mat):
     N = dim * (5,)
-    print(('...checking dim={}; material="{}"'.format(dim, mat)))
+    logger.debug('...checking dim=%s; material="%s"', dim, mat)
     materials = dict(
         square0={
             "inclusions": ["square", "otherwise"],

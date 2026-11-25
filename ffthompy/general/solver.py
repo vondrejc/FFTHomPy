@@ -1,10 +1,15 @@
+import logging
+from inspect import signature
+
 #!/usr/bin/python
 import numpy as np
+import scipy.sparse.linalg as spslin
+
 from ffthompy.general.base import Timer
 from ffthompy.matvecs import VecTri
 from ffthompy.tensors import Tensor
-import scipy.sparse.linalg as spslin
-from inspect import signature
+
+logger = logging.getLogger(__name__)
 
 
 def _scipy_tolerance(solver, tolerance):
@@ -65,7 +70,7 @@ def linear_solver(Afun, B, ATfun=None, x0=None, par=None,
         msg = "This kind (%s) of linear solver is not implemented" % solver
         raise NotImplementedError(msg)
 
-    tim.measure(print_time=False)
+    tim.measure(log_time=False)
     info.update({'time': tim.vals})
     return x, info
 
@@ -286,9 +291,9 @@ def cheby2TERM(A, B, x0, M=None, par=None, callback=None):
             callback(x)
 
     if par['tol'] < res['norm_res']: # if tolerance is less than error norm
-        print("Chebyshev solver does not converges!")
+        logger.warning("Chebyshev solver did not converge.")
     else:
-        print("Chebyshev solver converges.")
+        logger.info("Chebyshev solver converged.")
 
     if res['kit'] == 0:
         res['norm_res'] = 0
@@ -314,4 +319,5 @@ def get_norm(B, par):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

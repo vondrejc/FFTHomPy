@@ -1,11 +1,16 @@
+import logging
+
 import numpy as np
+
 import ffthompy.projections as proj
-from ffthompy.materials import Material
-from ffthompy.postprocess import postprocess, add_macro2minimizer
+from ffthompy.general.base import Timer
 from ffthompy.general.solver import linear_solver
 from ffthompy.general.solver_pp import CallBack, CallBack_GA
-from ffthompy.general.base import Timer
-from ffthompy.tensors import Tensor, DFT, Operator
+from ffthompy.materials import Material
+from ffthompy.postprocess import add_macro2minimizer, postprocess
+from ffthompy.tensors import DFT, Operator, Tensor
+
+logger = logging.getLogger(__name__)
 
 
 def scalar(problem):
@@ -16,9 +21,9 @@ def scalar(problem):
     ----------
     problem : object
     """
-    print(' ')
+    logger.info(' ')
     pb = problem
-    print(pb)
+    logger.debug('%s', pb)
 
     # Fourier projections
     _, hG1N, hG2N = proj.scalar(pb.solve['N'], pb.Y, NyqNul=True, tensor=True)
@@ -38,7 +43,7 @@ def scalar(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print(('\nproblem: ' + primaldual))
+        logger.info('%s', '\nproblem: ' + primaldual)
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -60,7 +65,7 @@ def scalar(problem):
         for iL in np.arange(pb.dim): # iteration over unitary loads
             E = np.zeros(pb.dim)
             E[iL] = 1
-            print(('macroscopic load E = ' + str(E)))
+            logger.debug('%s', 'macroscopic load E = ' + str(E))
             EN = Tensor(name='EN', N=Nbar, shape=(pb.dim,), Fourier=False)
             EN.set_mean(E)
             # initial approximation for solvers
@@ -76,13 +81,13 @@ def scalar(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print(('solver : {}'.format(pb.solver['kind'])))
+            logger.debug('solver : %s', pb.solver['kind'])
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
-            print(cb)
+            logger.info('%s', cb)
         tim.measure()
 
         # POSTPROCESSING
@@ -98,9 +103,9 @@ def elasticity(problem):
     ----------
     problem : object
     """
-    print(' ')
+    logger.info(' ')
     pb = problem
-    print(pb)
+    logger.debug('%s', pb)
 
     # Fourier projections
     _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb.solve['N'], pb.Y, NyqNul=True)
@@ -123,7 +128,7 @@ def elasticity(problem):
 
     for primaldual in pb.solve['primaldual']:
         tim = Timer(name='primal-dual')
-        print(('\nproblem: ' + primaldual))
+        logger.info('%s', '\nproblem: ' + primaldual)
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
 
@@ -146,7 +151,7 @@ def elasticity(problem):
         for iL in range(D): # iteration over unitary loads
             E = np.zeros(D)
             E[iL] = 1
-            print(('macroscopic load E = ' + str(E)))
+            logger.debug('%s', 'macroscopic load E = ' + str(E))
             EN = Tensor(name='EN', N=Nbar, shape=(D,), Fourier=False)
             EN.set_mean(E)
             # initial approximation for solvers
@@ -162,13 +167,13 @@ def elasticity(problem):
                 raise NotImplementedError("The solver callback (%s) is not \
                     implemented" % (pb.solver['callback']))
 
-            print(('solver : %s' % pb.solver['kind']))
+            logger.debug('%s', 'solver : %s' % pb.solver['kind'])
             X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun, B=B,
                                     x0=x0, par=pb.solver, callback=cb)
 
             solutions[iL] = add_macro2minimizer(X, E)
             results[iL] = {'cb': cb, 'info': info}
-            print(cb)
+            logger.info('%s', cb)
         tim.measure()
 
         # POSTPROCESSING
@@ -177,4 +182,5 @@ def elasticity(problem):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

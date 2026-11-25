@@ -1,14 +1,22 @@
 #!/usr/bin/python3
 
-from ffthompy.problem import Problem, import_file
+import logging
 from optparse import OptionParser
+
+from ffthompy.problem import Problem, import_file
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 parser = OptionParser()
 _, args = parser.parse_args()
 
-print('###################################################')
-print('## FFT-based homogenization in Python (FFTHomPy) ##')
-print('###################################################')
+logger.info('###################################################')
+logger.info('## FFT-based homogenization in Python (FFTHomPy) ##')
+logger.info('###################################################')
 
 if (len(args) == 1):
     input_file = args[0]
@@ -24,4 +32,4 @@ for conf_problem in conf.problems:
     prob.calculate()
     prob.postprocessing()
 
-print('The calculation is finished!')
+logger.info('The calculation is finished!')

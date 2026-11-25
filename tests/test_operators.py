@@ -1,4 +1,5 @@
 import itertools
+import logging
 
 import numpy as np
 import pytest
@@ -21,6 +22,9 @@ from ffthompy.tensors.projection import (
     scalar,
 )
 
+logger = logging.getLogger(__name__)
+
+
 fft_forms = [0, "r", "c"]
 
 
@@ -33,7 +37,7 @@ def test_operators(dim, fft_form):
 
     # Fourier transform
 
-    print(F)  # checking representation
+    logger.debug('%s', str(F))  # checking representation
 
     u = Tensor(name="u", shape=(), N=N, Fourier=False, fft_form=fft_form).randomize()
     Fu = F(u)
@@ -176,8 +180,8 @@ def test_compatibility(dim, fft_form):
 
     # __repr__
 
-    print(P1)
-    print(u)
+    logger.debug('%s', str(P1))
+    logger.debug('%s', str(u))
 
     assert (P1 == P1.transpose()) == pytest.approx(0, rel=0, abs=1e-13)
 

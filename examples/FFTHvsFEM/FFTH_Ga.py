@@ -1,7 +1,15 @@
-import numpy as np
 import itertools
-from scipy.sparse.linalg import cg, LinearOperator
-from functions import material_coef_at_grid_points, get_matinc, square_weights
+import logging
+
+import numpy as np
+from functions import get_matinc, material_coef_at_grid_points, square_weights
+from scipy.sparse.linalg import LinearOperator, cg
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 # PARAMETERS
 dim   = 2 # dimension (works for 2D and 3D)
@@ -51,6 +59,6 @@ aux = eE.reshape(vec_shape) + E
 
 # POSTPROCESSING to calculate guaranteed bound
 AH_11 = np.sum(dot(Aga, aux)*aux)/np.prod(dN)
-print('homogenised component AH11 = {} (FFTH-Ga)'.format(AH_11))
+logger.info('homogenised component AH11 = %s (FFTH-Ga)', AH_11)
 
-print('END')
+logger.info('END')

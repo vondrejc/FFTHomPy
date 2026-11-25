@@ -1,14 +1,22 @@
-import numpy as np
-
-from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
-from ffthompy.tensorsLowRank.decompositions import fast_qr
-from ffthompy.tensorsLowRank.decompositions import HOSVD, nModeProduct, new_expand_dims
-from ffthompy.tensors import Tensor
-from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
-from numpy.linalg import norm
-from numpy import newaxis
-import warnings
+import logging
 import time
+import warnings
+
+import numpy as np
+from numpy import newaxis
+from numpy.linalg import norm
+
+from ffthompy.tensors import Tensor
+from ffthompy.tensorsLowRank.decompositions import (
+    HOSVD,
+    fast_qr,
+    new_expand_dims,
+    nModeProduct,
+)
+from ffthompy.tensorsLowRank.objects.canoTensor import CanoTensor
+from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
+
+logger = logging.getLogger(__name__)
 
 
 class Tucker(CanoTensor):
@@ -352,8 +360,9 @@ class Tucker(CanoTensor):
         return np.prod(self.r)+sum(self.r*self.N)
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    print('\n----testing "repeat" function ----\n')
+    logger.info('\n----testing "repeat" function ----\n')
 
     N1=10 # warning: in 3d multiplication too large N number could kill the machine.
     N2=20
@@ -370,25 +379,25 @@ if __name__=='__main__':
     t1=Tucker(val=T,)
     t2=Tucker(val=(T*T))
 
-    print(t1)
-    print(t2)
+    logger.info('%s', t1)
+    logger.info('%s', t2)
 
     # ta=t1+t2+t1+t2+t1+t2+t1+t2+t1+t2
     t=t1*t2
-    print(t)
+    logger.info('%s', t)
 
     start = time.perf_counter()
     tt=t.truncate(rank=2, fast=False)
-    print("time is {}".format(time.perf_counter() - start))
+    logger.info('time is %s', time.perf_counter() - start)
 
 #    print(tt)
-    print((t-tt).norm())
+    logger.info('%s', (t-tt).norm())
 
     start = time.perf_counter()
     tt2=t.truncate(rank=2, fast=True)
-    print("time is {}".format(time.perf_counter() - start))
+    logger.info('time is %s', time.perf_counter() - start)
 
-    print((t-tt2).norm())
+    logger.info('%s', (t-tt2).norm())
 #    # this is a rank-2 tensor
 #    T=np.arange(N1*N2*N3)
 #    T=np.reshape(T, (N1, N2, N3))

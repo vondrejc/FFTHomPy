@@ -3,12 +3,17 @@ This module contains operators working with Tensor from ffthompy.tensors.objects
 """
 
 import itertools
+import logging
+from copy import copy
+
 import numpy as np
 import numpy.matlib as npmatlib
-from ffthompy.trigpol import Grid, fft_form_default
-from ffthompy.tensors.objects import Tensor, TensorFuns
+
 from ffthompy.tensors.fft import *
-from copy import copy
+from ffthompy.tensors.objects import Tensor, TensorFuns
+from ffthompy.trigpol import Grid, fft_form_default
+
+logger = logging.getLogger(__name__)
 
 
 class DFT(TensorFuns):
@@ -181,7 +186,7 @@ class Operator():
             self.Y_reshape=Y.val.shape
             self.Y_order=Y.order
         else:
-            print('LinOper : This operand is not implemented!')
+            logger.error('LinOper : This operand is not implemented!')
 
     def matvec(self, x):
         """

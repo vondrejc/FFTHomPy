@@ -1,10 +1,25 @@
 from __future__ import division, print_function
 
-import numpy as np
-from ffthompy.tensorsLowRank.homogenisation import (homog_Ga_full_potential, homog_GaNi_full_potential,
-                                                    homog_Ga_sparse, homog_GaNi_sparse)
+import logging
 
-from examples.lowRankTensorApproximations.setting import get_material_coef, get_default_parameters
+import numpy as np
+
+from examples.lowRankTensorApproximations.setting import (
+    get_default_parameters,
+    get_material_coef,
+)
+from ffthompy.tensorsLowRank.homogenisation import (
+    homog_Ga_full_potential,
+    homog_Ga_sparse,
+    homog_GaNi_full_potential,
+    homog_GaNi_sparse,
+)
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 
 # PARAMETERS ##############################################################
@@ -17,38 +32,36 @@ pars, pars_sparse=get_default_parameters(dim, N, material, kind)
 pars_sparse.debug=True
 pars_sparse.solver.update(dict(rank=10))
 
-print('== format={}, N={}, dim={}, material={}, rank={} ===='.format(pars_sparse.kind, N, dim,
-                                                                     material,
-                                                                     pars_sparse.solver['rank']))
-print('dofs = {}'.format(N**dim))
+logger.info('== format=%s, N=%s, dim=%s, material=%s, rank=%s ====', pars_sparse.kind, N, dim, material, pars_sparse.solver['rank'])
+logger.info('dofs = %s', N**dim)
 
 # get material coefficients
 Aga, Agani, Agas, Aganis=get_material_coef(material, pars, pars_sparse)
 
-print('\n== Full solution with potential by CG (GaNi)===========')
+logger.info('\n== Full solution with potential by CG (GaNi)===========')
 resP_GaNi=homog_GaNi_full_potential(Agani, Aga, pars)
-print('mean of solution={}'.format(resP_GaNi.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resP_GaNi.AH))
+logger.info('mean of solution=%s', resP_GaNi.Fu.mean())
+logger.info('homogenised properties (component 11) = %s', resP_GaNi.AH)
 
-print('\n== Full solution with potential by CG (Ga) ===========')
+logger.info('\n== Full solution with potential by CG (Ga) ===========')
 resP_Ga=homog_Ga_full_potential(Aga, pars)
-print('mean of solution={}'.format(resP_Ga.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resP_Ga.AH))
+logger.info('mean of solution=%s', resP_Ga.Fu.mean())
+logger.info('homogenised properties (component 11) = %s', resP_Ga.AH)
 
-print('\n== SPARSE solver with preconditioner (Ga) =======================')
+logger.info('\n== SPARSE solver with preconditioner (Ga) =======================')
 resS_Ga=homog_Ga_sparse(Agas, pars_sparse)
-print('mean of solution={}'.format(resS_Ga.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resS_Ga.AH))
-print('iterations={}'.format(resS_Ga.solver['kit']))
-print('norm(resP)={}'.format(resS_Ga.solver['norm_res']))
+logger.info('mean of solution=%s', resS_Ga.Fu.mean())
+logger.info('homogenised properties (component 11) = %s', resS_Ga.AH)
+logger.info('iterations=%s', resS_Ga.solver['kit'])
+logger.info('norm(resP)=%s', resS_Ga.solver['norm_res'])
 
-print('\n== SPARSE solver with preconditioner (GaNi) =======================')
+logger.info('\n== SPARSE solver with preconditioner (GaNi) =======================')
 resS_GaNi=homog_GaNi_sparse(Aganis, Agas, pars_sparse)
-print('mean of solution={}'.format(resS_GaNi.Fu.mean()))
-print('homogenised properties (component 11) = {}'.format(resS_GaNi.AH))
-print('iterations={}'.format(resS_GaNi.solver['kit']))
+logger.info('mean of solution=%s', resS_GaNi.Fu.mean())
+logger.info('homogenised properties (component 11) = %s', resS_GaNi.AH)
+logger.info('iterations=%s', resS_GaNi.solver['kit'])
 if np.array_equal(pars.N, pars_sparse.N):
-    print('norm(dif)={}'.format(np.linalg.norm(resP_GaNi.Fu.fourier(Fourier=False).val-resS_GaNi.Fu.fourier().full().val)))
-print('norm(resP)={}'.format(resS_GaNi.solver['norm_res']))
+    logger.info('norm(dif)=%s', np.linalg.norm(resP_GaNi.Fu.fourier(Fourier=False).val-resS_GaNi.Fu.fourier().full().val))
+logger.info('norm(resP)=%s', resS_GaNi.solver['norm_res'])
 
-print('END')
+logger.info('END')

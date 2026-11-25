@@ -1,9 +1,14 @@
+import logging
+
 import numpy as np
 from numpy import newaxis
-from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns
+
 from ffthompy.tensors import Tensor
-from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 from ffthompy.tensorsLowRank.decompositions import fast_qr
+from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns, fft_form_default
+
+logger = logging.getLogger(__name__)
+
 
 class CanoTensor(LowRankTensorFuns):
     kind='cano'
@@ -467,6 +472,7 @@ class CanoTensor(LowRankTensorFuns):
 
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 #    N=[10,20]
 #    a = CanoTensor(name='a', r=3, N=N, randomise=True)
@@ -504,8 +510,8 @@ if __name__=='__main__':
     a=CanoTensor(name='a', core=s1, basis=[u1.T, vt1])
     b=CanoTensor(name='b', core=s2, basis=[u2.T, vt2])
 
-    print((a.norm(ord='fro')))
-    print((a.norm(ord='core')))
+    logger.info('%s', a.norm(ord='fro'))
+    logger.info('%s', a.norm(ord='core'))
 
 #     N=[100,101]
 #     a=CanoTensor(name='a', r=50, N=N, randomise=True)
@@ -517,9 +523,9 @@ if __name__=='__main__':
     c2=c.truncate(tol=1e-5)
 
     c_add=a.full()+b.full()
-    print()
-    print("(a+b).full - (a.full+b.full)    = ", (np.linalg.norm(c.full()-c_add)))
-    print("add(a,b).full - (a.full+b.full) = ", (np.linalg.norm(c2.full()-c_add)))
+    logger.info("")
+    logger.info('(a+b).full - (a.full+b.full)    =  %s', np.linalg.norm(c.full()-c_add))
+    logger.info('add(a,b).full - (a.full+b.full) =  %s', np.linalg.norm(c2.full()-c_add))
 
     # multiplication
 
@@ -527,20 +533,20 @@ if __name__=='__main__':
     c3=a.multiply(b, tol=0.001)
 
     c_mul=a.full()*b.full()
-    print()
-    print("                  (a*b).full - (a.full*b.full) = ", (np.linalg.norm(c.full()-c_mul)))
-    print("truncated multiply(a,b).full - (a.full*b.full) = ", (np.linalg.norm(c3.full()-c_mul)))
-    print()
+    logger.info("")
+    logger.info('                  (a*b).full - (a.full*b.full) =  %s', np.linalg.norm(c.full()-c_mul))
+    logger.info('truncated multiply(a,b).full - (a.full*b.full) =  %s', np.linalg.norm(c3.full()-c_mul))
+    logger.info("")
 
-    print('rank control on tensor product:')
-    print("full product tensor rank=     ", c.r)
-    print("truncated product tensor rank=", c3.r)
-    print()
+    logger.info('rank control on tensor product:')
+    logger.info('full product tensor rank=      %s', c.r)
+    logger.info('truncated product tensor rank= %s', c3.r)
+    logger.info("")
     # truncation
     a_trunc=a.truncate(rank=4)
 
-    print("a.full  - a_trunc.full        = ", np.linalg.norm(a.full()-a_trunc.full()))
-    print()
+    logger.info('a.full  - a_trunc.full        =  %s', np.linalg.norm(a.full()-a_trunc.full()))
+    logger.info("")
 
 #    # DFT
 #    print('testing DFT...')
@@ -570,9 +576,9 @@ if __name__=='__main__':
     a=CanoTensor(val=T1, name='a')
     b=CanoTensor(val=T2, name='b')
     c=a*b
-    print(c)
+    logger.info('%s', c)
 
-    print()
+    logger.info("")
 
     m=c.mean()
 #    k=N2
@@ -581,14 +587,14 @@ if __name__=='__main__':
 #        print "norm(c_truncated.full - c.full)/norm(c.full) = ", norm(c_trunc.full()-T2*T1)/norm(T2*T1)
 #        k-=1
 
-    print((np.mean(c.full().val)-c.mean()))
-    print((np.mean(c.full().val)-c.fourier().mean()))
+    logger.info('%s', np.mean(c.full().val)-c.mean())
+    logger.info('%s', np.mean(c.full().val)-c.fourier().mean())
 
     cf=c.set_fft_form('c').fourier().set_fft_form('sr')
 
     cf2=c.set_fft_form('sr').fourier()
 
-    print(((cf-cf2).norm()))
+    logger.info('%s', (cf-cf2).norm())
 
     ### test Fourier Hadamard product #####
     af=a.set_fft_form('c').fourier()
@@ -601,14 +607,14 @@ if __name__=='__main__':
 
     afbf2=af2*bf2
 
-    print(((afbf.fourier()-afbf2.fourier()).norm()))
+    logger.info('%s', (afbf.fourier()-afbf2.fourier()).norm())
 
-    print(c)
-    print((c.fourier()))
+    logger.info('%s', c)
+    logger.info('%s', c.fourier())
 
     cf=c.fourier().truncate(rank=5)
-    print(cf)
-    print((cf.fourier()))
+    logger.info('%s', cf)
+    logger.info('%s', cf.fourier())
 
 # # test inner product
     N1=200
@@ -623,7 +629,7 @@ if __name__=='__main__':
     M1=np.sum((T1*T2))
     M2=a.inner(b)
 
-    print(("inner product error is:", M1-M2))
+    logger.info('%s', ("inner product error is:", M1-M2))
 
 # ## test accuracy of scalor product
 #    N1=1000
@@ -683,4 +689,4 @@ if __name__=='__main__':
 #
 #    print (np.linalg.norm(c.fourier().full(fft_form=full_fft_form_default).val- T.set_fft_form(fft_form=full_fft_form_default).fourier().val ))
 
-    print('END')
+    logger.info('END')

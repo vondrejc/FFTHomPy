@@ -5,12 +5,16 @@ relating operators for homogenization.
 
 import copy
 import itertools
+import logging
+from warnings import warn
 
-from ffthompy.trigpol import Grid, enlarge, get_inverse, decrease, mean_index
 import numpy as np
 import numpy.fft as fft
 import numpy.matlib as npmatlib
-from warnings import warn
+
+from ffthompy.trigpol import Grid, decrease, enlarge, get_inverse, mean_index
+
+logger = logging.getLogger(__name__)
 
 
 class FieldFun():
@@ -369,8 +373,9 @@ class VecTri(FieldFun, Grid):
         if N is None:
             N=self.N
 
-        from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import axes3d
+
         from ffthompy.trigpol import Grid
         fig=plt.figure()
         coord=Grid.get_coordinates(N, Y)
@@ -891,7 +896,7 @@ class LinOper():
             self.X_reshape=X.val.shape
             self.Y_reshape=Y.val.shape
         else:
-            print('LinOper : This operand is not implemented!')
+            logger.error('LinOper : This operand is not implemented!')
 
     def matvec(self, x):
         """
@@ -1265,4 +1270,5 @@ def div_norm(j, Y):
 
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

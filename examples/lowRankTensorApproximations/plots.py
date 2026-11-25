@@ -1,9 +1,17 @@
+import logging
+import os
 import pickle
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import os
 from examples.lowRankTensorApproximations.fig_pars import set_labels, set_pars
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 os.nice(19)
 
@@ -96,9 +104,9 @@ def plot_error():
 
             plt.legend(loc='best')
             fname = src + 'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver, N, '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-        print('END plot errors 2D')
+        logger.info('END plot errors 2D')
         ##### END: figure 1 resiguum(solution rank) ###########
 
     for dim in [3]:
@@ -148,9 +156,9 @@ def plot_error():
 
             plt.legend(loc='best')
             fname=src+'Error_dim{}_mat{}_{}_N{}{}'.format(dim, material, solver, N, '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-        print('END plot errors 3D')
+        logger.info('END plot errors 3D')
         ##### END: figure 1 resiguum(solution rank) ###########
 
 
@@ -199,9 +207,9 @@ def plot_memory():
 
             plt.legend(loc='best')
             fname=src+'Memory_dim{}_mat{}{}'.format(dim, material, '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-        print('END plot memory')
+        logger.info('END plot memory')
         ##### END: figure 2 memory ###########
 
     for dim in [3]:
@@ -240,9 +248,9 @@ def plot_memory():
 
             plt.legend(loc='best')
             fname = src + 'Memory_dim{}_mat{}{}'.format(dim, material, '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-        print('END plot memory')
+        logger.info('END plot memory')
         ##### END: figure 2 memory ###########
 
 
@@ -292,9 +300,9 @@ def plot_residuals():
                     plt.legend(loc='upper right')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_Ga_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                     solver, N, '.pdf')
-                    print(('create figure: {}'.format(fname)))
+                    logger.info('create figure: %s', fname)
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-            print('END Ga 2D residuum N={}'.format(N))
+            logger.info('END Ga 2D residuum N=%s', N)
             ##### END: figure 5.1 Residuum for Ga solution ###########
 
             ##### BEGIN: figure 5.2 Residuum for GaNi solution ###########
@@ -331,10 +339,10 @@ def plot_residuals():
 
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_GaNi_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                       solver, N, '.pdf')
-                    print(('create figure: {}'.format(fname)))
+                    logger.info('create figure: %s', fname)
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'],
                                 bbox_inches='tight')
-            print('END GaNi 2D residuum N={}'.format(N))
+            logger.info('END GaNi 2D residuum N=%s', N)
             ##### END: figure 5.2 Residuum for GaNi solution ###########
 
     for dim in [3]:
@@ -374,10 +382,10 @@ def plot_residuals():
                     plt.legend(loc='best')
                     fname = src + 'Residuum_dim{}_mat{}_kind_{}_Ga_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                     solver, N, '.pdf')
-                    print(('create figure: {}'.format(fname)))
+                    logger.info('create figure: %s', fname)
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'],
                                 bbox_inches='tight')
-            print('END Ga 3D residuum N={} mat {}'.format(N, material))
+            logger.info('END Ga 3D residuum N=%s mat %s', N, material)
             ##### END: figure 5.1 Residuum for Ga solution ###########
 
             ##### BEGIN: figure 5.2 Residuum for GaNi solution ###########
@@ -414,9 +422,9 @@ def plot_residuals():
                     lg=plt.legend(loc='upper right')
                     fname=src+'Residuum_dim{}_mat{}_kind_{}_GaNi_{}_N{}{}'.format(dim, material, kind_list[kind],
                                                                                       solver, N, '.pdf')
-                    print(('create figure: {}'.format(fname)))
+                    logger.info('create figure: %s', fname)
                     plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-            print('END GaNi 3D residuum N={} mat {}'.format(N, material))
+            logger.info('END GaNi 3D residuum N=%s mat %s', N, material)
             ##### END: figure 5.2 Residuum for GaNi solution ###########
 
 
@@ -466,9 +474,9 @@ def plot_time():
 
             plt.legend(loc='upper left')
             fname=src+'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-            print('END Ga time efficiency')
+            logger.info('END Ga time efficiency')
 
     for material in [2, 4]:
         kind_list = ['cano', 'tucker', 'tt']
@@ -513,9 +521,9 @@ def plot_time():
 
             lg=plt.legend(loc='upper left')
             fname=src+'time_efficiency_dim{}_mat{}_{}{}'.format(dim, material, kind_list[kind], '.pdf')
-            print(('create figure: {}'.format(fname)))
+            logger.info('create figure: %s', fname)
             plt.savefig(fname, dpi=parf['dpi'], pad_inches=parf['pad_inches'], bbox_inches='tight')
-            print('END Ga time efficiency')
+            logger.info('END Ga time efficiency')
 
 
 def display_data():
@@ -536,12 +544,12 @@ def display_data():
             sparse_time_list = pickle.load(
                 open("data_for_plot/time/dim_{}/mat_{}/sparse_time_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
 
-            print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
-            print("N list {} ".format(N_list))
-            print("rank list {} ".format(rank_list))
-            print("tensorsLowRank time list {} ".format(sparse_time_list))
-            print("full time list {} ".format(full_time_list))
-            print()
+            logger.info('dim=%s, material=%s, kind=%s ', dim, material, kind_list[kind])
+            logger.info('N list %s ', N_list)
+            logger.info('rank list %s ', rank_list)
+            logger.info('tensorsLowRank time list %s ', sparse_time_list)
+            logger.info('full time list %s ', full_time_list)
+            logger.info("")
 
     for material in [2, 4]:
         for dim in [2, 3]:
@@ -552,18 +560,18 @@ def display_data():
             rank_list_1 = pickle.load(
                 open("data_for_plot/time/dim_{}/mat_{}/rank_list_{}_1e-03.p".format(dim, material, kind_list[kind]), "rb"))
 
-            print("dim={}, material={}, kind={}, err_tol=1e-03 ".format(dim, material, kind_list[kind]))
-            print("N list {} ".format(N_list))
-            print("rank list {} ".format(rank_list_1))
-            print()
+            logger.info('dim=%s, material=%s, kind=%s, err_tol=1e-03 ', dim, material, kind_list[kind])
+            logger.info('N list %s ', N_list)
+            logger.info('rank list %s ', rank_list_1)
+            logger.info("")
 
             rank_list_2 = pickle.load(
                 open("data_for_plot/time/dim_{}/mat_{}/rank_list_{}_1e-06.p".format(dim, material, kind_list[kind]), "rb"))
 
-            print("dim={}, material={}, kind={}, err_tol=1e-06 ".format(dim, material, kind_list[kind]))
-            print("N list {} ".format(N_list))
-            print("rank list {} ".format(rank_list_2))
-            print()
+            logger.info('dim=%s, material=%s, kind=%s, err_tol=1e-06 ', dim, material, kind_list[kind])
+            logger.info('N list %s ', N_list)
+            logger.info('rank list %s ', rank_list_2)
+            logger.info("")
 
     for material in [0,3, 2, 4]:
         for dim in [2, 3]:
@@ -574,11 +582,11 @@ def display_data():
             rank_list = pickle.load(
                 open("data_for_plot/time/dim_{}/mat_{}/full_solution_rank_list_{}.p".format(dim, material, kind_list[kind]), "rb"))
 
-            print("dim={}, material={}, kind={} ".format(dim, material, kind_list[kind]))
-            print("N list {} ".format(N_list))
-            print("full solution rank list {} ".format(rank_list))
+            logger.info('dim=%s, material=%s, kind=%s ', dim, material, kind_list[kind])
+            logger.info('N list %s ', N_list)
+            logger.info('full solution rank list %s ', rank_list)
 
-            print()
+            logger.info("")
 if __name__ == '__main__':
 #     data used in plot_time have to be genereted first by experiment_time_efficiency.py
 #     plot_time()

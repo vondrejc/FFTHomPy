@@ -1,4 +1,12 @@
+import logging
+
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 def set_pars(mpl):
     mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath,bm,amsfonts}"]
@@ -86,6 +94,6 @@ def copy_files(src, dest, files='all'):
                 copy(full_file_name, dest)
         else:
             continue
-    print('copy of files is finished')
+    logger.info('copy of files is finished')
     return
-print((plt.style.available))
+logger.info('%s', plt.style.available)

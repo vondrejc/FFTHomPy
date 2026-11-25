@@ -1,6 +1,12 @@
+import logging
+
 import numpy as np
+
 from ffthompy import Timer
 from ffthompy.tensorsLowRank.objects import SparseTensor
+
+logger = logging.getLogger(__name__)
+
 
 def linear_solver(method, Afun, B, par):
     if method in ['Richardson','richardson','r','R']:
@@ -91,9 +97,9 @@ def cheby2TERM(Afun, B, x0=None, par={}, callback=None):
             callback(x)
 
     if par['tol'] < res['norm_res']: # if tolerance is less than error norm
-        print("Chebyshev solver does not converges!")
+        logger.warning("Chebyshev solver did not converge.")
     else:
-        print("Chebyshev solver converges.")
+        logger.info("Chebyshev solver converged.")
 
     if res['kit'] == 0:
         res['norm_res'] = 0
@@ -143,7 +149,7 @@ def minimal_residual(Afun, B, x0=None, par=None):
         else:
             minres_fail_counter+=1
             if minres_fail_counter>=par['minres_fails']:
-                print('Residuum has risen up {} times -> ending solver.'.format(par['minres_fails']))
+                logger.warning('Residuum has risen up %s times -> ending solver.', par['minres_fails'])
                 break
 
         beta=Afun(residuum.truncate(tol=min([res['norm_res'][-1]/1e1, par['tol']]), fast=fast))
@@ -175,7 +181,7 @@ def minimal_residual_debug(Afun, B, x0=None, par=None):
 
     while (norm_res>par['tol'] and res['kit']<par['maxiter']):
         res['kit']+=1
-        print('iteration = {}'.format(res['kit']))
+        logger.debug('iteration = %s', res['kit'])
 
         if par['approx_omega']:
             omega=norm_res/norm(beta) # approximate omega
@@ -204,8 +210,8 @@ def minimal_residual_debug(Afun, B, x0=None, par=None):
         tol=min([norm_res/1e1, par['tol']])
         residuum_for_beta=residuum.truncate(rank=None, tol=tol, fast=fast)
         tic.measure()
-        print('tolerance={}, rank={}'.format(tol, residuum_for_beta.r))
-        print('residuum_for_beta.r={}'.format(residuum_for_beta.r))
+        logger.debug('tolerance=%s, rank=%s', tol, residuum_for_beta.r)
+        logger.debug('residuum_for_beta.r=%s', residuum_for_beta.r)
         tic=Timer('compute beta')
         beta=Afun(residuum_for_beta)
         tic.measure()

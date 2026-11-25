@@ -1,13 +1,18 @@
-import numpy as np
-from ffthompy import Timer, Struct
-import ffthompy.tensors.projection as proj
-from ffthompy.general.solver import linear_solver
-from ffthompy.tensors import DFT, Operator, Tensor, grad_tensor, grad, div
-from ffthompy.trigpol import mean_index
-from ffthompy.tensorsLowRank.solver import linear_solver as linear_solver_lowrank
-from ffthompy.tensorsLowRank.projection import grad_tensor as sgrad_tensor
-from ffthompy.tensorsLowRank.objects import SparseTensor
 import itertools
+import logging
+
+import numpy as np
+
+import ffthompy.tensors.projection as proj
+from ffthompy import Struct, Timer
+from ffthompy.general.solver import linear_solver
+from ffthompy.tensors import DFT, Operator, Tensor, div, grad, grad_tensor
+from ffthompy.tensorsLowRank.objects import SparseTensor
+from ffthompy.tensorsLowRank.projection import grad_tensor as sgrad_tensor
+from ffthompy.tensorsLowRank.solver import linear_solver as linear_solver_lowrank
+from ffthompy.trigpol import mean_index
+
+logger = logging.getLogger(__name__)
 
 
 def homog_Ga_full(Aga, pars):
@@ -71,10 +76,10 @@ def homog_Ga_full_potential(Aga, pars):
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
 
-    print(('iterations of CG={}'.format(info['kit'])))
-    print(('norm of residuum={}'.format(info['norm_res'])))
+    logger.info('iterations of CG=%s', info['kit'])
+    logger.info('norm of residuum=%s', info['norm_res'])
     R=PB-PDFAFGPfun(iPU)
-    print(('norm of residuum={} (from definition)'.format(R.norm())))
+    logger.info('norm of residuum=%s (from definition)', R.norm())
 
     Fu=P*iPU
     X=iF2(grad(Fu).project(Nbar))
@@ -111,12 +116,12 @@ def homog_GaNi_full_potential(Agani, Aga, pars):
     iPU, info=linear_solver(solver='CG', Afun=PDFAFGPfun, B=PB,
                             x0=x0, par=pars.solver, callback=None)
     tic.measure()
-    print(('iterations of CG={}'.format(info['kit'])))
-    print(('norm of residuum={}'.format(info['norm_res'])))
+    logger.info('iterations of CG=%s', info['kit'])
+    logger.info('norm of residuum=%s', info['norm_res'])
 
     Fu=P*iPU
     if Aga is None: # GaNi homogenised properties
-        print('!!!!! homogenised properties are GaNi only !!!!!')
+        logger.warning('!!!!! homogenised properties are GaNi only !!!!!')
         XEN=iF(grad(Fu))+EN
         AH=Agani(XEN)*XEN
     else:
@@ -204,18 +209,17 @@ def homog_Ga_sparse(Agas, pars):
     PBs2=PBs.truncate(tol=pars.rhs_tol, fast=False)
 
     if debug:
-        print('r.h.s. norm = {}; error={}; rank={}'.format(np.linalg.norm(PBs.full().val),
-            np.linalg.norm(PBs.full().val-PBs2.full().val), PBs2.r))
+        logger.debug('r.h.s. norm = %s; error=%s; rank=%s', np.linalg.norm(PBs.full().val), np.linalg.norm(PBs.full().val-PBs2.full().val), PBs2.r)
     PBs=PBs2
 
     tic=Timer(name=pars.solver['method'])
     Fu, ress=linear_solver_lowrank(pars.solver['method'], Afun=PDFAFGfun_s, B=PBs, par=pars.solver)
     tic.measure()
 
-    print('iterations of solver={}'.format(ress['kit']))
-    print('norm of residuum={}'.format(ress['norm_res'][-1]))
+    logger.info('iterations of solver=%s', ress['kit'])
+    logger.info('norm of residuum=%s', ress['norm_res'][-1])
     Fu.name='Fu'
-    print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
+    logger.info('norm(resP)=%s', np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))
 
     FGX=[((hGrad_s[ii]*Fu).enlarge(Nbar)).fourier() for ii in range(dim)]
     FGX[0]+=Es # adding mean
@@ -265,8 +269,7 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     PBs=Ps*Bs
     PBs2=PBs.truncate(tol=pars.rhs_tol, fast=False)
     if debug:
-        print('r.h.s. norm = {}; error={}; rank={}'.format(np.linalg.norm(PBs.full().val),
-            np.linalg.norm(PBs.full().val-PBs2.full().val), PBs2.r))
+        logger.debug('r.h.s. norm = %s; error=%s; rank=%s', np.linalg.norm(PBs.full().val), np.linalg.norm(PBs.full().val-PBs2.full().val), PBs2.r)
 
     PBs=PBs2
 
@@ -274,13 +277,13 @@ def homog_GaNi_sparse(Aganis, Agas, pars):
     Fu, ress=linear_solver_lowrank(pars.solver['method'], Afun=PDFAFGfun_s, B=PBs, par=pars.solver)
     tic.measure()
 
-    print('iterations of solver={}'.format(ress['kit']))
-    print('norm of residuum={}'.format(ress['norm_res'][-1]))
+    logger.info('iterations of solver=%s', ress['kit'])
+    logger.info('norm of residuum=%s', ress['norm_res'][-1])
     Fu.name='Fu'
-    print('norm(resP)={}'.format(np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full())))
+    logger.info('norm(resP)=%s', np.linalg.norm((PBs-PDFAFGfun_s(Fu)).full()))
 
     if Agas is None: # GaNi homogenised properties
-        print('!!!!! homogenised properties are GaNi only !!!!!')
+        logger.warning('!!!!! homogenised properties are GaNi only !!!!!')
         FGX=[(hGrad_s[ii]*Fu).fourier() for ii in range(dim)]
         FGX[0]+=Es # adding mean
         AH = calculate_AH_sparse(Aganis, Aniso, FGX, method='full')

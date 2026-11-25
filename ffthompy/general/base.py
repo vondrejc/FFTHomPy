@@ -1,9 +1,13 @@
-import numpy as np
+import logging
 import os
 import sys
 import time
-from copy import copy, deepcopy
 from collections.abc import Callable
+from copy import copy, deepcopy
+
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def get_base_dir():
@@ -18,12 +22,13 @@ def run_file(filen=''):
     exec(compile(open(main).read(), main, 'exec'))
 
 def print_dict(d):
-    print('-- print dictionary -------------------')
+    """Log dictionary entries at INFO level (legacy helper name)."""
+    logger.info('-- print dictionary -------------------')
     for key, vals in list(d.items()):
-        print((key + ' =', vals))
+        logger.info('%s = %s', key, vals)
 
 def end():
-    print('end')
+    logger.info('end')
     sys.exit()
 
 class Representation():
@@ -40,10 +45,11 @@ class Representation():
         return ss
 
 class PrintControl():
-    flag=True
+    """Legacy control for muting FFTHomPy logging without changing stdout."""
 
     def __init__(self, flag=True):
-        self.flag=True
+        self.flag = flag
+        self._previous_level = None
 
     def activate(self):
         self.flag=True
@@ -52,13 +58,15 @@ class PrintControl():
         self.flag=False
 
     def disable(self):
-        if self.flag:
-            sys.stdout = open(os.devnull, 'w')
+        if self.flag and self._previous_level is None:
+            package_logger = logging.getLogger('ffthompy')
+            self._previous_level = package_logger.level
+            package_logger.setLevel(logging.CRITICAL + 1)
 
     def enable(self):
-        if self.flag:
-            sys.stdout.close()
-            sys.stdout = sys.__stdout__
+        if self._previous_level is not None:
+            logging.getLogger('ffthompy').setLevel(self._previous_level)
+            self._previous_level = None
 
 class Timer():
     def __init__(self, name='time', start=True):
@@ -70,12 +78,18 @@ class Timer():
         self.vals = []
         self.ttin = [time.process_time(), time.perf_counter(), time.time()]
 
-    def measure(self, print_time=True):
+    def measure(self, log_time=True, *, print_time=None):
+        """Record elapsed times and optionally log them at INFO level.
+
+        The legacy ``print_time`` keyword is accepted for compatibility.
+        """
         self.vals.append([time.process_time()-self.ttin[0],
                           time.perf_counter()-self.ttin[1],
                           time.time()-self.ttin[2]])
-        if print_time:
-            print(self)
+        if print_time is not None:
+            log_time = print_time
+        if log_time:
+            logger.info('%s', self)
 
     def __repr__(self):
         return 'time (%s): %s' % (self.name, str(self.vals))
@@ -273,4 +287,5 @@ class Struct(object):
         return log
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     run_file()

@@ -1,6 +1,14 @@
 from __future__ import division, print_function
 
-print("""
+import logging
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+logger.info("""
 This example shows how to interactively solve a problem of 
 FFT-based homogenization for linear elasticity. This algorithm is equivalent
 to original Moulinec-Suquet scheme, which is emphasized here.
@@ -16,51 +24,54 @@ Here, we follow an example in examples/elasticity/linelas_3d.py using
 an interactive mode with comments.
 """)
 
-import numpy as np
 import os
 import sys
+
+import numpy as np
+
 sys.path.insert(0, os.path.normpath(os.path.join(sys.path[0], '..')))
 
-print("""
+logger.info("""
 The problem in topological dimension
 dim = """)
 dim = 2 # topological dimension of a problem
-print(dim)
-print("""is defined on cell sizing
+logger.info('%s', dim)
+logger.info("""is defined on cell sizing
 Y =""")
 Y = np.ones(dim)
-print(Y)
+logger.info('%s', Y)
 
-print("""
+logger.info("""
 The material coefficients of linear elastic medium are defined in terms of
 bulk modulus
 K =""")
 K = np.array([1, 10.], dtype=np.float64)
-print(K)
-print("""and shear modulus
+logger.info('%s', K)
+logger.info("""and shear modulus
 G =""")
 G = np.array([1, 5.], dtype=np.float64)
-print(G)
-print("""where the first value of both 'K' and 'G' corresponds to the matrix
+logger.info('%s', G)
+logger.info("""where the first value of both 'K' and 'G' corresponds to the matrix
 phase, while the second value corresponds to the cube inclusion of size 0.6.
 The we express material coefficients as stiffness matrices in Mandel`s
 engineering notation:
 matcoefM.mandel =""")
 from ffthompy.mechanics.matcoef import ElasticTensor
+
 plane=None
 if dim==2:
     plane='strain'
 matcoefM = ElasticTensor(bulk=K[0], mu=G[0], plane=plane) # mat. coef. of matrix phase 
 matcoefI = ElasticTensor(bulk=K[1], mu=G[1], plane=plane) # mat. coef. of inclusion
-print(matcoefM.mandel)
-print("matcoefI.mandel =")
-print(matcoefI.mandel)
+logger.info('%s', matcoefM.mandel)
+logger.info("matcoefI.mandel =")
+logger.info('%s', matcoefI.mandel)
 
-print("""The problem, which is discretized with following no. of grid points
+logger.info("""The problem, which is discretized with following no. of grid points
 N = """)
 N = 5*np.ones(dim, dtype=np.int32) # no. of grid points
-print(N)
-print("""is defined via problem definition with instance 'pb'
+logger.info('%s', N)
+logger.info("""is defined via problem definition with instance 'pb'
 with a following keys:
 
 material : dictionary
@@ -100,7 +111,7 @@ pb = {'name': 'prob1',
                  'tol': 1e-8,
                  'maxiter': 1e3}}
 
-print("""
+logger.info("""
 The material properties for FFT-based homogenization are stored at grid
 points and are represented with class 'Matrix',
 which has the same or similar attributes and methods as a VecTri class
@@ -109,6 +120,7 @@ coefficients composed of random values, symmetrize them, and sum them with
 a multiplication of identity to obtain positive definite matrix, i.e.
 A =""")
 from ffthompy.tensors import Tensor
+
 D = int(dim*(dim+1)/2)
 A = Tensor(N=N, shape=(D,D), Fourier=False, multype=21)
 A.randomize()
@@ -118,18 +130,18 @@ I = Tensor(N=N, shape=(D,D), Fourier=False, multype=21)
 I.identity()
 A += 3*I
 A.name='material'
-print(A)
+logger.info('%s', A)
 
-print("""
+logger.info("""
 The values of material coefficients are stored in 'self.val', which == 'numpy.ndarray' object of shape = (D, D) + tuple(N)
 here D=d*(d+1)/2 is a number of components of elasticity matrix in
 engineering notation, so
 A.val.shape =""")
-print(A.val.shape)
+logger.info('%s', A.val.shape)
 
 del A
 
-print("""
+logger.info("""
 Now, we create an instance of material coefficients defined in
 a problem definition 'pb'. The methods, that evaluate the material coefficients
 in accordance with the inclusion types, are implemented in
@@ -137,36 +149,39 @@ class 'Material' in module 'homogenize.materials'. Hence,
 A =""")
 # definition of material
 from ffthompy.materials import Material
+
 mat = Material(pb['material'])
 A = mat.get_A_GaNi(pb['solve']['N'], 'primal')
-print(A)
+logger.info('%s', A)
 
-print("""---------------------
+logger.info("""---------------------
 Then, we define projection operators represented also with 'Matrix' class
 and FFT operators represented with 'DFT' class.""")
 import ffthompy.projections as proj
+
 _, hG1hN, hG1sN, hG2hN, hG2sN = proj.elasticity(pb['solve']['N'], pb['material']['Y'],
                                                 NyqNul=True, tensor=True)
 
 from ffthompy.tensors import DFT, Operator
+
 FN = DFT(name='FN', inverse=False, N=N)
 FiN = DFT(name='FiN', inverse=True, N=N)
 
-print("""
+logger.info("""
 The class 'Matrix' allows to check that the objects are projections""")
-print('(hG1hN*hG1hN-hG1hN).norm() =', (hG1hN*hG1hN-hG1hN).norm())
-print('(hG1sN*hG1sN-hG1sN).norm() =', (hG1sN*hG1sN-hG1sN).norm())
-print('(hG2hN*hG2hN-hG2hN).norm() =', (hG2hN*hG2hN-hG2hN).norm())
-print('(hG2sN*hG2sN-hG2sN).norm() =', (hG2sN*hG2sN-hG2sN).norm())
-print("""and check also for their ortogonality:""")
-print('(hG1hN*hG1sN).norm() =', (hG1hN*hG1sN).norm())
-print('(hG1hN*hG2hN).norm() =', (hG1hN*hG2hN).norm())
-print('(hG1hN*hG2sN).norm() =', (hG1hN*hG2sN).norm())
-print('(hG1sN*hG2hN).norm() =', (hG1sN*hG2hN).norm())
-print('(hG1sN*hG2sN).norm() =', (hG1sN*hG2sN).norm())
-print('(hG2hN*hG2sN).norm() =', (hG2hN*hG2sN).norm())
+logger.info('(hG1hN*hG1hN-hG1hN).norm() = %s', (hG1hN*hG1hN-hG1hN).norm())
+logger.info('(hG1sN*hG1sN-hG1sN).norm() = %s', (hG1sN*hG1sN-hG1sN).norm())
+logger.info('(hG2hN*hG2hN-hG2hN).norm() = %s', (hG2hN*hG2hN-hG2hN).norm())
+logger.info('(hG2sN*hG2sN-hG2sN).norm() = %s', (hG2sN*hG2sN-hG2sN).norm())
+logger.info("""and check also for their ortogonality:""")
+logger.info('(hG1hN*hG1sN).norm() = %s', (hG1hN*hG1sN).norm())
+logger.info('(hG1hN*hG2hN).norm() = %s', (hG1hN*hG2hN).norm())
+logger.info('(hG1hN*hG2sN).norm() = %s', (hG1hN*hG2sN).norm())
+logger.info('(hG1sN*hG2hN).norm() = %s', (hG1sN*hG2hN).norm())
+logger.info('(hG1sN*hG2sN).norm() = %s', (hG1sN*hG2sN).norm())
+logger.info('(hG2hN*hG2sN).norm() = %s', (hG2hN*hG2sN).norm())
 
-print("""
+logger.info("""
 Then we put all operators together to get a linear operator 'G1'
 represented by 'LinOper' class and providing a projection on compatible fields.
 Here, we also shows that both operators are orthogonal projection:""")
@@ -176,15 +191,15 @@ G1N = Operator(name='G1', mat=[[FiN, hG1hN + hG1sN, FN]])
 G2N = Operator(name='G1', mat=[[FiN, hG2hN + hG2sN, FN]])
 uN = Tensor(N=N, shape=(D,)).randomize()
 vN = Tensor(N=N, shape=(D,)).randomize()
-print('(G1N(G1N(uN))-G1N(uN)).norm() =', (G1N(G1N(uN))-G1N(uN)).norm())
-print('(G2N*G2N*uN-G2N*uN).norm() =', (G2N(G2N(uN))-G2N(uN)).norm())
-print('G1N(uN)*G2N(vN) =', G1N(uN)*G2N(vN))
-print("""We note that different syntax has been used to show the usage of
+logger.info('(G1N(G1N(uN))-G1N(uN)).norm() = %s', (G1N(G1N(uN))-G1N(uN)).norm())
+logger.info('(G2N*G2N*uN-G2N*uN).norm() = %s', (G2N(G2N(uN))-G2N(uN)).norm())
+logger.info('G1N(uN)*G2N(vN) = %s', G1N(uN)*G2N(vN))
+logger.info("""We note that different syntax has been used to show the usage of
 class 'Matrix'. The important methods for 'LinOper', 'Matrix', and 'DFT'
 classes are 'self.__call__' and 'self.__mul__', which enable the application to
 trigonometric polynomials.""")
 
-print("""
+logger.info("""
 We also show the possibility of linear operator ('LinOper') by showing one
 iteration of Moulinec-Suquet scheme using three versions.
 """)
@@ -195,21 +210,21 @@ epN = Tensor(name='strain', N=N, shape=(D,)).randomize()
 # sufficiently small parameter corresponding to reference medium 
 alp = 0.1
 
-print("#1")
-print("epN_new = epN - alp*Afun(epN)")
+logger.info("#1")
+logger.info("epN_new = epN - alp*Afun(epN)")
 epN_new = epN - alp*Afun(epN)
-print("#2")
-print("""hG1 = hG1hN + hG1sN
+logger.info("#2")
+logger.info("""hG1 = hG1hN + hG1sN
 epN_new2 = epN - alp * FiN(hG1(FN(A(epN))))""")
 hG1 = hG1hN + hG1sN
 epN_new2 = epN - alp * FiN(hG1(FN(A(epN))))
 
-print("""
+logger.info("""
 Then the resulting vectors are compared to show they are the same:
 (epN_new == epN_new2) = """)
-print(epN_new == epN_new2)
+logger.info('%s', epN_new == epN_new2)
 
-print("""==============================
+logger.info("""==============================
 Now, we show a solution of homogenization problem for material defined in
 problem 'pb' and particular choice of macroscopic value
 E =""")
@@ -218,7 +233,7 @@ E = np.zeros(D)
 E[0] = 1
 EN = Tensor(name='EN', N=N, shape=(D,), Fourier=False)
 EN.set_mean(E)
-print(EN)
+logger.info('%s', EN)
 
 # definition of reference media according to Moulinec-Suquet
 Km = K.mean()
@@ -240,19 +255,20 @@ x0 = Tensor(N=N, shape=(D,), Fourier=False)
 B = Afun(-EN) # RHS
 B_MS = Afun_MS(-EN) # RHS
 
-print("""
+logger.info("""
 The linear system is solved with different algorithms:""")
-print("""
+logger.info("""
 version #1 :
 The solution by Conjugate gradients with zero initial vector; the macroscopic
 value occurs on right-hand-side as a load.""")
 from ffthompy.general.solver import linear_solver
+
 X, info = linear_solver(solver='CG', Afun=Afun, B=B,
                         x0=x0, par=pb['solver'], callback=None)
 
-print('Homogenised properties (component 11) = {0}'.format(A(X+EN)*(X+EN)))
+logger.info('Homogenised properties (component 11) = %s', A(X+EN)*(X+EN))
 
-print("""
+logger.info("""
 version #2 :
 The solution by Conjugate gradients with initial vector corresponding to
 macroscopic value; in this case, the right-hand-side remains zero.
@@ -260,9 +276,9 @@ The difference to previous solution is printed:
 (X+EN == X2) =""")
 X2, info2 = linear_solver(solver='CG', Afun=Afun, B=x0,
                           x0=EN, par=pb['solver'], callback=None)
-print(X+EN == X2)
+logger.info('%s', X+EN == X2)
 
-print("""
+logger.info("""
 version #3 :
 The solution by Conjugate gradients as in #2 with initial vector
 corresponding to macroscopic value. However, the projection operator is scaled
@@ -270,9 +286,9 @@ in accordance with Moulinec-Suquet scheme.
 (X+EN == X3) =""")
 X3, info3 = linear_solver(solver='CG', Afun=Afun_MS, B=x0,
                           x0=EN, par=pb['solver'], callback=None)
-print(X+EN == X3)
+logger.info('%s', X+EN == X3)
 
-print("""
+logger.info("""
 version #4 :
 The solution by 'scipy.sparse.linalg.cg' with initial vector corresponding to
 macroscopic value.
@@ -281,8 +297,8 @@ macroscopic value.
 Afun.define_operand(B)
 X4, info4 = linear_solver(solver='scipy_cg', Afun=Afun, B=x0,
                           x0=EN, par=pb['solver'], callback=None)
-print(X+EN == X4)
-print("""
+logger.info('%s', X+EN == X4)
+logger.info("""
 version #5 :
 The solution by Richardson's iteration, which is exactly the same like
 Moulinec-Suquet algorithm; the initial value is taken as macroscopic vector.
@@ -296,6 +312,6 @@ while (resn > pb['solver']['tol'] and iters < pb['solver']['maxiter']):
         X5 = X5 - Afun_MS(X5)
         resn = (X5_prev-X5).norm()
 
-print(X+EN == X5)
+logger.info('%s', X+EN == X5)
 
-print('END')
+logger.info('END')

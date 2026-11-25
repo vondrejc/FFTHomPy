@@ -40,6 +40,21 @@ The stochastic material examples additionally require
 [StoPy](https://github.com/vondrejc/StoPy). The package and its core tests do
 not require StoPy.
 
+## Logging
+
+The library uses standard Python logging with per-module loggers under
+`ffthompy`. Configure logging in your application to see progress and results:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+```
+
+Use `logging.DEBUG` for solver diagnostics. Standalone examples, tutorials,
+and `main.py` enable INFO logging when run directly. In tests, use
+`uv run pytest --log-cli-level=INFO` to display logs as they are emitted.
+
 ## References
 
 The code is based on the following papers, where you can find more theoretical information.

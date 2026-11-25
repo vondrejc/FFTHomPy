@@ -1,7 +1,15 @@
+import itertools
+import logging
+
 import numpy as np
 import scipy.sparse.linalg as sp
-import itertools
-from functions import get_matinc, material_coef_at_grid_points, enlarge, square_weights
+from functions import enlarge, get_matinc, material_coef_at_grid_points, square_weights
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 # PARAMETERS
 dim   = 2 # dimension (works for 2D and 3D)
@@ -39,7 +47,7 @@ e, _= sp.cg(A=sp.LinearOperator(shape=(ndof, ndof), matvec=GA_fun, dtype='float'
 # POSTPROCESSING to calculate energetic value influenced by numerical integration
 aux  = e+E.reshape(-1)
 AH11 = np.inner(A_fun(aux).reshape(-1), aux)/np.prod(N)
-print('homogenised component AH11 = {} (FFTH-GaNi - nonconforming)'.format(AH11))
+logger.info('homogenised component AH11 = %s (FFTH-GaNi - nonconforming)', AH11)
 
 # POSTPROCESSING to calculate guaranteed bound
 dN = 2*N-1
@@ -61,5 +69,5 @@ e2 = ifft(Fe2, dN).real
 E2 = np.zeros((dim,)+tuple(dN)); E2[0] = 1. # macroscopic value
 aux2 = e2 + E2
 AH11 = np.sum(dot(Aga, aux2)*aux2)/np.prod(dN)
-print('homogenised component AH11 = {} (FFTH-GaNi - conforming - upper bound on homogenised properties)'.format(AH11))
-print('END')
+logger.info('homogenised component AH11 = %s (FFTH-GaNi - conforming - upper bound on homogenised properties)', AH11)
+logger.info('END')

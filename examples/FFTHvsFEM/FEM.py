@@ -1,8 +1,31 @@
+import logging
+
 import numpy as np
-from functions import get_matinc, PeriodicBoundary
-from fenics import (Constant, FunctionSpace, UnitSquareMesh, UnitCubeMesh, inner,
-                    MeshFunction, SubDomain, between, Measure, DirichletBC,
-                    TrialFunction, TestFunction, Function, grad, assemble, solve)
+from fenics import (
+    Constant,
+    DirichletBC,
+    Function,
+    FunctionSpace,
+    Measure,
+    MeshFunction,
+    SubDomain,
+    TestFunction,
+    TrialFunction,
+    UnitCubeMesh,
+    UnitSquareMesh,
+    assemble,
+    between,
+    grad,
+    inner,
+    solve,
+)
+from functions import PeriodicBoundary, get_matinc
+
+logger = logging.getLogger(__name__)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 # PARAMETERS
 dim   = 2   # dimension (works for 2D and 3D)
@@ -61,6 +84,6 @@ solve(bilf(grad(u), grad(v)) == -bilf(E, grad(v)), uE, bcs=[bc0])
 
 # POSTPROCESSING evaluation of guaranteed bound
 AH11 = assemble(bilf(grad(uE)+E, grad(uE)+E))
-print('homogenised component A11 = {} (FEM)'.format(AH11))
+logger.info('homogenised component A11 = %s (FEM)', AH11)
 
-print('END')
+logger.info('END')
