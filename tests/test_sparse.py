@@ -20,13 +20,6 @@ from ffthompy.tensorsLowRank.objects import CanoTensor, SparseTensor
 
 
 @pytest.fixture
-def require_tt():
-    pytest.importorskip(
-        "tt", reason="Tensor Train tests require the legacy ttpy package"
-    )
-
-
-@pytest.fixture
 def tensors_2d():
     tensor = np.random.rand(5, 10)
     return tensor, np.random.rand(*tensor.shape)
@@ -41,7 +34,6 @@ def tensors_3d():
 @pytest.mark.parametrize(
     ("dim", "material", "kind"), [(2, 0, 0), (2, 3, 1), (3, 1, 1), (3, 0, 2)]
 )
-@pytest.mark.usefixtures("require_tt")
 def test_sparse_solver(dim, material, kind):
 
     tic = Timer("homogenisation")
@@ -102,7 +94,6 @@ def test_tucker(tensors_3d):
     assert 0 == pytest.approx(norm((a * b).full() - T3d * T3dOther), rel=0, abs=5e-8)
 
 
-@pytest.mark.usefixtures("require_tt")
 def test_tensor_train(tensors_3d):
     T3d, T3dOther = tensors_3d
 
@@ -114,8 +105,32 @@ def test_tensor_train(tensors_3d):
     assert 0 == pytest.approx(norm((a + b).full() - T3d - T3dOther), rel=0, abs=5e-8)
     assert 0 == pytest.approx(norm((a * b).full() - T3d * T3dOther), rel=0, abs=5e-8)
 
+    # A rank cap at the exact rank must preserve the sum.
+    rounded = (a + b).truncate(rank=max(T3d.shape[0], T3d.shape[-1]))
+    assert norm(rounded.full().val - T3d - T3dOther) < 5e-8
 
-@pytest.mark.usefixtures("require_tt")
+
+def test_tensor_train_vector_and_scalar():
+    values = np.arange(5.0)
+    train = SparseTensor(kind="tt", val=values)
+    assert norm((train + train).full().val - 2 * values) < 1e-12
+    assert norm((train * np.float64(2)).full().val - 2 * values) < 1e-12
+    assert norm(train.fourier().full().val - np.fft.rfft(values)) < 1e-12
+
+
+@pytest.mark.parametrize("bits", [(2, 2), (2, 3), (2, 2, 2)])
+def test_qtt_fft_small(bits):
+    shape = tuple(2**n for n in bits)
+    values = np.arange(1, np.prod(shape) + 1, dtype=float).reshape(shape, order="F")
+    quantized = values.reshape([2] * sum(bits), order="F")
+    transformed = SparseTensor(kind="tt", val=quantized).qtt_fft(bits, tol=1e-10)
+    reversed_shape = shape[::-1]
+    actual = transformed.full().val.reshape(reversed_shape, order="F").transpose(
+        tuple(reversed(range(len(bits))))
+    )
+    assert norm(actual - np.fft.fftn(values) / values.size) < 1e-8
+
+
 def test_fourier(tensors_2d, tensors_3d):
     T2d, _ = tensors_2d
     T3d, _ = tensors_3d
@@ -194,7 +209,6 @@ def test_fourier(tensors_2d, tensors_3d):
         )
 
 
-@pytest.mark.usefixtures("require_tt")
 def test_fourier_truncation():
     N = np.random.randint(20, 50, size=3)
     a = np.arange(1, np.prod(N) + 1).reshape(N)
@@ -287,7 +301,6 @@ def test_qtt_fft():
     assert qtt_fft_time < 0.1 * tt_fft_time
 
 
-@pytest.mark.usefixtures("require_tt")
 def test_orthogonalise(tensors_2d, tensors_3d):
     T2d, T2dOther = tensors_2d
     T3d, T3dOther = tensors_3d
@@ -334,7 +347,6 @@ def test_orthogonalise(tensors_2d, tensors_3d):
         assert np.dot(cr[i], cr[i].T).any() == identity.any()
 
 
-@pytest.mark.usefixtures("require_tt")
 def test_mean(tensors_2d, tensors_3d):
     T2d, _ = tensors_2d
     T3d, _ = tensors_3d

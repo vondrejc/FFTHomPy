@@ -13,6 +13,7 @@ authors = [{name = "Jaroslav Vondřejc", email = "vondrejc@gmail.com"}]
 dependencies = [
     "numpy>=1.26.4,<3",
     "scipy>=1.11.4,<2",
+    "seemps>=3.0,<4",
 ]
 classifiers = [
     "Programming Language :: Python :: 3.11",

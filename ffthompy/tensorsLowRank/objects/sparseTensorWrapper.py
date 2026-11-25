@@ -27,8 +27,8 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
     :param rank: rank of the cano and tucker tensorsLowRank tensor, maximum rank of TT tensorsLowRank tensor.
     :type rank: int for cano and TT, list of int for tucker.
 
-    :param vectorObj: a TTPY vector class object, to be cast into tensorTrain object.
-    :type vectorObj:  TTPY vector
+    :param vectorObj: a SeeMPS MPS object, to be cast into a TensorTrain object.
+    :type vectorObj: SeeMPS MPS
 
     :returns: object of tensorsLowRank tensor.
     """
@@ -43,12 +43,7 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
     elif kind.lower() in ['tucker']:
         return Tucker(name=name, val=val, core=core, basis=basis,Fourier=Fourier,fft_form=fft_form).truncate(rank=rank, tol=eps)
     elif kind.lower() in ['tt', 'tensortrain']:
-        try:
-            from ffthompy.tensorsLowRank.objects.tensorTrain import TensorTrain
-        except ModuleNotFoundError as exc:
-            if exc.name == 'tt':
-                raise ImportError('Tensor Train support requires the legacy ttpy package') from exc
-            raise
+        from ffthompy.tensorsLowRank.objects.tensorTrain import TensorTrain
         return TensorTrain(val=val, core=core, eps=eps, rmax=rmax, name=name,
                            Fourier=Fourier, vectorObj=vectorObj,fft_form=fft_form)
     else:
@@ -56,6 +51,7 @@ def SparseTensor(kind='tt', val=None, core=None, basis=None, eps=None, rank=None
 
 
 if __name__=='__main__':
+    from seemps.state import MPS, NO_TRUNCATION
 
     print()
     print('----testing "Repeat" function ----')
@@ -100,7 +96,7 @@ if __name__=='__main__':
     tt2=SparseTensor(kind='tt', val=v1, eps=2e-1)
     print(tt2)
 
-    tt_vec=vector(v1)
+    tt_vec=MPS.from_tensor(v1, strategy=NO_TRUNCATION, normalize=False)
     tt3=SparseTensor(kind='TT', vectorObj=tt_vec)
     print(tt3)
 

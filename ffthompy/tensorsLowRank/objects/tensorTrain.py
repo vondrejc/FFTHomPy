@@ -6,12 +6,13 @@ from numpy.linalg import qr, norm, svd
 from scipy.linalg import rq
 from ffthompy.tensors import Tensor
 from ffthompy.tensorsLowRank.objects.tensors import LowRankTensorFuns
-from tt.core.vector import vector
+from seemps.state import MPS, NO_TRUNCATION, Strategy, Truncation, mps_tensor_product
+from seemps.qft import qft_nd_mpo
 from ffthompy.tensorsLowRank.objects.tensors import fft_form_default
 from functools import reduce
 
 
-class TensorTrain(vector, LowRankTensorFuns):
+class TensorTrain(LowRankTensorFuns):
     kind='tt'
 
     def __init__(self, val=None, core=None, eps=None, rmax=None, Fourier=False, name='unnamed',
@@ -21,18 +22,18 @@ class TensorTrain(vector, LowRankTensorFuns):
         if rmax is None: rmax=999999
 
         if val is not None:
-            vectorObject=vector(val, eps, rmax)
+            self._mps = self._round_mps(
+                MPS.from_tensor(np.asarray(val), strategy=NO_TRUNCATION,
+                                normalize=False), eps, rmax)
         elif core is not None:
-            vectorObject=vector.from_list(core)
-        elif vectorObj is not None: # cast a TTPY object to tensorTrain object
-            vectorObject=vectorObj
-        else: # a  3D zero tensor
-            vectorObject=vector(np.zeros((3, 4, 5)), eps, rmax)
+            self._mps = MPS([np.asarray(c).copy() for c in core])
+        elif vectorObj is not None:
+            self._mps = vectorObj
+        else:
+            self._mps = MPS.from_tensor(np.zeros((3, 4, 5)),
+                                        strategy=NO_TRUNCATION, normalize=False)
 
-        for attr_name in vectorObject.__dict__:
-            setattr(self, attr_name, getattr(vectorObject, attr_name))
-
-        self.N=self.n # ttpy use n, we use N.
+        self._update_shape()
         self.name=name
         self.Fourier=Fourier
         self.fft_form=fft_form
@@ -47,7 +48,7 @@ class TensorTrain(vector, LowRankTensorFuns):
         :returns: TensorTrain object constructed from the given cores.
 
         """
-        vectorObj=vector.from_list(a)
+        vectorObj=MPS([np.asarray(c).copy() for c in a])
 
         ttObj=TensorTrain(vectorObj=vectorObj, name=name, Fourier=Fourier,fft_form=fft_form)
 
@@ -56,6 +57,45 @@ class TensorTrain(vector, LowRankTensorFuns):
     @property
     def dim(self):
         return self.d
+
+    def _update_shape(self):
+        self.n = np.asarray(self._mps.physical_dimensions(), dtype=int)
+        self.N = self.n
+        self.r = np.asarray(self._mps.bond_dimensions(), dtype=int)
+        self.d = len(self.n)
+
+    @staticmethod
+    def to_list(obj):
+        return [core.copy() for core in obj._mps]
+
+    @staticmethod
+    def _round_mps(mps, eps, rmax):
+        """Round MPS cores with a relative Frobenius error and rank cap."""
+        cores = [core.copy() for core in mps]
+        if len(cores) == 1:
+            return MPS(cores)
+
+        # Move the orthogonality center to the final core.
+        for i in range(len(cores) - 1):
+            left, n, right = cores[i].shape
+            q, r = qr(cores[i].reshape(left * n, right), mode='reduced')
+            bond = q.shape[1]
+            cores[i] = q.reshape(left, n, bond)
+            cores[i + 1] = (r @ cores[i + 1].reshape(right, -1)).reshape(
+                bond, *cores[i + 1].shape[1:])
+
+        local_error = eps * mps.norm() / np.sqrt(len(cores) - 1)
+        for i in range(len(cores) - 1, 0, -1):
+            left, n, right = cores[i].shape
+            u, s, vh = svd(cores[i].reshape(left, n * right), full_matrices=False)
+            rank = min(len(s), int(rmax))
+            while rank > 1 and np.linalg.norm(s[rank - 1:]) <= local_error:
+                rank -= 1
+            cores[i] = vh[:rank].reshape(rank, n, right)
+            prev = cores[i - 1]
+            cores[i - 1] = (prev.reshape(-1, left) @ (u[:, :rank] * s[:rank])).reshape(
+                prev.shape[0], prev.shape[1], rank)
+        return MPS(cores)
 
     def fourier(self, real_output=False):
         "(inverse) discrete Fourier transform"
@@ -205,11 +245,11 @@ class TensorTrain(vector, LowRankTensorFuns):
         """
 
         if self.Fourier:
-            res=self.fourier()
+            res=self.fourier(real_output=self.fft_form == 'sr')
         else:
             res=self
 
-        val= vector.full(res)
+        val=res._mps.to_tensor()
 
         # Tensor with the default fft_form for full tensor
         T=Tensor(name=res.name, val=val, order=0, N=val.shape, Fourier=False, **kwargs)
@@ -229,7 +269,7 @@ class TensorTrain(vector, LowRankTensorFuns):
         X=self
         assert(X.Fourier==Y.Fourier)
 #        XY=X*Y
-        res_vec=vector.__mul__(X, Y)
+        res_vec=X._mps * Y._mps
         XY=TensorTrain(vectorObj=res_vec,Fourier=self.Fourier, fft_form=self.fft_form)
         return XY.mean(normal_domain=False)*np.prod(XY.N)
 
@@ -237,25 +277,28 @@ class TensorTrain(vector, LowRankTensorFuns):
 
         name=self.name+'*'+(str(other) if isinstance(other, (int, float, complex)) or np.isscalar(other) else other.name)
 
-        if self.fft_form=='sr' and not isinstance(other, (int, float, complex)):
-            res_vec=vector.__mul__(self.set_fft_form('c',copy=True), other.set_fft_form('c',copy=True))
+        if self.fft_form=='sr' and isinstance(other, TensorTrain):
+            res_vec=self.set_fft_form('c',copy=True)._mps * other.set_fft_form('c',copy=True)._mps
             res=TensorTrain(vectorObj=res_vec, name=name[:50],
                             Fourier=self.Fourier, fft_form='c').set_fft_form('sr')
         else:
-            res_vec=vector.__mul__(self, other)
+            res_vec=self._mps * (other._mps if isinstance(other, TensorTrain) else other.item() if isinstance(other, np.generic) else other)
             res=TensorTrain(vectorObj=res_vec, name=name[:50],
                             Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __add__(self, other):
-        res_vec=vector.__add__(self, other)
+        if self.d == 1:
+            res_vec=MPS([self._mps[0] + other._mps[0]])
+        else:
+            res_vec=(self._mps + other._mps).join()
         res=TensorTrain(vectorObj=res_vec,
                         name=self.name+'+'+(str(other) if isinstance(other, (int, float, complex)) else other.name),
                         Fourier=self.Fourier, fft_form=self.fft_form)
         return res
 
     def __kron__(self, other):
-        res_vec=vector.__kron__(self, other)
+        res_vec=mps_tensor_product([self._mps, other._mps])
         res=TensorTrain(vectorObj=res_vec,
                         name=self.name+' glued with '+(str(other) if isinstance(other, (int, float, complex)) else other.name),
                         Fourier=self.Fourier, fft_form=self.fft_form)
@@ -267,6 +310,12 @@ class TensorTrain(vector, LowRankTensorFuns):
         res.name=self.name+'-'+(str(other) if isinstance(other, (int, float, complex)) else other.name)
 
         return res
+
+    def __neg__(self):
+        return self * -1
+
+    def __rmul__(self, other):
+        return self * other
 
     def multiply(self, Y, tol=None, rank=None):
         # element-wise multiplication
@@ -280,7 +329,7 @@ class TensorTrain(vector, LowRankTensorFuns):
     @property
     def memory(self):
         "return the number of floating point numbers that consist of the TT tensor"
-        return self.core.shape[0]+self.ps.shape[0]
+        return sum(core.size for core in self._mps)
 
     def __repr__(self): # print statement
         keys=['name', 'Fourier', 'fft_form', 'dim', 'N', 'r']
@@ -319,10 +368,11 @@ class TensorTrain(vector, LowRankTensorFuns):
 
                 cr_new[self.d-1]=cr[self.d-1]
 
-                res_vec=self.from_list(cr_new)
-                res_vec=res_vec.round(eps=tol, rmax=rank)
+                res_vec=self.from_list(cr_new)._mps
             else:
-                res_vec=self.round(eps=tol, rmax=rank) # round() produces a TTPY vetcor object
+                res_vec=self._mps
+
+            res_vec=self._round_mps(res_vec, tol, rank)
 
             res=TensorTrain(vectorObj=res_vec, name=self.name+'_truncated', Fourier=self.Fourier,
                             fft_form=self.fft_form)
@@ -389,7 +439,7 @@ class TensorTrain(vector, LowRankTensorFuns):
                 return newObj
 
         else:
-            raise ValueError("Unexpected parameter '"+direction+"' at tt.vector.tt_qr")
+            raise ValueError("Unexpected orthogonalisation direction: " + direction)
 
     def tt_chunk(self, start, end):
         """
@@ -419,44 +469,24 @@ class TensorTrain(vector, LowRankTensorFuns):
         :param tol: error torlerance
         :type tol: float
         """
-        assert((self.n==2).any())
+        if not np.all(self.n == 2) or sum(ds) != self.d:
+            raise ValueError('QTT FFT requires binary cores partitioned by ds')
 
-        ds=np.array(ds)
+        # QTT input uses Fortran bit order. Reversing sites makes each group
+        # compatible with SeeMPS's most-significant-bit-first QFT operators.
+        state = self._mps.reverse()
+        strategy = Strategy(method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
+                            tolerance=tol**2, normalize=False)
+        offset = 0
+        for bits in reversed(ds):
+            sites = list(range(offset, offset + bits))
+            state = qft_nd_mpo(sites, N=self.d, strategy=strategy).apply(state)
+            offset += bits
 
-        D=np.prod(ds.shape)
-        x=self.orthogonalise(direction='rl')
-
-        for i in range(D):
-            cury=x.tt_chunk(0, ds[i]-1)
-            if i<D-1:
-                x=x.tt_chunk(ds[i], x.d-1)
-
-            cury=cury.qtt_fft1(tol, bitReverse=False)
-
-            if i<D-1:
-                cury, ru=cury.orthogonalise(direction='lr', r_output=True)
-                crx=x.to_list(x)
-                crx[0]=reshape(crx[0], (x.r[0], x.n[0]*x.r[1]))
-                crx[0]=np.dot(ru, crx[0])
-                x.r[0]=crx[0].shape[0]
-                crx[0]=reshape(crx[0], (x.r[0], x.n[0], x.r[1]))
-                x=x.from_list(crx)
-
-            if i==0:
-                y=cury
-            else:
-                y=y.__kron__(cury)
-
-        cr=y.to_list(y)
-        cr2=[None]*y.d
-
-        for i in range(y.d):
-            cr2[y.d-i-1]=cr[i].T
-
-        cr2[y.d-1]/=2**((sum(ds))/2.0) # divided by sqrt(prod(N)), another sqrt(prod(N)) was already divided in qtt_fft1()
-        y=y.from_list(cr2)
-
-        return y
+        # SeeMPS uses a unitary FFT; FFTHomPy historically divides by N.
+        state = state * (1 / np.sqrt(2**self.d))
+        return TensorTrain(vectorObj=state, name=self.name + '_qtt_fft',
+                           fft_form=self.fft_form)
 
     def copy(self, name=None):
         if name is None:
@@ -466,9 +496,9 @@ class TensorTrain(vector, LowRankTensorFuns):
 
     def norm(self, normal_domain=True):
         if self.Fourier and self.fft_form=='sr':
-            return vector.norm(self.set_fft_form('c',copy=True))
+            return self.set_fft_form('c',copy=True)._mps.norm()
         else:
-            return vector.norm(self)
+            return self._mps.norm()
 
 if __name__=='__main__':
 
@@ -542,7 +572,7 @@ if __name__=='__main__':
 ##    print t
 ##
 #    # ## test casting a vector obj to tensortrain obj
-#    ty=vector(v)
+#    ty=MPS.from_tensor(v, strategy=NO_TRUNCATION, normalize=False)
 #    ty2=TensorTrain(vectorObj=ty)
 #
 ##    ##   test  enlarge  ###

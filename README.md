@@ -34,12 +34,11 @@ All tests live in `tests/` and use pytest functions, fixtures, and
 parameterized cases. To run an individual module, use for example
 `uv run pytest tests/test_solver.py`.
 
-For plotting, use `uv sync --extra plot`. The Tensor Train functionality
-requires the legacy [ttpy](https://pypi.org/project/ttpy/) package, which is
-not installed by default; its tests are skipped when it is unavailable.
+For plotting, use `uv sync --extra plot`. Tensor Train functionality uses
+[SeeMPS](https://pypi.org/project/seemps/), which is installed with the package.
 The stochastic material examples additionally require
 [StoPy](https://github.com/vondrejc/StoPy). The package and its core tests do
-not require either of these legacy dependencies.
+not require StoPy.
 
 ## References
 
